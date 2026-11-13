@@ -5,3 +5,5 @@ pydantic-settings
 httpx
 pytest
 pytest-asyncio
+numpy
+rasterio

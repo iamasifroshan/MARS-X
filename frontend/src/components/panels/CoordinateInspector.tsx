@@ -60,3 +60,4 @@ export const CoordinateInspector: React.FC<CoordinateInspectorProps> = ({ coords
     </div>
   );
 };
+

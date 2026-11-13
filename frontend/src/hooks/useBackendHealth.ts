@@ -68,3 +68,4 @@ export function useBackendHealth(intervalMs = 15000): BackendHealthState {
 
   return state;
 }
+

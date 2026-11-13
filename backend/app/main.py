@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import APP_NAME, VERSION, API_V1_PREFIX, CORS_ORIGINS
 from app.routers import health as health_router
 from app.routers import datasets as datasets_router
+from app.routers import terrain as terrain_router
 
 # ── Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -21,8 +22,8 @@ app = FastAPI(
     title="MARS-X API",
     description=(
         "Backend API for the MARS-X project — Mars Analysis, Research & "
-        "Site-selection eXplorer. Provides dataset catalogue endpoints and "
-        "health/status checks for the Martian geospatial data pipeline."
+        "Site-selection eXplorer. Provides dataset catalogue endpoints, "
+        "terrain data engine services, and planetary geodesy verification."
     ),
     version=VERSION,
 )
@@ -40,6 +41,7 @@ app.add_middleware(
 app.include_router(health_router.router)
 app.include_router(health_router._status_router)
 app.include_router(datasets_router.router)
+app.include_router(terrain_router.router)
 
 
 # ── Root ───────────────────────────────────────────────────────────────────
@@ -52,6 +54,12 @@ async def root():
         "health": "/health",
         "status": f"{API_V1_PREFIX}/status",
         "datasets": f"{API_V1_PREFIX}/datasets",
+        "terrain": {
+            "datasets": f"{API_V1_PREFIX}/terrain/datasets",
+            "metadata": f"{API_V1_PREFIX}/terrain/metadata",
+            "coverage": f"{API_V1_PREFIX}/terrain/coverage",
+            "summary": f"{API_V1_PREFIX}/terrain/summary",
+        },
     }
 
 

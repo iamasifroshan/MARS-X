@@ -47,3 +47,4 @@ export interface MapLayer {
   isAvailable: boolean;
   statusNote: string;
 }
+

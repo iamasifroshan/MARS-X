@@ -7,34 +7,13 @@
 
 ---
 
-## Endpoints
+## Core System Endpoints
 
 ### `GET /` — Welcome
-
-Returns a welcome message with links to API documentation and key endpoints.
-
-**Response** `200 OK`
-
-```json
-{
-  "message": "Welcome to MARS-X API",
-  "version": "0.1.0",
-  "docs": "/docs",
-  "endpoints": {
-    "health": "/health",
-    "status": "/api/v1/status",
-    "datasets": "/api/v1/datasets"
-  }
-}
-```
-
----
+Returns service metadata and navigation endpoints.
 
 ### `GET /health` — Health Check
-
-Lightweight health check endpoint for monitoring and load balancers.
-
-**Response** `200 OK`
+Lightweight liveness probe for orchestration and frontend status monitoring.
 
 ```json
 {
@@ -44,172 +23,104 @@ Lightweight health check endpoint for monitoring and load balancers.
 }
 ```
 
-**Pydantic Model:** `HealthResponse`
-
-```python
-class HealthResponse(BaseModel):
-    status: str = "ok"
-    app: str
-    version: str
-```
-
----
-
 ### `GET /api/v1/status` — Detailed Status
-
-Returns detailed application status including uptime and service health.
-
-**Response** `200 OK`
+Returns uptime and subsystem readiness.
 
 ```json
 {
   "status": "ok",
   "app": "MARS-X",
   "version": "0.1.0",
-  "uptime_seconds": 142.7,
+  "uptime_seconds": 12.4,
   "services": {
-    "dataset_catalogue": "operational",
-    "geospatial_engine": "not_configured",
-    "terrain_analysis": "not_configured"
+    "dataset_catalogue": "ok",
+    "geospatial": "active",
+    "terrain": "active_engine",
+    "routing": "pending_engine",
+    "science": "ready",
+    "mission": "ready",
+    "ai": "foundation_stub"
   }
 }
 ```
 
-**Pydantic Model:** `StatusResponse`
+---
 
-```python
-class StatusResponse(BaseModel):
-    status: str = "ok"
-    app: str
-    version: str
-    uptime_seconds: float
-    services: Dict[str, str]
-```
+## Dataset Catalogue Endpoints
+
+### `GET /api/v1/datasets` — Dataset Catalogue
+Returns the list of 11 verified NASA/USGS Mars dataset metadata records.
+
+**Query Parameters:**
+- `mission` *(optional, string)*: Filter by mission substring (e.g. `MRO`, `MSL`).
 
 ---
 
-### `GET /api/v1/datasets` — Dataset Catalogue
+## Terrain Data Engine Endpoints (Phase 2)
 
-Returns the full list of registered NASA/USGS Mars dataset metadata entries.
+### `GET /api/v1/terrain/datasets` — Numerical Terrain Datasets
+Returns summary responses for all registered numerical elevation products (MOLA MEGDR, HRSC DTMs, HiRISE DTMs, CTX DTMs).
+Strictly separates numerical DTM elevation grids from visual shaded relief imagery.
 
-**Query Parameters**
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `mission` | `string` | No | Filter datasets by mission name (case-insensitive substring match) |
-
-**Response** `200 OK`
-
+**Response `200 OK`:**
 ```json
 [
   {
     "dataset_id": "mola-megdr",
-    "name": "MOLA Mission Experiment Gridded Data Records",
-    "mission": "Mars Global Surveyor",
+    "name": "MOLA Mission Experiment Gridded Data Records (MEGDR)",
+    "mission": "Mars Global Surveyor (MGS)",
     "instrument": "Mars Orbiter Laser Altimeter (MOLA)",
-    "product_type": "Topographic grid (DTM)",
-    "spatial_resolution": "463 m/px (1/128 degree)",
-    "acquisition_date_range": "1999-2001",
-    "geographic_footprint": "Global",
-    "crs": "IAU:49900",
-    "source_url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html",
-    "data_format": "PDS IMG / GeoTIFF",
-    "coverage": "Global, 87.5°S to 87.5°N latitude",
-    "processing_status": "registered",
-    "scientific_limitations": "Accuracy degrades above ~87° latitude due to polar orbit geometry. Vertical accuracy ~1 m, horizontal ~100 m.",
-    "description": "Global topographic dataset derived from over 600 million laser altimetry measurements by MOLA aboard Mars Global Surveyor."
+    "product_type": "Numerical Topographic DTM",
+    "status": "registered",
+    "elevation_unit": "metres relative to MOLA Areoid",
+    "native_resolution_desc": "128 pixels/degree (~463 m/px at equator)",
+    "is_numerical_dtm": true,
+    "coverage": "Near-global (±88° Lat, 0°–360° East Lon)",
+    "nodata_value_repr": "-32768 (int16)",
+    "scientific_limitations": "Spatial resolution limited to ~463 m; polar gap beyond 88° latitude; microtopography (<100m) not resolved.",
+    "provenance_source": "NASA Planetary Data System (PDS) Geosciences Node / Smith et al. (2001)"
   }
 ]
 ```
 
-**Example: Filter by mission**
+### `GET /api/v1/terrain/coverage` — Spatial Coverage & Footprint
+Returns coordinate bounding box and surface percentage coverage.
 
-```
-GET /api/v1/datasets?mission=reconnaissance
-```
+**Query Parameters:**
+- `dataset_id` *(required, string)*: Target dataset ID (e.g., `mola-megdr`, `hrsc-dtm`, `hirise-dtm`, `ctx-dtm`).
 
-Returns only datasets from missions containing "reconnaissance" (e.g., Mars Reconnaissance Orbiter).
-
-**Pydantic Model:** `DatasetMetadata`
-
-```python
-class ProcessingStatus(str, Enum):
-    registered = "registered"
-    available = "available"
-    downloaded = "downloaded"
-    validated = "validated"
-    error = "error"
-
-class DatasetMetadata(BaseModel):
-    dataset_id: str
-    name: str
-    mission: str
-    instrument: str
-    product_type: str
-    spatial_resolution: Optional[str] = None
-    acquisition_date_range: Optional[str] = None
-    geographic_footprint: Optional[str] = None
-    crs: str
-    source_url: str
-    data_format: str
-    coverage: str
-    processing_status: ProcessingStatus
-    scientific_limitations: Optional[str] = None
-    description: str
-```
-
----
-
-## Error Responses
-
-All error responses follow the standard FastAPI format:
-
-**`422 Unprocessable Entity`** — Validation error
-
+**Response `200 OK`:**
 ```json
 {
-  "detail": [
-    {
-      "loc": ["query", "mission"],
-      "msg": "value is not a valid string",
-      "type": "type_error.str"
-    }
-  ]
+  "dataset_id": "mola-megdr",
+  "is_global": true,
+  "lat_min": -88.0,
+  "lat_max": 88.0,
+  "lon_min": 0.0,
+  "lon_max": 360.0,
+  "crs": "IAU:49900",
+  "total_area_approx_pct": 98.6,
+  "notes": "Global cylindrical coverage excluding narrow 2° polar caps covered by polar stereographic megp products."
 }
 ```
 
-**`500 Internal Server Error`** — Server-side error
+### `GET /api/v1/terrain/summary` — Full Terrain Product Profile
+Returns comprehensive scientific profile, native resolution, vertical datum, and limitations.
 
-```json
-{
-  "detail": "Internal server error"
-}
-```
+**Query Parameters:**
+- `dataset_id` *(required, string)*: Target dataset ID.
 
----
+### `GET /api/v1/terrain/metadata` — Rasterio Header Inspection
+Inspects raster dimensions, transform, CRS, pixel spacing, and NoData value.
 
-## CORS Configuration
+**Query Parameters:**
+- `dataset_id` *(required, string)*: Target dataset ID.
+- `file_path` *(optional, string)*: Path to local raster file on disk.
 
-The backend is configured with CORS middleware to allow the frontend development server to make cross-origin requests.
-
-| Setting | Value |
-|---|---|
-| **Allowed Origins** | `http://localhost:3000` (configurable via `CORS_ORIGINS` env var) |
-| **Allowed Methods** | All (`*`) |
-| **Allowed Headers** | All (`*`) |
-
-To configure CORS origins, set the environment variable:
-
-```powershell
-$env:CORS_ORIGINS = "http://localhost:3000,https://mars-x.example.com"
-```
+*Zero-Fabrication Enforcement:* If the file has not yet been downloaded to local storage and `file_path` is not provided, the API returns `404 Not Found` with an explicit notice that un-downloaded raster headers cannot be fabricated.
 
 ---
 
-## Interactive Documentation
-
-FastAPI automatically generates interactive API documentation:
-
-- **Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
+## CORS & Interactive Documentation
+- **Interactive Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
 - **ReDoc:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
-- **OpenAPI JSON:** [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)

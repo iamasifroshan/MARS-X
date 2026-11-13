@@ -20,3 +20,4 @@ class AIQueryResponse(BaseModel):
     suggested_actions: List[str] = []
     source_datasets: List[str] = []
     status: str = "foundation_stub"
+

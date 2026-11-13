@@ -30,8 +30,8 @@ async def status():
         uptime_seconds=round(time.time() - _start_time, 2),
         services={
             "dataset_catalogue": "ok",
-            "geospatial": "ready",
-            "terrain": "pending_raster_engine",
+            "geospatial": "active",
+            "terrain": "active_engine",
             "routing": "pending_engine",
             "science": "ready",
             "mission": "ready",

@@ -56,3 +56,4 @@ export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({
     </div>
   );
 };
+
