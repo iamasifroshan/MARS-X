@@ -1,6 +1,16 @@
-"""Terrain API router for MARS-X."""
+"""Terrain API router for MARS-X.
+
+Exposes endpoints for:
+- Datasets, metadata, coverage, layers, and product profiles
+- Multi-resolution comparisons and tile adjacency
+- Scientific validation registry and reports (/validation, /products/{id}/validation)
+- MOLA MEG128 tile inventory and coverage calculations (/inventory)
+- Strict CRS and vertical datum compatibility assessment (/compatibility)
+- Terrain hazard metrics and metadata (/hazards, /hazards/metadata)
+"""
 
 import os
+import numpy as np
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, HTTPException, Query, Path
 
@@ -9,6 +19,7 @@ from app.terrain.models import (
     TerrainSummaryResponse,
     RasterCoverageResponse,
     RasterMetadataResponse,
+    ElevationPointQuery,
 )
 from app.terrain.provenance import (
     list_terrain_datasets,
@@ -23,16 +34,35 @@ from app.terrain.multi_resolution import (
     DTMProductProfile,
     ResolutionComparisonResult,
 )
+from app.terrain.validation import (
+    DatasetValidationRegistry,
+    ProductValidationReport,
+)
+from app.terrain.inventory import (
+    Mola128InventoryService,
+    Mola128InventoryReport,
+    TileAdjacencyCheckResult,
+)
+from app.terrain.harmonization import (
+    HarmonizationEngine,
+    CompatibilityAssessmentResult,
+)
+from app.terrain.hazard_engine import (
+    TerrainHazardEngine,
+    TerrainHazardPointMetrics,
+    HazardEngineMetadata,
+    HazardThresholds,
+)
 
 router = APIRouter(prefix=f"{API_V1_PREFIX}/terrain", tags=["terrain"])
+
+inventory_service = Mola128InventoryService()
+hazard_engine = TerrainHazardEngine()
 
 
 @router.get("/datasets", response_model=List[TerrainSummaryResponse])
 async def get_terrain_datasets():
-    """Retrieve all registered Martian numerical elevation products.
-
-    Strictly separates numerical DTMs from visual shaded relief imagery.
-    """
+    """Retrieve all registered Martian numerical elevation products."""
     return list_terrain_datasets()
 
 
@@ -66,12 +96,12 @@ async def get_terrain_layers():
             "name": "MOLA Topographic Slope (Horn)",
             "product_type": "slope",
             "instrument": "MOLA",
-            "resolution_desc": "0.25°/px (latitudinally scaled cell spacing)",
+            "resolution_desc": "0.25°/px (~14.8 km/px)",
             "ground_spacing_m": 14818.67,
             "crs": "IAU:49900",
-            "vertical_datum": "Angular Gradient",
+            "vertical_datum": "Gradient (Horn 3x3)",
             "unit": "degrees",
-            "value_range": {"min": 0.0, "max": 16.5},
+            "value_range": {"min": 0.0, "max": 18.2},
             "is_available": os.path.exists(slope_cog),
             "file_format": "COG (Cloud Optimized GeoTIFF)",
             "file_path": slope_cog if os.path.exists(slope_cog) else None,
@@ -125,17 +155,118 @@ async def get_terrain_layers():
     return layers
 
 
+@router.get("/validation", response_model=List[ProductValidationReport])
+async def get_validation_summary():
+    """Retrieve lifecycle states and scientific verification summaries for all terrain products."""
+    return DatasetValidationRegistry.get_all_reports()
+
+
+@router.get("/products/{product_id}/validation", response_model=ProductValidationReport)
+async def get_product_validation(
+    product_id: str = Path(..., description="Target product identifier (e.g., 'mola-megdr-4')")
+):
+    """Retrieve detailed scientific validation report and check history for a single product."""
+    report = DatasetValidationRegistry.get_report(product_id)
+    if not report:
+        raise HTTPException(status_code=404, detail=f"Validation report for '{product_id}' not found.")
+    return report
+
+
+@router.get("/inventory", response_model=Mola128InventoryReport)
+async def get_mola_128_inventory():
+    """Retrieve MOLA 128 ppd tile inventory, download statuses, and computed spherical coverage."""
+    return inventory_service.get_inventory_report()
+
+
+@router.get("/inventory/adjacency", response_model=TileAdjacencyCheckResult)
+async def check_tile_adjacency(
+    tile_a: str = Query(..., description="First tile identifier (e.g., 'megt00n000hb')"),
+    tile_b: str = Query(..., description="Second tile identifier (e.g., 'megt44n000hb')"),
+):
+    """Inspect topological boundary adjacency and seam alignment between two MOLA 128 tiles."""
+    try:
+        return Mola128InventoryService.check_adjacency(tile_a, tile_b)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/compatibility", response_model=CompatibilityAssessmentResult)
+async def assess_product_compatibility(
+    product_a: str = Query(..., description="First product ID (e.g., 'mola-megdr-128')"),
+    product_b: str = Query(..., description="Second product ID (e.g., 'hirise-dtm-jezero')"),
+):
+    """Assess horizontal CRS, vertical datum, and resolution compatibility before combining or comparing."""
+    try:
+        return HarmonizationEngine.assess_compatibility(product_a, product_b)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/hazards/metadata", response_model=HazardEngineMetadata)
+async def get_hazard_metadata():
+    """Retrieve mathematical algorithms, thresholds, and limitations of the terrain hazard engine."""
+    return HazardEngineMetadata()
+
+
+@router.get("/hazards", response_model=TerrainHazardPointMetrics)
+async def evaluate_terrain_hazards(
+    lat: float = Query(..., ge=-90.0, le=90.0, description="Target Martian latitude"),
+    lon: float = Query(..., ge=0.0, le=360.0, description="Target Martian positive-East longitude"),
+    dataset_id: str = Query("mola-megdr", description="Source DTM product ID (e.g., 'mola-megdr')"),
+):
+    """Evaluate point terrain hazard indicators (slope, relief, roughness, discontinuities, and complexity).
+
+    Uses authentic locally ingested raster data.
+    """
+    if not engine.is_raster_available(dataset_id):
+        raise HTTPException(
+            status_code=404,
+            detail=f"Numerical raster for '{dataset_id}' not loaded or unavailable locally. Cannot compute hazards."
+        )
+
+    # Sample local 3x3 window around the requested point
+    # Global MOLA 4 ppd has pixel size d_lat = 0.25, d_lon = 0.25
+    d_lat = 0.25
+    d_lon = 0.25
+
+    # Extract 3x3 elevations
+    elev_grid = np.zeros((3, 3), dtype=np.float32)
+    offsets = [(-1, -1), (-1, 0), (-1, 1),
+               (0, -1),  (0, 0),  (0, 1),
+               (1, -1),  (1, 0),  (1, 1)]
+
+    for row_idx, d_row in enumerate([-1, 0, 1]):
+        for col_idx, d_col in enumerate([-1, 0, 1]):
+            sample_lat = max(min(lat - d_row * d_lat, 90.0), -90.0)
+            sample_lon = (lon + d_col * d_lon) % 360.0
+            pt = engine.query_elevation_point(
+                ElevationPointQuery(
+                    latitude=sample_lat,
+                    longitude=sample_lon,
+                    dataset_id=dataset_id,
+                )
+            )
+            elev_grid[row_idx, col_idx] = pt.elevation_m if pt.elevation_m is not None else -32768.0
+
+    metrics = hazard_engine.evaluate_point_hazards(
+        lat_deg=lat,
+        lon_deg=lon,
+        window_3x3=elev_grid,
+        d_lat_deg=d_lat,
+        d_lon_deg=d_lon,
+        source_dataset=dataset_id,
+        source_resolution_m=14818.67,
+        validation_state_score=1.0,
+    )
+    return metrics
+
+
 @router.get("/metadata", response_model=RasterMetadataResponse)
 async def get_terrain_metadata(
     dataset_id: str = Query(..., description="Target dataset ID (e.g., 'mola-megdr')"),
     file_path: Optional[str] = Query(None, description="Optional path to local raster file to inspect via Rasterio"),
 ):
-    """Inspect and return raster metadata and CRS parameters.
-
-    If file_path is specified, runs live Rasterio inspection on the file.
-    If only dataset_id is provided, checks if a local raster is registered with the engine,
-    or returns 404 if local raster has not been ingested.
-    """
+    """Inspect and return raster metadata and CRS parameters."""
     target_path = file_path
     if not target_path and engine.is_raster_available(dataset_id):
         target_path = engine._loaded_rasters.get(dataset_id.lower())
@@ -182,7 +313,6 @@ async def get_terrain_coverage(
             raise HTTPException(status_code=404, detail=f"Coverage footprint for '{dataset_id}' not found.")
         return coverage
 
-    # Return full multi-tier catalog coverage
     return {
         "catalog_tiers": [
             {"tier": "global_coarse", "resolution": "14.8 km/px", "coverage": "100% Global"},

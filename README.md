@@ -14,8 +14,9 @@ MARS-X is an open-source platform for visualising Mars terrain, planning astrona
 |---|---|
 | **Frontend** | Next.js 15 · TypeScript · Tailwind CSS · MapLibre GL JS |
 | **Backend** | FastAPI · Python 3.12 · Pydantic · Uvicorn |
-| **Geospatial** *(planned)* | Rasterio · GDAL · GeoPandas |
-| **Data** | 11 registered NASA/USGS dataset sources |
+| **Geospatial** | Rasterio · NumPy · COG pipeline · Multi-Resolution DTM Engine |
+| **Data** | NASA PDS · MOLA MEGDR 4 & 128 ppd · ESA PSA HRSC · USGS CTX · HiRISE |
+| **Hazard Analysis** | Horn Gradient · Metric Relief · Local Roughness · Scarp Detection |
 
 ---
 

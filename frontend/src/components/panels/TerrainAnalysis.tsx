@@ -5,13 +5,21 @@ import {
   fetchElevationStats, 
   fetchTerrainCoverage, 
   fetchTerrainLayers, 
-  compareTerrainResolutions 
+  fetchValidationReports,
+  fetchMolaInventory,
+  fetchCompatibilityAssessment,
+  fetchTerrainHazards,
+  fetchHazardMetadata,
 } from "@/lib/api";
 import { 
   ElevationStats, 
   TerrainCoverage, 
   TerrainLayerItem, 
-  ResolutionComparison 
+  ProductValidationReport,
+  Mola128InventoryReport,
+  CompatibilityAssessmentResult,
+  TerrainHazardPointMetrics,
+  HazardEngineMetadata,
 } from "@/lib/types";
 
 interface TerrainAnalysisProps {
@@ -22,54 +30,127 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
   const [stats, setStats] = useState<ElevationStats | null>(null);
   const [coverage, setCoverage] = useState<TerrainCoverage | null>(null);
   const [layers, setLayers] = useState<TerrainLayerItem[]>([]);
-  const [selectedLayerId, setSelectedLayerId] = useState<string>("mola-megdr-128-tile-00n000");
-  const [comparison, setComparison] = useState<ResolutionComparison | null>(null);
+  const [validationReports, setValidationReports] = useState<ProductValidationReport[]>([]);
+  const [inventory, setInventory] = useState<Mola128InventoryReport | null>(null);
+  const [compatibility, setCompatibility] = useState<CompatibilityAssessmentResult | null>(null);
+  const [hazards, setHazards] = useState<TerrainHazardPointMetrics | null>(null);
+  const [hazardMeta, setHazardMeta] = useState<HazardEngineMetadata | null>(null);
+  
+  const [selectedTab, setSelectedTab] = useState<"layers" | "validation" | "inventory" | "compatibility" | "hazards">("hazards");
+  const [compatPair, setCompatPair] = useState<{ a: string; b: string }>({
+    a: "mola-megdr-4",
+    b: "hirise-dtm-jezero",
+  });
+  
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const queryLat = currentCoordinates?.lat ?? 18.38;
-  const queryLon = currentCoordinates?.lon ?? 77.58;
+  const queryLat = currentCoordinates?.lat ?? 18.65;
+  const queryLon = currentCoordinates?.lon ?? 226.20;
 
   useEffect(() => {
-    async function loadInitialData() {
+    async function loadData() {
       try {
         setLoading(true);
-        const [statsData, coverageData, layersData] = await Promise.all([
+        const [
+          statsData,
+          coverageData,
+          layersData,
+          valData,
+          invData,
+          compatData,
+          hazardData,
+          metaData,
+        ] = await Promise.all([
           fetchElevationStats(),
           fetchTerrainCoverage(queryLat, queryLon),
           fetchTerrainLayers(),
+          fetchValidationReports(),
+          fetchMolaInventory(),
+          fetchCompatibilityAssessment(compatPair.a, compatPair.b),
+          fetchTerrainHazards(queryLat, queryLon, "mola-megdr").catch(() => null),
+          fetchHazardMetadata().catch(() => null),
         ]);
+
         setStats(statsData);
         setCoverage(coverageData);
         setLayers(layersData);
-
-        // Fetch comparison between MOLA 128 and HiRISE
-        const cmp = await compareTerrainResolutions("mola-megdr-128", "hirise-dtm-jezero");
-        setComparison(cmp);
+        setValidationReports(valData);
+        setInventory(invData);
+        setCompatibility(compatData);
+        setHazards(hazardData);
+        setHazardMeta(metaData);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load terrain intelligence");
       } finally {
         setLoading(false);
       }
     }
-    loadInitialData();
-  }, [queryLat, queryLon]);
+    loadData();
+  }, [queryLat, queryLon, compatPair.a, compatPair.b]);
 
   return (
-    <div className="space-y-6 text-sm text-slate-300">
-      <div>
-        <h3 className="text-base font-semibold text-white tracking-wide flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-          Multi-Resolution Terrain Engine
-        </h3>
-        <p className="text-xs text-slate-400 mt-1">
-          Authentic planetary DTM hierarchy with anti-upsampling protection and strict Mars CRS bounds.
-        </p>
+    <div className="space-y-4 text-sm text-slate-300">
+      {/* Header and Sub-Navigation */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+        <div>
+          <h3 className="text-base font-semibold text-white tracking-wide flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Mars Terrain Intelligence & Hazard Engine
+          </h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Phase 5 Scientific Harmonization, Verification Pipeline & Explainable Hazards (EPSG:104905)
+          </p>
+        </div>
+
+        {/* Tab Switcher */}
+        <div className="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-lg border border-slate-800 text-xs font-mono">
+          <button
+            onClick={() => setSelectedTab("hazards")}
+            className={`px-2.5 py-1 rounded transition-colors ${
+              selectedTab === "hazards" ? "bg-red-950/80 text-red-300 border border-red-800/60" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            Hazards
+          </button>
+          <button
+            onClick={() => setSelectedTab("validation")}
+            className={`px-2.5 py-1 rounded transition-colors ${
+              selectedTab === "validation" ? "bg-blue-950/80 text-blue-300 border border-blue-800/60" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            Lifecycle ({validationReports.length})
+          </button>
+          <button
+            onClick={() => setSelectedTab("inventory")}
+            className={`px-2.5 py-1 rounded transition-colors ${
+              selectedTab === "inventory" ? "bg-amber-950/80 text-amber-300 border border-amber-800/60" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            MOLA 128 ({inventory?.downloaded_tile_count ?? 0}/16)
+          </button>
+          <button
+            onClick={() => setSelectedTab("compatibility")}
+            className={`px-2.5 py-1 rounded transition-colors ${
+              selectedTab === "compatibility" ? "bg-purple-950/80 text-purple-300 border border-purple-800/60" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            CRS & Datum
+          </button>
+          <button
+            onClick={() => setSelectedTab("layers")}
+            className={`px-2.5 py-1 rounded transition-colors ${
+              selectedTab === "layers" ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/60" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            DTMs
+          </button>
+        </div>
       </div>
 
       {loading && (
-        <div className="p-4 bg-slate-900/60 border border-slate-800 rounded animate-pulse text-xs text-slate-400">
-          Querying planetary elevation catalog and inspecting footprints...
+        <div className="p-3 bg-slate-900/60 border border-slate-800 rounded text-xs text-slate-400 animate-pulse">
+          Querying planetary elevation catalog and running geodetic validation...
         </div>
       )}
 
@@ -79,161 +160,341 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
         </div>
       )}
 
-      {/* Multi-Resolution Layer Hierarchy */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-mono text-emerald-400 uppercase tracking-wider">
-            Available DTM Layers ({layers.length})
-          </span>
-          <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
-            CRS: EPSG:104905
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 gap-2">
-          {layers.map((layer) => {
-            const isSelected = layer.layer_id === selectedLayerId;
-            return (
-              <div
-                key={layer.layer_id}
-                onClick={() => setSelectedLayerId(layer.layer_id)}
-                className={`cursor-pointer p-2.5 rounded border transition-all text-xs ${
-                  isSelected
-                    ? "bg-emerald-950/30 border-emerald-500/50 text-white"
-                    : "bg-slate-950/40 border-slate-800/80 hover:border-slate-700 text-slate-300"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{layer.name}</span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
-                      layer.product_type === "elevation"
-                        ? "bg-purple-900/50 text-purple-300 border border-purple-700/50"
-                        : layer.product_type === "slope"
-                        ? "bg-blue-900/50 text-blue-300 border border-blue-700/50"
-                        : "bg-amber-900/50 text-amber-300 border border-amber-700/50"
-                    }`}
-                  >
-                    {layer.product_type.toUpperCase()}
+      {/* 1. TERRAIN HAZARD INTELLIGENCE PANEL */}
+      {selectedTab === "hazards" && (
+        <div className="space-y-3">
+          {hazards ? (
+            <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <div>
+                  <span className="text-xs font-mono uppercase text-red-400 font-bold tracking-wider">
+                    Terrain Hazard Indicators ({queryLat.toFixed(2)}°N, {queryLon.toFixed(2)}°E)
                   </span>
+                  <div className="text-[11px] text-slate-400">
+                    Source: <code className="text-emerald-300">{hazards.source_dataset}</code> (Window: {hazards.analysis_window_m.toLocaleString()}m)
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 mt-1.5 text-[11px] text-slate-400 font-mono">
-                  <span>Res: {layer.ground_spacing_m.toFixed(1)} m/px</span>
-                  <span>|</span>
-                  <span>Datum: {layer.vertical_datum}</span>
-                  <span>|</span>
-                  <span className={layer.is_available ? "text-emerald-400" : "text-amber-400"}>
-                    {layer.is_available ? "✓ Available" : "Catalog Ref"}
-                  </span>
+                <span
+                  className={`text-xs px-2.5 py-1 rounded font-mono font-bold uppercase ${
+                    hazards.complexity_class === "low_measured_complexity"
+                      ? "bg-emerald-950/60 text-emerald-300 border border-emerald-800/50"
+                      : hazards.complexity_class === "moderate_complexity"
+                      ? "bg-amber-950/60 text-amber-300 border border-amber-800/50"
+                      : hazards.complexity_class === "high_complexity"
+                      ? "bg-orange-950/60 text-orange-300 border border-orange-800/50"
+                      : hazards.complexity_class === "extreme_complexity"
+                      ? "bg-red-950/60 text-red-300 border border-red-800/50"
+                      : "bg-slate-800 text-slate-400"
+                  }`}
+                >
+                  {hazards.complexity_class.replace("_", " ")}
+                </span>
+              </div>
+
+              {/* Grid of indicators */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs font-mono">
+                <div className="bg-slate-950/60 p-2.5 rounded border border-slate-800">
+                  <div className="text-[10px] text-slate-500 uppercase">Topographic Slope</div>
+                  <div className="text-base text-white font-bold mt-0.5">
+                    {hazards.slope_deg !== null ? `${hazards.slope_deg}°` : "N/A"}
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    {hazards.slope_pct !== null ? `${hazards.slope_pct.toFixed(1)}% grade` : "NoData"}
+                  </div>
+                </div>
+
+                <div className="bg-slate-950/60 p-2.5 rounded border border-slate-800">
+                  <div className="text-[10px] text-slate-500 uppercase">Local Relief (Δz)</div>
+                  <div className="text-base text-cyan-300 font-bold mt-0.5">
+                    {hazards.local_relief_m !== null ? `${hazards.local_relief_m} m` : "N/A"}
+                  </div>
+                  <div className="text-[10px] text-slate-400">Elevation range</div>
+                </div>
+
+                <div className="bg-slate-950/60 p-2.5 rounded border border-slate-800">
+                  <div className="text-[10px] text-slate-500 uppercase">Roughness (σz)</div>
+                  <div className="text-base text-purple-300 font-bold mt-0.5">
+                    {hazards.roughness_m !== null ? `${hazards.roughness_m} m` : "N/A"}
+                  </div>
+                  <div className="text-[10px] text-slate-400">Std deviation</div>
+                </div>
+
+                <div className="bg-slate-950/60 p-2.5 rounded border border-slate-800">
+                  <div className="text-[10px] text-slate-500 uppercase">Data Confidence</div>
+                  <div className="text-base text-emerald-300 font-bold mt-0.5">
+                    {(hazards.data_confidence_score * 100).toFixed(0)}%
+                  </div>
+                  <div className="text-[10px] text-slate-400">Authentic MOLA</div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </div>
 
-      {/* Coordinate Footprint Inspection */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-4 space-y-2">
-        <span className="text-xs font-mono text-cyan-400 uppercase tracking-wider">
-          Point Footprint Intersection
-        </span>
-        <div className="text-xs text-slate-400">
-          Coordinates: <code className="text-cyan-300">{queryLat.toFixed(4)}°N, {queryLon.toFixed(4)}°E</code>
-        </div>
-        {coverage ? (
-          <div className="space-y-2 pt-1">
-            <div className="text-xs">
-              <span className="text-slate-400">Highest Available Resolution: </span>
-              <span className="text-white font-mono font-semibold">
-                {coverage.finest_available_resolution_m ? `${coverage.finest_available_resolution_m} m/px` : "N/A"}
-              </span>
-            </div>
-            <div className="text-xs text-slate-400">
-              Intersecting Products:
-              <ul className="mt-1 space-y-1">
-                {coverage.covering_dtms?.map((p) => (
-                  <li key={p.id} className="font-mono text-[11px] text-slate-300 flex items-center justify-between bg-slate-950/30 px-2 py-1 rounded">
-                    <span>{p.name} ({p.id})</span>
-                    <span className="text-emerald-400">{p.pixel_spacing_m} m/px</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        ) : (
-          <div className="text-xs text-slate-500">Checking coverage...</div>
-        )}
-      </div>
+              {/* Discontinuity banner if detected */}
+              {hazards.discontinuity_detected && (
+                <div className="bg-red-950/40 border border-red-700/60 p-2.5 rounded text-xs text-red-200 flex items-center justify-between">
+                  <span className="font-semibold">⚠️ Topographic Discontinuity Detected:</span>
+                  <span className="font-mono">{hazards.discontinuity_type}</span>
+                </div>
+              )}
 
-      {/* Anti-Upsampling & Resolution Comparison */}
-      {comparison && (
-        <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono text-purple-400 uppercase tracking-wider">
-              Anti-Upsampling Guard
-            </span>
-            <span className="text-[10px] px-2 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/50 font-mono">
-              Scientific Integrity
-            </span>
-          </div>
+              {/* Explainable Reasoning */}
+              <div className="bg-slate-950/40 border border-slate-800/80 p-2.5 rounded text-xs text-slate-300 space-y-1">
+                <div className="text-[10px] text-slate-400 uppercase font-mono font-semibold">
+                  Classification Rationale:
+                </div>
+                <p>{hazards.explanation}</p>
+              </div>
 
-          <div className="text-xs space-y-2">
-            <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
-              <span className="text-slate-400">Baseline Product:</span>
-              <span className="font-mono text-slate-200">{comparison.product_a}</span>
+              {/* Scientific Disclaimer */}
+              <div className="p-2 bg-slate-950/80 border border-amber-800/40 rounded text-[10px] text-amber-300/90 italic">
+                {hazards.safety_disclaimer}
+              </div>
             </div>
-            <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
-              <span className="text-slate-400">Comparison Product:</span>
-              <span className="font-mono text-slate-200">{comparison.product_b}</span>
+          ) : (
+            <div className="p-4 bg-slate-900/60 border border-slate-800 rounded text-xs text-slate-400">
+              No hazard calculations available for current coordinate. Check dataset ingestion.
             </div>
-            <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
-              <span className="text-slate-400">Resolution Ratio:</span>
-              <span className="font-mono text-emerald-400 font-bold">
-                {comparison.resolution_ratio.toFixed(1)}x detail disparity
-              </span>
-            </div>
-            <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
-              <span className="text-slate-400">Vertical Datum Aligned:</span>
-              <span className={`font-mono ${comparison.vertical_datum_compatible ? "text-emerald-400" : "text-red-400"}`}>
-                {comparison.vertical_datum_compatible ? "✓ Both GMM-3 Areoid" : "⚠ Datum Mismatch"}
-              </span>
-            </div>
-          </div>
+          )}
 
-          <p className="text-[11px] text-slate-400 bg-slate-950/40 p-2 rounded border border-slate-800/50 italic">
-            "{comparison.anti_upsampling_notice}"
-          </p>
+          {/* Algorithm Metadata Card */}
+          {hazardMeta && (
+            <div className="bg-slate-900/50 border border-slate-800 rounded p-3 text-[11px] text-slate-400 space-y-1 font-mono">
+              <div className="text-slate-300 font-bold">Algorithms & Mathematical Basis:</div>
+              <div>• Slope: {hazardMeta.slope_algorithm}</div>
+              <div>• Relief: {hazardMeta.relief_algorithm}</div>
+              <div>• Roughness: {hazardMeta.roughness_algorithm}</div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Physical Elevation Statistics */}
-      {stats && (
-        <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-4 space-y-2">
-          <span className="text-xs font-mono text-amber-400 uppercase tracking-wider">
-            Verified Physical Elevations ({stats.source_dataset})
-          </span>
-          <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-xs">
-            <div className="bg-slate-950/50 p-2 rounded border border-slate-800/60">
-              <div className="text-[10px] text-slate-500 uppercase">Min Elevation</div>
-              <div className="text-cyan-300 font-semibold">{stats.min_elevation_m.toLocaleString()} m</div>
-              <div className="text-[9px] text-slate-500 mt-0.5">Hellas Basin depth</div>
+      {/* 2. DATASET LIFECYCLE & VALIDATION PANEL */}
+      {selectedTab === "validation" && (
+        <div className="space-y-3">
+          <div className="text-xs text-slate-400">
+            Planetary datasets undergo formal verification before transitioning from catalogue records to analysis-ready rasters:
+          </div>
+          <div className="space-y-2">
+            {validationReports.map((report) => (
+              <div
+                key={report.product_id}
+                className="bg-slate-900/80 border border-slate-800 rounded-lg p-3 text-xs space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="font-semibold text-white flex items-center gap-2">
+                    <span>{report.product_id}</span>
+                    <span className="text-[10px] text-slate-400 font-normal">({report.instrument} • {report.source_archive})</span>
+                  </div>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold uppercase ${
+                      report.is_analysis_ready
+                        ? "bg-emerald-950 text-emerald-300 border border-emerald-800/60"
+                        : report.lifecycle_state === "discovered"
+                        ? "bg-blue-950 text-blue-300 border border-blue-800/60"
+                        : "bg-slate-800 text-slate-400"
+                    }`}
+                  >
+                    {report.lifecycle_state}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px] font-mono text-slate-400">
+                  <div>Res: <span className="text-slate-200">{report.native_resolution_desc}</span></div>
+                  <div>CRS: <span className="text-slate-200">{report.horizontal_crs.split(" ")[0]}</span></div>
+                  <div>Datum: <span className="text-slate-200">{report.vertical_datum.split(" ")[0]}</span></div>
+                  <div>Raster: <span className={report.raster_available_locally ? "text-emerald-400" : "text-amber-400"}>
+                    {report.raster_available_locally ? "✓ On Disk" : "✗ Catalog Only"}
+                  </span></div>
+                </div>
+
+                {report.evidence_checks.length > 0 && (
+                  <div className="border-t border-slate-800/80 pt-1.5 space-y-1">
+                    <div className="text-[10px] uppercase font-mono text-slate-500">Validation Checks:</div>
+                    {report.evidence_checks.map((c, i) => (
+                      <div key={i} className="text-[11px] text-slate-300 flex items-center justify-between">
+                        <span>• {c.check_name}: {c.details}</span>
+                        <span className="text-emerald-400 font-mono">PASS</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {report.unresolved_limitations.length > 0 && (
+                  <div className="text-[10px] text-amber-400/90 italic">
+                    ⚠️ {report.unresolved_limitations[0]}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 3. MOLA 128 TILE INVENTORY PANEL */}
+      {selectedTab === "inventory" && inventory && (
+        <div className="space-y-3">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-3 space-y-2">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span className="text-xs font-mono uppercase text-amber-400 font-bold">
+                MOLA MEG128 Tile Repository (16 Quadrant Tiles)
+              </span>
+              <span className="text-xs font-mono text-emerald-400 font-bold">
+                {inventory.total_surface_coverage_pct.toFixed(2)}% Verified Surface Area
+              </span>
             </div>
-            <div className="bg-slate-950/50 p-2 rounded border border-slate-800/60">
-              <div className="text-[10px] text-slate-500 uppercase">Max Elevation</div>
-              <div className="text-emerald-300 font-semibold">{stats.max_elevation_m.toLocaleString()} m</div>
-              <div className="text-[9px] text-slate-500 mt-0.5">Olympus Mons summit</div>
-            </div>
-            <div className="bg-slate-950/50 p-2 rounded border border-slate-800/60">
-              <div className="text-[10px] text-slate-500 uppercase">Mean Elevation</div>
-              <div className="text-slate-200 font-semibold">{stats.mean_elevation_m.toFixed(1)} m</div>
-              <div className="text-[9px] text-slate-500 mt-0.5">Global areoid mean</div>
-            </div>
-            <div className="bg-slate-950/50 p-2 rounded border border-slate-800/60">
-              <div className="text-[10px] text-slate-500 uppercase">Valid Pixels</div>
-              <div className="text-slate-200 font-semibold">{stats.valid_pixel_count.toLocaleString()}</div>
-              <div className="text-[9px] text-slate-500 mt-0.5">100% valid coverage</div>
+            <p className="text-[11px] text-slate-400">
+              {inventory.coverage_calculation_method}
+            </p>
+            <div className="grid grid-cols-3 gap-2 text-xs font-mono pt-1">
+              <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                <span className="text-slate-500 block text-[10px]">Expected Tiles</span>
+                <span className="text-white font-bold">{inventory.expected_tile_count}</span>
+              </div>
+              <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                <span className="text-slate-500 block text-[10px]">Locally Ingested</span>
+                <span className="text-emerald-400 font-bold">{inventory.downloaded_tile_count}</span>
+              </div>
+              <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                <span className="text-slate-500 block text-[10px]">Remote Catalog</span>
+                <span className="text-amber-400 font-bold">{inventory.missing_tile_count}</span>
+              </div>
             </div>
           </div>
+
+          {/* Tile Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+            {inventory.tiles.map((tile) => (
+              <div
+                key={tile.tile_id}
+                className={`p-2.5 rounded border transition-all ${
+                  tile.download_status === "available_locally"
+                    ? "bg-emerald-950/30 border-emerald-500/50 text-white"
+                    : "bg-slate-950/40 border-slate-800/80 text-slate-400"
+                }`}
+              >
+                <div className="font-mono font-bold flex items-center justify-between">
+                  <span>{tile.tile_id}</span>
+                  <span className="text-[9px] uppercase px-1 py-0.5 rounded bg-slate-900">
+                    {tile.download_status === "available_locally" ? "INGESTED" : "PDS"}
+                  </span>
+                </div>
+                <div className="text-[10px] text-slate-500 font-mono mt-1">
+                  Lat: [{tile.lat_min}°, {tile.lat_max}°]
+                </div>
+                <div className="text-[10px] text-slate-500 font-mono">
+                  Lon: [{tile.lon_min}°, {tile.lon_max}°E]
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 4. CRS & VERTICAL DATUM COMPATIBILITY PANEL */}
+      {selectedTab === "compatibility" && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-xs font-mono">
+            <span className="text-slate-400">Compare Pair:</span>
+            <select
+              value={compatPair.a}
+              onChange={(e) => setCompatPair({ ...compatPair, a: e.target.value })}
+              className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-slate-200"
+            >
+              <option value="mola-megdr-4">MOLA MEGDR 4</option>
+              <option value="mola-megdr-128">MOLA MEGDR 128</option>
+            </select>
+            <span className="text-slate-500">vs</span>
+            <select
+              value={compatPair.b}
+              onChange={(e) => setCompatPair({ ...compatPair, b: e.target.value })}
+              className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-slate-200"
+            >
+              <option value="hirise-dtm-jezero">HiRISE Jezero</option>
+              <option value="ctx-dtm-jezero">CTX Jezero</option>
+              <option value="hrsc-dtm-mc11">HRSC MC-11</option>
+              <option value="mola-megdr-128">MOLA MEGDR 128</option>
+            </select>
+          </div>
+
+          {compatibility && (
+            <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-4 space-y-3 text-xs">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <span className="font-mono text-purple-400 uppercase font-bold">
+                  Compatibility Assessment
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded font-mono text-[10px] uppercase font-bold ${
+                    compatibility.decision === "permitted_direct"
+                      ? "bg-emerald-950 text-emerald-300 border border-emerald-800"
+                      : "bg-red-950 text-red-300 border border-red-800"
+                  }`}
+                >
+                  {compatibility.decision.replace(/_/g, " ")}
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between border-b border-slate-800/80 pb-1">
+                  <span className="text-slate-400">Horizontal CRS:</span>
+                  <span className="font-mono text-slate-200">{compatibility.horizontal_status}</span>
+                </div>
+                <div className="text-[11px] text-slate-400 italic">
+                  {compatibility.horizontal_notes}
+                </div>
+
+                <div className="flex justify-between border-b border-slate-800/80 pb-1 pt-1">
+                  <span className="text-slate-400">Vertical Datum:</span>
+                  <span className="font-mono text-slate-200">{compatibility.vertical_status}</span>
+                </div>
+                <div className="text-[11px] text-slate-400 italic">
+                  {compatibility.vertical_notes}
+                </div>
+
+                <div className="flex justify-between border-b border-slate-800/80 pb-1 pt-1">
+                  <span className="text-slate-400">Resolution Scale Ratio:</span>
+                  <span className="font-mono text-emerald-400 font-bold">{compatibility.resolution_ratio.toFixed(1)}x</span>
+                </div>
+              </div>
+
+              {compatibility.reasons_blocked.length > 0 && (
+                <div className="p-2.5 bg-red-950/40 border border-red-800/60 rounded text-[11px] text-red-300 space-y-1">
+                  <span className="font-bold block">Comparison / Fusion Blocked:</span>
+                  {compatibility.reasons_blocked.map((r, idx) => (
+                    <div key={idx}>• {r}</div>
+                  ))}
+                </div>
+              )}
+
+              <div className="p-2 bg-slate-950/60 border border-slate-800/60 rounded text-[10px] text-slate-400 font-mono">
+                {compatibility.preservation_guarantee}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 5. MULTI-RESOLUTION DTM LAYERS PANEL */}
+      {selectedTab === "layers" && (
+        <div className="space-y-2">
+          {layers.map((layer) => (
+            <div
+              key={layer.layer_id}
+              className="p-3 rounded border bg-slate-950/40 border-slate-800 text-xs space-y-1.5"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-white">{layer.name}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono bg-slate-800 text-slate-300 uppercase">
+                  {layer.product_type}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono">
+                <span>Res: {layer.ground_spacing_m.toFixed(1)} m/px</span>
+                <span>•</span>
+                <span>CRS: {layer.crs}</span>
+                <span>•</span>
+                <span>Datum: {layer.vertical_datum}</span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
