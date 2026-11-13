@@ -11,6 +11,9 @@ import {
   CompatibilityAssessmentResult,
   TerrainHazardPointMetrics,
   HazardEngineMetadata,
+  RoutePlanRequest,
+  RoutePlanResponse,
+  RouteComparisonResponse,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -123,8 +126,6 @@ export async function compareTerrainResolutions(
   return res.json();
 }
 
-// Phase 5 API endpoints
-
 export async function fetchValidationReports(): Promise<ProductValidationReport[]> {
   const res = await fetch(`${API_BASE}/api/v1/terrain/validation`, {
     cache: "no-store",
@@ -192,6 +193,42 @@ export async function fetchHazardMetadata(): Promise<HazardEngineMetadata> {
   });
   if (!res.ok) {
     throw new Error(`Hazard metadata fetch failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
+// ── Phase 6 Routing API Clients ──────────────────────────────────────────────
+
+export async function planMarsRoute(request: RoutePlanRequest): Promise<RoutePlanResponse> {
+  const res = await fetch(`${API_BASE}/api/v1/routes/plan`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Route planning failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function compareMarsRouteAlgorithms(
+  request: RoutePlanRequest
+): Promise<RouteComparisonResponse> {
+  const res = await fetch(`${API_BASE}/api/v1/routes/compare`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Algorithm comparison failed with status: ${res.status}`);
   }
   return res.json();
 }

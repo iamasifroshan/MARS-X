@@ -9,6 +9,7 @@ from app.config import APP_NAME, VERSION, API_V1_PREFIX, CORS_ORIGINS
 from app.routers import health as health_router
 from app.routers import datasets as datasets_router
 from app.routers import terrain as terrain_router
+from app.routers import routing as routing_router
 
 # ── Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -42,6 +43,7 @@ app.include_router(health_router.router)
 app.include_router(health_router._status_router)
 app.include_router(datasets_router.router)
 app.include_router(terrain_router.router)
+app.include_router(routing_router.router)
 
 
 # ── Root ───────────────────────────────────────────────────────────────────

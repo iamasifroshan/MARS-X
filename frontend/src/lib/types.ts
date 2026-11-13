@@ -237,3 +237,111 @@ export interface HazardEngineMetadata {
   metric_units: Record<string, string>;
   scientific_limitations: string[];
 }
+
+// ── Phase 6 Routing Types ────────────────────────────────────────────────────
+
+export type PathfindingAlgorithm = "astar" | "dijkstra";
+export type NeighborConnectivity = 4 | 8;
+
+export interface TerrainCostWeights {
+  weight_slope: number;
+  weight_roughness: number;
+  weight_relief: number;
+  weight_complexity: number;
+}
+
+export interface ExclusionZone {
+  name: string;
+  lat_min: number;
+  lat_max: number;
+  lon_min: number;
+  lon_max: number;
+}
+
+export interface RoutePlanRequest {
+  start_lat: number;
+  start_lon: number;
+  dest_lat: number;
+  dest_lon: number;
+  dataset_id?: string;
+  algorithm?: "astar" | "dijkstra";
+  connectivity?: 4 | 8;
+  cost_weights?: TerrainCostWeights;
+  max_slope_deg?: number;
+  max_snapping_distance_m?: number;
+  max_search_nodes?: number;
+  exclusion_zones?: ExclusionZone[];
+}
+
+export interface RouteWaypoint {
+  latitude: number;
+  longitude: number;
+  elevation_m: number;
+  slope_deg: number;
+  roughness_m: number;
+  relief_m: number;
+  cumulative_distance_m: number;
+  complexity_class: string;
+}
+
+export interface RouteSummaryMetrics {
+  total_distance_m: number;
+  cumulative_elevation_gain_m: number;
+  cumulative_elevation_loss_m: number;
+  min_elevation_m: number;
+  max_elevation_m: number;
+  max_slope_deg: number;
+  mean_slope_deg: number;
+  mean_roughness_m: number;
+  mean_local_relief_m: number;
+  high_complexity_fraction: number;
+  nodes_expanded: number;
+  nodes_visited: number;
+  search_duration_ms: number;
+  total_cost: number;
+}
+
+export interface RouteValidationSummary {
+  is_valid: boolean;
+  passed_checks: string[];
+  failed_checks: string[];
+  max_encountered_slope_deg: number;
+  steepest_segment_indices?: [number, number] | null;
+  diagonal_corner_cuts_count: number;
+  nodata_violations_count: number;
+}
+
+export interface RoutePlanResponse {
+  route_id: string;
+  algorithm: "astar" | "dijkstra";
+  requested_start: [number, number];
+  requested_dest: [number, number];
+  snapped_start: [number, number];
+  snapped_dest: [number, number];
+  snapping_distance_start_m: number;
+  snapping_distance_dest_m: number;
+  waypoints: RouteWaypoint[];
+  metrics: RouteSummaryMetrics;
+  validation: RouteValidationSummary;
+  dataset_id: string;
+  dataset_checksum: string;
+  native_resolution_m: number;
+  planning_grid_spacing_m: number;
+  cost_weights: TerrainCostWeights;
+  max_slope_threshold_deg: number;
+  explanation: string;
+  scientific_disclaimer: string;
+}
+
+export interface RouteComparisonResponse {
+  request: RoutePlanRequest;
+  astar_route: RoutePlanResponse;
+  dijkstra_route: RoutePlanResponse;
+  cost_difference: number;
+  cost_difference_pct: number;
+  distance_difference_m: number;
+  runtime_speedup_factor: number;
+  nodes_expanded_ratio: number;
+  path_geometries_identical: boolean;
+  scientific_synthesis: string;
+}

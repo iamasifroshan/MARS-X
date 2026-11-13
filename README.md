@@ -17,6 +17,7 @@ MARS-X is an open-source platform for visualising Mars terrain, planning astrona
 | **Geospatial** | Rasterio · NumPy · COG pipeline · Multi-Resolution DTM Engine |
 | **Data** | NASA PDS · MOLA MEGDR 4 & 128 ppd · ESA PSA HRSC · USGS CTX · HiRISE |
 | **Hazard Analysis** | Horn Gradient · Metric Relief · Local Roughness · Scarp Detection |
+| **Pathfinding** | A* (Euclidean lower bound) · Dijkstra baseline · Mars terrain cost surface |
 
 ---
 
