@@ -6,12 +6,14 @@ Computes scientifically rigorous, explainable terrain hazard indicators from val
 3. Roughness (elevation standard deviation in configurable metric neighborhoods).
 4. Terrain Discontinuities (candidate scarps, crater rims, abrupt elevation steps).
 5. Data Confidence (incorporating validation state, resolution, and NoData proximity).
-6. Explainable Terrain Complexity Classification (with explicit numerical thresholds).
+6. Explainable Terrain Complexity Classification (with explicit numerical thresholds and spatial scale limits).
+7. Polar Geodesy Guard (masks latitudes |lat| > 85° from equirectangular approximation).
 
 Strictly enforces:
-- No claims of astronaut safety or EVA clearance.
+- No claims of astronaut safety or EVA feasibility.
 - No Earth-walking metabolic predictions on Mars.
 - No conversion of NoData into low-risk terrain.
+- Complete transparency of spatial resolution and detectable feature scale.
 """
 
 import math
@@ -21,6 +23,11 @@ from typing import Dict, List, Optional, Tuple, Any
 from pydantic import BaseModel, Field
 
 from app.geospatial import MARS_EQUATORIAL_RADIUS_M, MARS_POLAR_RADIUS_M
+
+# Valid latitude envelope for cylindrical/equirectangular metric approximations
+# Beyond 85° (|lat| > 85°), meridian convergence creates severe East-West metric compression
+# requiring polar stereographic projection (as used in MOLA polar products).
+MAX_VALID_CYLINDRICAL_LAT_DEG = 85.0
 
 
 class TerrainComplexityClass(str, Enum):
@@ -45,6 +52,20 @@ class HazardThresholds(BaseModel):
     roughness_extreme_m: float = 20.0
 
 
+class SpatialScaleMetadata(BaseModel):
+    """Rigorous reporting of spatial resolution, window geometry, and feature detectability."""
+    native_pixel_spacing_m: float
+    analysis_window_size_m: float
+    analysis_window_pixel_span: int = 3
+    minimum_detectable_feature_scale_m: float = Field(
+        ..., description="Nyquist sampling minimum feature size (typically 2x to 3x pixel post-spacing)"
+    )
+    operational_scale_tier: str = Field(
+        ..., description="'regional_reconnaissance' (MOLA 4), 'meso_scale' (MOLA 128), or 'tactical_microtopography' (HiRISE 1m)"
+    )
+    scale_limitation_warning: str
+
+
 class TerrainHazardPointMetrics(BaseModel):
     """Point hazard indicators computed for a specific geographic coordinate."""
     latitude: float
@@ -59,8 +80,7 @@ class TerrainHazardPointMetrics(BaseModel):
     data_confidence_score: float = Field(..., ge=0.0, le=1.0)
     complexity_class: TerrainComplexityClass
     source_dataset: str
-    source_resolution_m: float
-    analysis_window_m: float
+    spatial_scale: SpatialScaleMetadata
     explanation: str
     safety_disclaimer: str = (
         "Terrain hazard classification reflects measured topographical complexity only. "
@@ -86,7 +106,7 @@ class HazardEngineMetadata(BaseModel):
     thresholds: HazardThresholds = HazardThresholds()
     scientific_limitations: List[str] = [
         "Slope and roughness are strictly resolution-dependent. 14.8 km MOLA slopes cannot resolve rover-scale 1m hazards.",
-        "Polar singularities (|lat| > 85°) cause severe longitudinal cell compression; algorithms cap minimum cell width.",
+        "Polar latitudes (|lat| > 85°) cause severe longitudinal cell compression; cylindrical calculations are masked outside valid range.",
         "Missing or NoData elevation cells propagate as 'insufficient_data' and are never classified as safe.",
         "Astronaut Marswalk planning requires sub-meter microtopography not available in global datasets.",
     ]
@@ -100,12 +120,18 @@ class TerrainHazardEngine:
 
     @staticmethod
     def calculate_cell_metric_dimensions(lat_deg: float, d_lat_deg: float, d_lon_deg: float) -> Tuple[float, float]:
-        """Compute local metric ground spacing in metres (dy, dx) accounting for Martian latitude."""
-        # dy (North-South) depends on polar radius / spherical arc
-        # dx (East-West) shrinks with cos(lat)
+        """Compute local metric ground spacing in metres (dy, dx) accounting for Martian latitude.
+
+        Rejects polar latitudes |lat| > 85° with ValueError.
+        """
+        if abs(lat_deg) > MAX_VALID_CYLINDRICAL_LAT_DEG:
+            raise ValueError(
+                f"Latitude {lat_deg}° exceeds maximum valid cylindrical/equirectangular envelope "
+                f"(±{MAX_VALID_CYLINDRICAL_LAT_DEG}°). Polar stereographic projection required."
+            )
+
         lat_rad = math.radians(lat_deg)
-        # Protect against polar singularity
-        cos_lat = max(math.cos(lat_rad), 1e-6)
+        cos_lat = math.cos(lat_rad)
 
         dy = (math.pi / 180.0) * MARS_EQUATORIAL_RADIUS_M * d_lat_deg
         dx = (math.pi / 180.0) * MARS_EQUATORIAL_RADIUS_M * cos_lat * d_lon_deg
@@ -115,15 +141,11 @@ class TerrainHazardEngine:
     def compute_slope_horn(cls, window_3x3: np.ndarray, dy: float, dx: float) -> Optional[float]:
         """Compute slope in degrees using Horn's weighted 3x3 gradient method.
 
-        window_3x3:
-        [[z1, z2, z3],
-         [z4, z5, z6],
-         [z7, z8, z9]]
+        Strict rule: If any pixel in the 3x3 window is NoData (-32768 or NaN), returns None.
         """
         if window_3x3.shape != (3, 3):
             raise ValueError(f"Expected (3, 3) window, got {window_3x3.shape}")
 
-        # Check for NoData sentinels (-32768 or NaN)
         if np.any(np.isnan(window_3x3)) or np.any(window_3x3 == -32768):
             return None
 
@@ -139,21 +161,19 @@ class TerrainHazardEngine:
 
     @classmethod
     def compute_local_relief(cls, window: np.ndarray) -> Optional[float]:
-        """Calculate elevation range (max - min) in metres."""
-        valid_mask = (~np.isnan(window)) & (window != -32768)
-        if not np.any(valid_mask):
+        """Calculate elevation range (max - min) in metres. Returns None if any pixel is NoData."""
+        if np.any(np.isnan(window)) or np.any(window == -32768):
             return None
-        valid_vals = window[valid_mask]
-        return float(np.max(valid_vals) - np.min(valid_vals))
+        return float(np.max(window) - np.min(window))
 
     @classmethod
     def compute_roughness(cls, window: np.ndarray) -> Optional[float]:
-        """Calculate sample standard deviation of elevation within the window."""
-        valid_mask = (~np.isnan(window)) & (window != -32768)
-        valid_vals = window[valid_mask]
-        if valid_vals.size < 2:
+        """Calculate sample standard deviation of elevation within the window. Returns None if NoData present."""
+        if np.any(np.isnan(window)) or np.any(window == -32768):
             return None
-        return float(np.std(valid_vals, ddof=1))
+        if window.size < 2:
+            return None
+        return float(np.std(window, ddof=1))
 
     @classmethod
     def detect_discontinuity(
@@ -174,14 +194,26 @@ class TerrainHazardEngine:
     def classify_complexity(
         self, slope_deg: Optional[float], relief_m: Optional[float], roughness_m: Optional[float], confidence: float
     ) -> Tuple[TerrainComplexityClass, str]:
-        """Classify terrain complexity according to transparent physical thresholds."""
+        """Classify terrain complexity using transparent Boolean logic.
+
+        Logic:
+        1. If confidence < 0.2 OR any required indicator is None (e.g. NoData in neighborhood):
+           -> INSUFFICIENT_DATA
+        2. If slope >= 25° OR relief >= 75m OR roughness >= 20m:
+           -> EXTREME_COMPLEXITY
+        3. If slope >= 15° OR relief >= 30m OR roughness >= 8m:
+           -> HIGH_COMPLEXITY
+        4. If slope >= 8° OR relief >= 10m OR roughness >= 2.5m:
+           -> MODERATE_COMPLEXITY
+        5. Otherwise:
+           -> LOW_COMPLEXITY
+        """
         if confidence < 0.2 or slope_deg is None or relief_m is None or roughness_m is None:
             return (
                 TerrainComplexityClass.INSUFFICIENT_DATA,
-                "Elevation data missing, NoData encountered, or confidence score below minimum threshold.",
+                "Elevation data missing, NoData encountered in neighborhood, or confidence score below minimum threshold (0.2).",
             )
 
-        # Check extreme
         if (
             slope_deg >= self.thresholds.slope_extreme_deg
             or relief_m >= self.thresholds.relief_extreme_m
@@ -193,7 +225,6 @@ class TerrainHazardEngine:
                 f"Relief {relief_m:.1f}m (>= {self.thresholds.relief_extreme_m}m), or Roughness {roughness_m:.1f}m.",
             )
 
-        # Check high
         if (
             slope_deg >= self.thresholds.slope_high_deg
             or relief_m >= self.thresholds.relief_high_m
@@ -204,7 +235,6 @@ class TerrainHazardEngine:
                 f"High terrain complexity: Slope {slope_deg:.1f}°, Relief {relief_m:.1f}m, Roughness {roughness_m:.1f}m.",
             )
 
-        # Check moderate
         if (
             slope_deg >= self.thresholds.slope_moderate_deg
             or relief_m >= self.thresholds.relief_moderate_m
@@ -231,8 +261,49 @@ class TerrainHazardEngine:
         source_resolution_m: float,
         validation_state_score: float = 1.0,
     ) -> TerrainHazardPointMetrics:
-        """Run complete hazard evaluation on a 3x3 local neighborhood."""
+        """Run complete hazard evaluation on a 3x3 local neighborhood with scale limits."""
         center_elev = float(window_3x3[1, 1])
+
+        # Define scale metadata
+        min_feature_scale = round(source_resolution_m * 2.5, 1)
+        scale_tier = (
+            "regional_reconnaissance" if source_resolution_m > 1000.0
+            else "meso_scale" if source_resolution_m > 100.0
+            else "tactical_microtopography"
+        )
+        scale_warning = (
+            f"Source resolution is {source_resolution_m:.1f} m/px. Features smaller than ~{min_feature_scale:.0f} m "
+            f"(such as rover boulders, crevasses, or meter-scale scarps) CANNOT be detected at this scale. "
+            f"Output is suitable strictly for {scale_tier.replace('_', ' ')}."
+        )
+
+        scale_meta = SpatialScaleMetadata(
+            native_pixel_spacing_m=round(source_resolution_m, 1),
+            analysis_window_size_m=round(source_resolution_m * 3.0, 1),
+            analysis_window_pixel_span=3,
+            minimum_detectable_feature_scale_m=min_feature_scale,
+            operational_scale_tier=scale_tier,
+            scale_limitation_warning=scale_warning,
+        )
+
+        # Check for polar bounds
+        if abs(lat_deg) > MAX_VALID_CYLINDRICAL_LAT_DEG:
+            return TerrainHazardPointMetrics(
+                latitude=lat_deg,
+                longitude=lon_deg,
+                elevation_m=center_elev,
+                slope_deg=None,
+                slope_pct=None,
+                local_relief_m=None,
+                roughness_m=None,
+                discontinuity_detected=False,
+                discontinuity_type=None,
+                data_confidence_score=0.0,
+                complexity_class=TerrainComplexityClass.INSUFFICIENT_DATA,
+                source_dataset=source_dataset,
+                spatial_scale=scale_meta,
+                explanation=f"Latitude {lat_deg}° exceeds maximum validated cylindrical envelope (±{MAX_VALID_CYLINDRICAL_LAT_DEG}°). Polar projection required.",
+            )
 
         # If center pixel is NoData, return insufficient data immediately
         if np.isnan(center_elev) or center_elev == -32768:
@@ -249,18 +320,36 @@ class TerrainHazardEngine:
                 data_confidence_score=0.0,
                 complexity_class=TerrainComplexityClass.INSUFFICIENT_DATA,
                 source_dataset=source_dataset,
-                source_resolution_m=source_resolution_m,
-                analysis_window_m=round(source_resolution_m * 3.0, 1),
+                spatial_scale=scale_meta,
                 explanation="Center pixel is NoData sentinel.",
             )
 
-        dy, dx = self.calculate_cell_metric_dimensions(lat_deg, d_lat_deg, d_lon_deg)
+        try:
+            dy, dx = self.calculate_cell_metric_dimensions(lat_deg, d_lat_deg, d_lon_deg)
+        except ValueError as e:
+            return TerrainHazardPointMetrics(
+                latitude=lat_deg,
+                longitude=lon_deg,
+                elevation_m=center_elev,
+                slope_deg=None,
+                slope_pct=None,
+                local_relief_m=None,
+                roughness_m=None,
+                discontinuity_detected=False,
+                discontinuity_type=None,
+                data_confidence_score=0.0,
+                complexity_class=TerrainComplexityClass.INSUFFICIENT_DATA,
+                source_dataset=source_dataset,
+                spatial_scale=scale_meta,
+                explanation=str(e),
+            )
+
         slope_deg = self.compute_slope_horn(window_3x3, dy, dx)
         slope_pct = math.tan(math.radians(slope_deg)) * 100.0 if slope_deg is not None else None
         relief_m = self.compute_local_relief(window_3x3)
         roughness_m = self.compute_roughness(window_3x3)
 
-        # Confidence calculation
+        # Independent confidence calculation
         nodata_in_window = np.count_nonzero((window_3x3 == -32768) | np.isnan(window_3x3))
         neighbor_validity_frac = (9 - nodata_in_window) / 9.0
         confidence = round(validation_state_score * neighbor_validity_frac, 2)
@@ -281,7 +370,6 @@ class TerrainHazardEngine:
             data_confidence_score=confidence,
             complexity_class=complexity,
             source_dataset=source_dataset,
-            source_resolution_m=round(source_resolution_m, 1),
-            analysis_window_m=round(source_resolution_m * 3.0, 1),
+            spatial_scale=scale_meta,
             explanation=expl,
         )

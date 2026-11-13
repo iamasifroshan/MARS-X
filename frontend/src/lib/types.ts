@@ -155,7 +155,12 @@ export interface Mola128TileRecord {
   lat_max: number;
   lon_min: number;
   lon_max: number;
+  spherical_area_fraction_pct: number;
   download_status: string;
+  is_downloaded: boolean;
+  is_integrity_verified: boolean;
+  is_geospatially_validated: boolean;
+  is_scientifically_validated: boolean;
   validation_status: string;
   sha256_img: string | null;
 }
@@ -163,10 +168,18 @@ export interface Mola128TileRecord {
 export interface Mola128InventoryReport {
   expected_tile_count: number;
   downloaded_tile_count: number;
-  validated_tile_count: number;
+  integrity_verified_tile_count: number;
+  geospatially_validated_tile_count: number;
+  scientifically_validated_tile_count: number;
   missing_tile_count: number;
   latitude_coverage_deg: [number, number];
   longitude_coverage_deg: [number, number];
+  theoretical_archive_coverage_pct: number;
+  catalogued_tile_coverage_pct: number;
+  downloaded_tile_coverage_pct: number;
+  integrity_verified_coverage_pct: number;
+  geospatially_validated_coverage_pct: number;
+  scientifically_validated_coverage_pct: number;
   total_surface_coverage_pct: number;
   coverage_calculation_method: string;
   tiles: Mola128TileRecord[];
@@ -188,6 +201,15 @@ export interface CompatibilityAssessmentResult {
   preservation_guarantee: string;
 }
 
+export interface SpatialScaleMetadata {
+  native_pixel_spacing_m: number;
+  analysis_window_size_m: number;
+  analysis_window_pixel_span: number;
+  minimum_detectable_feature_scale_m: number;
+  operational_scale_tier: string;
+  scale_limitation_warning: string;
+}
+
 export interface TerrainHazardPointMetrics {
   latitude: number;
   longitude: number;
@@ -201,8 +223,7 @@ export interface TerrainHazardPointMetrics {
   data_confidence_score: number;
   complexity_class: string;
   source_dataset: string;
-  source_resolution_m: number;
-  analysis_window_m: number;
+  spatial_scale: SpatialScaleMetadata;
   explanation: string;
   safety_disclaimer: string;
 }

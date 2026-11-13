@@ -4,6 +4,7 @@ Provides strict, scientifically defensible checks before comparing or combining
 planetary elevation products:
 - Horizontal CRS compatibility (planetocentric vs planetographic, 0-360 positive-east, sphere vs ellipsoid).
 - Vertical reference compatibility (GMM3 areoid realizations, localized tie offsets).
+- Evidence-based auditing: removes arbitrary offset assumptions. Unknown evidence yields 'unknown'.
 - Anti-upsampling enforcement and derived product manifest tracking.
 """
 
@@ -39,6 +40,66 @@ class AlignmentDecision(str, Enum):
     BLOCKED_ANTI_UPSAMPLING = "blocked_anti_upsampling"
 
 
+class VerticalEvidenceRecord(BaseModel):
+    """Rigorous documentation of vertical datum evidence for a product."""
+    product_id: str
+    original_vertical_reference: str
+    mola_reference_model: Optional[str] = None
+    adjustment_procedure: str
+    measured_offset_m: Optional[float] = None
+    evidence_source: str
+    compatibility_status: VerticalCompatibilityStatus
+
+
+VERTICAL_EVIDENCE_CATALOG: Dict[str, VerticalEvidenceRecord] = {
+    "mola-megdr-4": VerticalEvidenceRecord(
+        product_id="mola-megdr-4",
+        original_vertical_reference="MOLA Areoid (GMM3 mgm1025 to degree 50)",
+        mola_reference_model="GMM-3 degree/order 50",
+        adjustment_procedure="Precision Orbit Determination and orbital crossover minimization",
+        measured_offset_m=0.0,
+        evidence_source="NASA PDS MGS-M-MOLA-5-MEGDR-L3-V1.0 Software Interface Specification",
+        compatibility_status=VerticalCompatibilityStatus.COMPATIBLE,
+    ),
+    "mola-megdr-128": VerticalEvidenceRecord(
+        product_id="mola-megdr-128",
+        original_vertical_reference="MOLA Areoid (GMM3 mgm1025 to degree 50)",
+        mola_reference_model="GMM-3 degree/order 50",
+        adjustment_procedure="First-order crossover solution for radial/along-track position",
+        measured_offset_m=0.0,
+        evidence_source="NASA PDS MEGT*HB.LBL documentation",
+        compatibility_status=VerticalCompatibilityStatus.COMPATIBLE,
+    ),
+    "hrsc-dtm-mc11": VerticalEvidenceRecord(
+        product_id="hrsc-dtm-mc11",
+        original_vertical_reference="MOLA Areoid (HRSC Level 4 Bundle Adjustment)",
+        mola_reference_model="MOLA MEGDR/PEDR areoid",
+        adjustment_procedure="Joint bundle adjustment aligning HRSC stereo orbits to MOLA tracks",
+        measured_offset_m=None,  # Specific per-orbit offset not published in quad header
+        evidence_source="DLR / ESA PSA HRSC MC-11 Quadrangle Data Release",
+        compatibility_status=VerticalCompatibilityStatus.COMPATIBLE_WITH_DOCUMENTED_TRANSFORMATION,
+    ),
+    "ctx-dtm-jezero": VerticalEvidenceRecord(
+        product_id="ctx-dtm-jezero",
+        original_vertical_reference="MOLA Areoid via NASA Ames Stereo Pipeline (ASP)",
+        mola_reference_model="MOLA PEDR point clouds",
+        adjustment_procedure="Iterative Closest Point (ICP pc_align) rigid transformation tie",
+        measured_offset_m=None,  # Requires inspection of ASP run log for exact delta
+        evidence_source="USGS Astrogeology / NASA ASP Jezero DTM Release",
+        compatibility_status=VerticalCompatibilityStatus.COMPATIBLE_WITH_DOCUMENTED_TRANSFORMATION,
+    ),
+    "hirise-dtm-jezero": VerticalEvidenceRecord(
+        product_id="hirise-dtm-jezero",
+        original_vertical_reference="MOLA Areoid via USGS ISIS / SOCET SET",
+        mola_reference_model="MOLA PEDR profiles",
+        adjustment_procedure="Manual and automated ground control point tie to MOLA tracks",
+        measured_offset_m=None,  # Variable localized vertical shift; exact offset requires DTM header
+        evidence_source="University of Arizona HiRISE DTM Archive (ESP_042858_1985)",
+        compatibility_status=VerticalCompatibilityStatus.COMPATIBLE_WITH_DOCUMENTED_TRANSFORMATION,
+    ),
+}
+
+
 class CompatibilityAssessmentResult(BaseModel):
     """Comprehensive compatibility analysis between two elevation products."""
     product_a: str
@@ -60,6 +121,11 @@ class HarmonizationEngine:
     """Core scientific engine assessing CRS and vertical datum compatibility."""
 
     @staticmethod
+    def get_vertical_evidence(product_id: str) -> Optional[VerticalEvidenceRecord]:
+        """Look up audited vertical datum evidence record."""
+        return VERTICAL_EVIDENCE_CATALOG.get(product_id.lower())
+
+    @staticmethod
     def assess_compatibility(product_id_a: str, product_id_b: str) -> CompatibilityAssessmentResult:
         """Evaluate horizontal, vertical, and resolution compatibility between two DTMs."""
         rep_a = DatasetValidationRegistry.get_report(product_id_a)
@@ -70,7 +136,7 @@ class HarmonizationEngine:
 
         reasons = []
 
-        # 1. Validation and availability gate
+        # 1. Validation and raster availability gate: block raster fusion if un-downloaded
         if not rep_a.is_analysis_ready:
             reasons.append(f"Product '{rep_a.product_id}' is in lifecycle state '{rep_a.lifecycle_state.value}' and not analysis-ready.")
         if not rep_b.is_analysis_ready:
@@ -80,7 +146,6 @@ class HarmonizationEngine:
         h_status = HorizontalCompatibilityStatus.IDENTICAL
         h_notes = "Both products share identical horizontal CRS conventions."
 
-        # Check sphere vs equirectangular projection
         if rep_a.horizontal_crs != rep_b.horizontal_crs:
             if "IAU:49900" in rep_a.horizontal_crs and "IAU:49900" in rep_b.horizontal_crs:
                 h_status = HorizontalCompatibilityStatus.IDENTICAL
@@ -93,33 +158,29 @@ class HarmonizationEngine:
                 h_notes = "Horizontal CRS definitions cannot be reconciled without loss of scientific integrity."
                 reasons.append("Horizontal coordinate systems are incompatible.")
 
-        # 3. Vertical datum inspection
-        v_status = VerticalCompatibilityStatus.COMPATIBLE
-        v_notes = "Both products reference the MOLA GMM-3 areoid vertical reference."
+        # 3. Vertical datum inspection backed by rigorous evidence catalog
+        ev_a = VERTICAL_EVIDENCE_CATALOG.get(rep_a.product_id)
+        ev_b = VERTICAL_EVIDENCE_CATALOG.get(rep_b.product_id)
 
-        if "Areoid" in rep_a.vertical_datum and "Areoid" in rep_b.vertical_datum:
-            if "tied" in rep_a.vertical_datum or "tied" in rep_b.vertical_datum:
-                v_status = VerticalCompatibilityStatus.COMPATIBLE_WITH_DOCUMENTED_TRANSFORMATION
-                v_notes = (
-                    "Both reference MOLA Areoid, but stereogrammetric solution includes a localized "
-                    "vertical tie offset (typically ±1–5 m) requiring vertical shift calibration."
-                )
-            elif "ICP" in rep_a.vertical_datum or "ICP" in rep_b.vertical_datum:
-                v_status = VerticalCompatibilityStatus.COMPATIBLE_WITH_DOCUMENTED_TRANSFORMATION
-                v_notes = (
-                    "Ames Stereo Pipeline DTM adjusted via Iterative Closest Point (ICP) to MOLA tracks. "
-                    "Compatible with residual error margin (~2 m)."
-                )
-            else:
-                v_status = VerticalCompatibilityStatus.COMPATIBLE
-                v_notes = "Direct MOLA areoid realization. Elevations directly comparable."
-        elif "Unknown" in rep_a.vertical_datum or "Unknown" in rep_b.vertical_datum:
+        if not ev_a or not ev_b:
             v_status = VerticalCompatibilityStatus.UNKNOWN
-            v_notes = "One or both products have an undocumented vertical reference."
-            reasons.append("Vertical reference is unknown; comparison blocked.")
+            v_notes = "Vertical reference evidence is undocumented for one or both products. Compatibility is unknown."
+            reasons.append("Vertical datum evidence undocumented; comparison blocked.")
+        elif ev_a.compatibility_status == VerticalCompatibilityStatus.COMPATIBLE and ev_b.compatibility_status == VerticalCompatibilityStatus.COMPATIBLE:
+            v_status = VerticalCompatibilityStatus.COMPATIBLE
+            v_notes = "Both products reference the primary MOLA GMM-3 areoid. Elevations directly comparable."
+        elif (
+            ev_a.compatibility_status in [VerticalCompatibilityStatus.COMPATIBLE, VerticalCompatibilityStatus.COMPATIBLE_WITH_DOCUMENTED_TRANSFORMATION]
+            and ev_b.compatibility_status in [VerticalCompatibilityStatus.COMPATIBLE, VerticalCompatibilityStatus.COMPATIBLE_WITH_DOCUMENTED_TRANSFORMATION]
+        ):
+            v_status = VerticalCompatibilityStatus.COMPATIBLE_WITH_DOCUMENTED_TRANSFORMATION
+            v_notes = (
+                f"Both products tie to MOLA areoid, but stereogrammetric solution ({rep_b.product_id if ev_b.measured_offset_m is None else rep_a.product_id}) "
+                "requires documented orbital bundle-adjustment or ICP tie-point offset correction before numerical elevation subtraction."
+            )
         else:
             v_status = VerticalCompatibilityStatus.INCOMPATIBLE
-            v_notes = "Vertical reference surfaces are incompatible (e.g., ellipsoid heights vs areoid gravity potential)."
+            v_notes = "Vertical reference surfaces are incompatible."
             reasons.append("Incompatible vertical datums.")
 
         # 4. Resolution and Anti-upsampling check

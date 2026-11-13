@@ -99,7 +99,7 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
             Mars Terrain Intelligence & Hazard Engine
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Phase 5 Scientific Harmonization, Verification Pipeline & Explainable Hazards (EPSG:104905)
+            Phase 5.1 Scientific Calibration & Explainable Complexity (EPSG:104905)
           </p>
         </div>
 
@@ -111,7 +111,7 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
               selectedTab === "hazards" ? "bg-red-950/80 text-red-300 border border-red-800/60" : "text-slate-400 hover:text-white"
             }`}
           >
-            Hazards
+            Complexity
           </button>
           <button
             onClick={() => setSelectedTab("validation")}
@@ -160,7 +160,7 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
         </div>
       )}
 
-      {/* 1. TERRAIN HAZARD INTELLIGENCE PANEL */}
+      {/* 1. TERRAIN COMPLEXITY & HAZARD INDICATORS */}
       {selectedTab === "hazards" && (
         <div className="space-y-3">
           {hazards ? (
@@ -168,10 +168,10 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
               <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                 <div>
                   <span className="text-xs font-mono uppercase text-red-400 font-bold tracking-wider">
-                    Terrain Hazard Indicators ({queryLat.toFixed(2)}°N, {queryLon.toFixed(2)}°E)
+                    Terrain Complexity Indicators ({queryLat.toFixed(2)}°N, {queryLon.toFixed(2)}°E)
                   </span>
                   <div className="text-[11px] text-slate-400">
-                    Source: <code className="text-emerald-300">{hazards.source_dataset}</code> (Window: {hazards.analysis_window_m.toLocaleString()}m)
+                    Source: <code className="text-emerald-300">{hazards.source_dataset}</code> (Window: {hazards.spatial_scale?.analysis_window_size_m?.toLocaleString() ?? "N/A"}m)
                   </div>
                 </div>
                 <span
@@ -187,7 +187,7 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
                       : "bg-slate-800 text-slate-400"
                   }`}
                 >
-                  {hazards.complexity_class.replace("_", " ")}
+                  {hazards.complexity_class.replace(/_/g, " ")}
                 </span>
               </div>
 
@@ -227,6 +227,20 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
                   <div className="text-[10px] text-slate-400">Authentic MOLA</div>
                 </div>
               </div>
+
+              {/* Spatial Scale Transparency Card */}
+              {hazards.spatial_scale && (
+                <div className="bg-slate-950/60 border border-slate-800 p-2.5 rounded text-xs space-y-1 font-mono">
+                  <div className="flex items-center justify-between text-slate-400 text-[11px]">
+                    <span>Pixel Spacing: <strong className="text-white">{hazards.spatial_scale.native_pixel_spacing_m}m</strong></span>
+                    <span>Min Detectable Feature: <strong className="text-amber-400">{hazards.spatial_scale.minimum_detectable_feature_scale_m}m</strong></span>
+                    <span>Tier: <strong className="text-cyan-400 uppercase">{hazards.spatial_scale.operational_scale_tier}</strong></span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 italic">
+                    {hazards.spatial_scale.scale_limitation_warning}
+                  </div>
+                </div>
+              )}
 
               {/* Discontinuity banner if detected */}
               {hazards.discontinuity_detected && (
@@ -338,26 +352,37 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
                 MOLA MEG128 Tile Repository (16 Quadrant Tiles)
               </span>
               <span className="text-xs font-mono text-emerald-400 font-bold">
-                {inventory.total_surface_coverage_pct.toFixed(2)}% Verified Surface Area
+                {inventory.downloaded_tile_coverage_pct.toFixed(2)}% Downloaded on Disk
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">
-              {inventory.coverage_calculation_method}
-            </p>
-            <div className="grid grid-cols-3 gap-2 text-xs font-mono pt-1">
+
+            {/* Separated coverage metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs font-mono pt-1">
               <div className="bg-slate-950 p-2 rounded border border-slate-800">
-                <span className="text-slate-500 block text-[10px]">Expected Tiles</span>
-                <span className="text-white font-bold">{inventory.expected_tile_count}</span>
+                <span className="text-slate-500 block text-[10px]">Theoretical Archive</span>
+                <span className="text-slate-300 font-bold">{inventory.theoretical_archive_coverage_pct.toFixed(2)}%</span>
+                <span className="text-[9px] text-slate-500 block">Excludes |lat| &gt; 88°</span>
               </div>
               <div className="bg-slate-950 p-2 rounded border border-slate-800">
-                <span className="text-slate-500 block text-[10px]">Locally Ingested</span>
-                <span className="text-emerald-400 font-bold">{inventory.downloaded_tile_count}</span>
+                <span className="text-slate-500 block text-[10px]">Downloaded on Disk</span>
+                <span className="text-emerald-400 font-bold">{inventory.downloaded_tile_coverage_pct.toFixed(2)}%</span>
+                <span className="text-[9px] text-slate-500 block">{inventory.downloaded_tile_count}/16 tiles</span>
               </div>
               <div className="bg-slate-950 p-2 rounded border border-slate-800">
-                <span className="text-slate-500 block text-[10px]">Remote Catalog</span>
-                <span className="text-amber-400 font-bold">{inventory.missing_tile_count}</span>
+                <span className="text-slate-500 block text-[10px]">SHA-256 Verified</span>
+                <span className="text-cyan-400 font-bold">{inventory.integrity_verified_coverage_pct.toFixed(2)}%</span>
+                <span className="text-[9px] text-slate-500 block">{inventory.integrity_verified_tile_count}/16 tiles</span>
+              </div>
+              <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                <span className="text-slate-500 block text-[10px]">Scientifically Validated</span>
+                <span className="text-purple-400 font-bold">{inventory.scientifically_validated_coverage_pct.toFixed(2)}%</span>
+                <span className="text-[9px] text-slate-500 block">{inventory.scientifically_validated_tile_count}/16 tiles</span>
               </div>
             </div>
+
+            <p className="text-[11px] text-slate-400 pt-1">
+              {inventory.coverage_calculation_method}
+            </p>
           </div>
 
           {/* Tile Grid */}
@@ -366,22 +391,22 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
               <div
                 key={tile.tile_id}
                 className={`p-2.5 rounded border transition-all ${
-                  tile.download_status === "available_locally"
+                  tile.is_downloaded
                     ? "bg-emerald-950/30 border-emerald-500/50 text-white"
                     : "bg-slate-950/40 border-slate-800/80 text-slate-400"
                 }`}
               >
                 <div className="font-mono font-bold flex items-center justify-between">
                   <span>{tile.tile_id}</span>
-                  <span className="text-[9px] uppercase px-1 py-0.5 rounded bg-slate-900">
-                    {tile.download_status === "available_locally" ? "INGESTED" : "PDS"}
+                  <span className={`text-[9px] uppercase px-1 py-0.5 rounded ${tile.is_downloaded ? "bg-emerald-900 text-emerald-300" : "bg-slate-900 text-slate-500"}`}>
+                    {tile.is_downloaded ? "INGESTED" : "REMOTE"}
                   </span>
                 </div>
-                <div className="text-[10px] text-slate-500 font-mono mt-1">
-                  Lat: [{tile.lat_min}°, {tile.lat_max}°]
+                <div className="text-[10px] text-slate-400 font-mono mt-1">
+                  Spherical Area: {tile.spherical_area_fraction_pct.toFixed(2)}%
                 </div>
                 <div className="text-[10px] text-slate-500 font-mono">
-                  Lon: [{tile.lon_min}°, {tile.lon_max}°E]
+                  Lat: [{tile.lat_min}°, {tile.lat_max}°] • Lon: [{tile.lon_min}°, {tile.lon_max}°E]
                 </div>
               </div>
             ))}
