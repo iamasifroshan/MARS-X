@@ -110,6 +110,8 @@ class MarsRouteService:
             path_rc=path_rc,
             cost_surface=cost_surface,
             max_slope_deg=request.max_slope_deg,
+            expected_start_rc=start_rc,
+            expected_dest_rc=dest_rc,
         )
 
         if not validation_res.is_valid:

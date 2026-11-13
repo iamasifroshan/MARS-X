@@ -52,6 +52,14 @@ class TerrainGridWindow:
         self.d_lat_deg = d_lat_deg
         self.d_lon_deg = d_lon_deg
 
+        # Precompute 1D coordinate vectors in radians for exact spherical geodesy
+        row_indices = np.arange(self.rows)
+        col_indices = np.arange(self.cols)
+        self.row_lats_rad = np.radians(self.lat_top - (row_indices + 0.5) * self.d_lat_deg)
+        self.col_lons_rad = np.radians(self.lon_left + (col_indices + 0.5) * self.d_lon_deg)
+        self.row_cos_lat = np.cos(self.row_lats_rad)
+        self.row_sin_lat = np.sin(self.row_lats_rad)
+
     def row_col_to_lat_lon(self, r: int, c: int) -> Tuple[float, float]:
         """Convert local grid row/col to planetocentric lat/lon (pixel center)."""
         lat = self.lat_top - (r + 0.5) * self.d_lat_deg

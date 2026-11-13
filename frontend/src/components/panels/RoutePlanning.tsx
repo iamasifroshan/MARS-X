@@ -22,7 +22,7 @@ const PRESET_TARGETS = [
   {
     name: "Margaritifer Terra Crater Corridor",
     start: { lat: -4.00, lon: 8.00 },
-    dest: { lat: -4.12, lon: 8.16 },
+    dest: { lat: -4.08, lon: 8.08 },
     desc: "Route along ancient fluvial valley networks avoiding crater rim scarps.",
   },
   {

@@ -10,6 +10,7 @@ import math
 import heapq
 from typing import Tuple, List, Optional, Dict, Set, Any
 
+from app.geospatial import MARS_EQUATORIAL_RADIUS_M
 from app.routing.cost_surface import TerrainCostSurface
 
 
@@ -21,17 +22,36 @@ class AStarPlanner:
         self.grid = cost_surface.grid
 
     def heuristic(self, r: int, c: int, goal_r: int, goal_c: int) -> float:
-        """Admissible and consistent lower-bound heuristic: straight-line 3D physical distance.
+        """Admissible and consistent lower-bound heuristic on Mars sphere.
 
-        Since edge cost C = L * (1 + penalties) and penalties >= 0,
-        edge cost C >= L (straight-line distance between nodes).
-        Therefore, straight-line distance to goal is strictly admissible and consistent.
+        Computes the great-circle geodesic surface distance D_gc combined with
+        vertical differential delta_z via Minkowski's 3D lower bound:
+            h(u, G) = alpha * sqrt(D_gc(u, G)^2 + (z_G - z_u)^2)
+        where alpha = 0.999 is a safety scaling factor that strictly guarantees
+        consistency (h(u) <= c(u, v) + h(v)) across latitude-dependent metric grid
+        spacings and floating-point discretization while maintaining 99.9% tightness.
+        At goal (r == goal_r and c == goal_c), h is exactly 0.0.
         """
-        dy, dx = self.grid.get_cell_metric_spacing(r)
-        step_y = (goal_r - r) * dy
-        step_x = (goal_c - c) * dx
+        if r == goal_r and c == goal_c:
+            return 0.0
+
+        lat_u = self.grid.row_lats_rad[r]
+        lon_u = self.grid.col_lons_rad[c]
+        cos_lat_u = self.grid.row_cos_lat[r]
+
+        lat_g = self.grid.row_lats_rad[goal_r]
+        lon_g = self.grid.col_lons_rad[goal_c]
+        cos_lat_g = self.grid.row_cos_lat[goal_r]
+
+        dlat = lat_g - lat_u
+        dlon = lon_g - lon_u
+        a = (
+            math.sin(dlat * 0.5) ** 2
+            + cos_lat_u * cos_lat_g * (math.sin(dlon * 0.5) ** 2)
+        )
+        d_gc = 2.0 * MARS_EQUATORIAL_RADIUS_M * math.asin(min(1.0, math.sqrt(max(0.0, a))))
         dz = float(self.grid.elevation[goal_r, goal_c] - self.grid.elevation[r, c])
-        return math.sqrt(step_x**2 + step_y**2 + dz**2)
+        return 0.999 * math.sqrt(d_gc * d_gc + dz * dz)
 
     def plan_path(
         self,

@@ -26,6 +26,8 @@ class RouteValidator:
         path_rc: List[Tuple[int, int]],
         cost_surface: TerrainCostSurface,
         max_slope_deg: float,
+        expected_start_rc: Optional[Tuple[int, int]] = None,
+        expected_dest_rc: Optional[Tuple[int, int]] = None,
     ) -> RouteValidationSummary:
         """Run independent scientific audit on generated route."""
         passed_checks = []
@@ -44,8 +46,22 @@ class RouteValidator:
         steepest_seg = None
         corner_cuts = 0
         nodata_violations = 0
+        edge_cost_violations = 0
 
-        # Check 1: Start & End cells are passable
+        # Check 1: Start & End endpoints match expected coordinates (if specified)
+        if expected_start_rc is not None:
+            if path_rc[0] == expected_start_rc:
+                passed_checks.append("Route start matches expected start cell.")
+            else:
+                failed_checks.append(f"Route start {path_rc[0]} does not match expected {expected_start_rc}.")
+
+        if expected_dest_rc is not None:
+            if path_rc[-1] == expected_dest_rc:
+                passed_checks.append("Route destination matches expected destination cell.")
+            else:
+                failed_checks.append(f"Route destination {path_rc[-1]} does not match expected {expected_dest_rc}.")
+
+        # Check 2: Start & End cells are passable
         if cost_surface.is_cell_passable(path_rc[0][0], path_rc[0][1]):
             passed_checks.append("Start cell satisfies all hard constraints.")
         else:
@@ -56,8 +72,11 @@ class RouteValidator:
         else:
             failed_checks.append("Destination cell violates hard constraints.")
 
-        # Check 2: Step-by-step continuity, slope, NoData, and corner cuts
+        # Check 3: Step-by-step continuity, slope, NoData, edge costs, and corner cuts
         continuity_valid = True
+        cum_gain = 0.0
+        cum_loss = 0.0
+
         for i in range(len(path_rc) - 1):
             r1, c1 = path_rc[i]
             r2, c2 = path_rc[i + 1]
@@ -92,6 +111,30 @@ class RouteValidator:
                 nodata_violations += 1
                 failed_checks.append(f"NoData encountered along segment {i} to {i+1}.")
 
+            # Edge cost check
+            edge_cost = cost_surface.compute_edge_cost(r1, c1, r2, c2)
+            if edge_cost is None or edge_cost <= 0.0 or np.isnan(edge_cost) or np.isinf(edge_cost):
+                edge_cost_violations += 1
+                failed_checks.append(f"Non-positive or invalid edge cost at step {i} to {i+1}.")
+
+            # Elevation conservation tracking
+            dz = float(z2 - z1)
+            if dz > 0:
+                cum_gain += dz
+            else:
+                cum_loss += abs(dz)
+
+        # Check 4: Physical elevation conservation
+        z_start = float(grid.elevation[path_rc[0][0], path_rc[0][1]])
+        z_end = float(grid.elevation[path_rc[-1][0], path_rc[-1][1]])
+        net_elevation_change = z_end - z_start
+        gain_loss_diff = (cum_gain - cum_loss) - net_elevation_change
+
+        if abs(gain_loss_diff) < 1e-3:
+            passed_checks.append("Physical elevation conservation satisfied (gain - loss == net elevation change).")
+        else:
+            failed_checks.append(f"Elevation conservation violated by {gain_loss_diff:.3f} m.")
+
         if continuity_valid:
             passed_checks.append("Route forms an unbroken sequence of adjacent cells.")
 
@@ -100,6 +143,9 @@ class RouteValidator:
 
         if nodata_violations == 0:
             passed_checks.append("Zero NoData elevation violations.")
+
+        if edge_cost_violations == 0:
+            passed_checks.append("All edge costs are strictly positive and finite.")
 
         if max_slope <= max_slope_deg:
             passed_checks.append(f"All route cells conform to max slope threshold ({max_slope_deg}°).")

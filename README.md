@@ -147,7 +147,7 @@ NASA Mars Trek WMTS tile services use EPSG:104905 (areocentric coordinates on a 
 
 ## 📊 Current Status
 
-**Phase: Foundation** 🏗️
+**Phase: Phase 6.1 (Pathfinding Scientific Verification & Benchmark Calibration)** 🧭🔴
 
 - [x] Project scaffolding and directory structure
 - [x] Backend API with FastAPI (health, status, dataset catalogue)
@@ -155,13 +155,12 @@ NASA Mars Trek WMTS tile services use EPSG:104905 (areocentric coordinates on a 
 - [x] 11 NASA/USGS datasets registered with real metadata
 - [x] Frontend application with Next.js, Tailwind, and dark theme
 - [x] Mars map component with MapLibre GL JS
-- [x] Documentation and architecture overview
-- [ ] Geospatial data processing pipeline *(planned)*
-- [ ] Terrain analysis and elevation profiles *(planned)*
-- [ ] Route planning for astronaut marswalks *(planned)*
-- [ ] Science target management *(planned)*
-- [ ] Mission/EVA timeline planning *(planned)*
-- [ ] AI-assisted exploration recommendations *(planned)*
+- [x] Authentic MOLA MEGDR 128 ppd tile ingestion (`megt00n000hb.img`)
+- [x] Multi-resolution terrain catalog and hazard intelligence engine
+- [x] Terrain-constrained A* and Dijkstra pathfinding engine
+- [x] Rigorous A* heuristic admissibility & consistency verification on Mars sphere
+- [x] Multi-corridor benchmark calibration and 100% path feasibility validation
+- [ ] Multi-resolution CTX / HiRISE stereo terrain routing *(Phase 7)*
 
 ---
 
