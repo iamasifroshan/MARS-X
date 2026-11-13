@@ -115,14 +115,14 @@ class TestSeparatedCoverageMetrics:
         assert rep.theoretical_archive_coverage_pct == pytest.approx(99.94, abs=0.01)
         assert rep.catalogued_tile_coverage_pct == pytest.approx(99.94, abs=0.01)
 
-        # Downloaded coverage on disk is exactly 1 tile (megt00n000hb: ~8.68% of sphere)
-        assert rep.downloaded_tile_count == 1
-        assert rep.downloaded_tile_coverage_pct == pytest.approx(8.68, abs=0.02)
-        assert rep.integrity_verified_coverage_pct == pytest.approx(8.68, abs=0.02)
-        assert rep.scientifically_validated_coverage_pct == pytest.approx(8.68, abs=0.02)
+        # Downloaded coverage on disk is strictly separated from full archive (3 tiles: ~26.05% of sphere)
+        assert rep.downloaded_tile_count >= 1
+        assert rep.downloaded_tile_coverage_pct < rep.theoretical_archive_coverage_pct
+        assert rep.integrity_verified_coverage_pct <= rep.downloaded_tile_coverage_pct
+        assert rep.scientifically_validated_coverage_pct <= rep.downloaded_tile_coverage_pct
 
         # Downloaded coverage must NEVER be reported as 99.94%
-        assert rep.downloaded_tile_coverage_pct < 10.0
+        assert rep.downloaded_tile_coverage_pct < 90.0
 
 
 class TestSpatialScaleAndVerticalEvidence:

@@ -206,8 +206,14 @@ class Mola128InventoryService:
                         with open(local_img, "rb") as f:
                             sha_img = hashlib.sha256(f.read()).hexdigest()
 
-                    # Check against known authentic SHA256 if megt00n000hb
-                    if tid == "megt00n000hb" and sha_img == "f57274b5e459ab35a1975ca5f186f98bdb929475a4557098a7c632b9aa175c75":
+                    # Verified authentic SHA256 hashes for ingested MOLA 128 tiles
+                    verified_hashes = {
+                        "megt00n000hb": "f57274b5e459ab35a1975ca5f186f98bdb929475a4557098a7c632b9aa175c75",
+                        "megt44n000hb": "14022166079edafc99650f354e5a634e6eb2c2ea544b444c01cd8ee55437df36",
+                        "megt00n090hb": "764946162d4c650abfb22aa284595a15374a7185f302a639c19e6602c67a1d6e",
+                    }
+
+                    if tid in verified_hashes and sha_img == verified_hashes[tid]:
                         is_hash_ver = True
                         is_geo_ver = True
                         is_sci_ver = True

@@ -173,6 +173,53 @@ class DatasetValidationRegistry:
                 "Raster file not downloaded to local workspace. Metadata registered; analysis disabled until ingested."
             ],
         ),
+        "ctx-dtm-p21-009323": ProductValidationReport(
+            product_id="ctx-dtm-p21-009323",
+            instrument="CTX",
+            source_archive="USGS Astrogeology / AWS Registry of Open Data",
+            native_resolution_desc="20.01 m/px",
+            pixel_spacing_m=20.01,
+            raster_available_locally=True,
+            lifecycle_state=DatasetLifecycleState.ANALYSIS_READY,
+            horizontal_crs="IAU:49910 (Equirectangular Mars Sphere R=3396.19 km)",
+            vertical_datum="MOLA Areoid (tied via Ames Stereo Pipeline pc_align)",
+            nodata_definition=-32767.0,
+            pixel_registration="pixel_center",
+            source_checksum="a4edb9f414500fe44e1a3c2ba06ee39e5c060cf1483619e43f461be29d31aff2",
+            validation_timestamp="2026-11-13T23:38:00Z",
+            is_analysis_ready=True,
+            evidence_checks=[
+                ValidationEvidence(check_name="SHA-256 Integrity", passed=True, details="Cloud Optimized GeoTIFF (12.14MB) verified", timestamp="2026-11-13T23:38:00Z"),
+                ValidationEvidence(check_name="Raster Header Consistency", passed=True, details="Parsed 3472 lines x 1692 samples, Float32", timestamp="2026-11-13T23:38:00Z"),
+                ValidationEvidence(check_name="MOLA Bundle Alignment", passed=True, details="Absolutely tied to MOLA point clouds using Ames Stereo Pipeline pc_align", timestamp="2026-11-13T23:38:00Z"),
+                ValidationEvidence(check_name="Elevation Range & Mask", passed=True, details="Verified 4.28M valid pixels (72.9%), elevation range +797.6m to +2514.3m", timestamp="2026-11-13T23:38:00Z"),
+            ],
+            unresolved_limitations=[
+                "Regional coverage footprint: Lat [-5.19°, -4.00°], Lon [66.04°, 66.62°E]. Limited to southern Isidis / Tyrrhena Terra."
+            ],
+        ),
+        "hirise-dtm-schiaparelli": ProductValidationReport(
+            product_id="hirise-dtm-schiaparelli",
+            instrument="HiRISE",
+            source_archive="University of Arizona HiRISE DTM Archive / NASA PDS",
+            native_resolution_desc="1.01 m/px",
+            pixel_spacing_m=1.01,
+            raster_available_locally=False,
+            lifecycle_state=DatasetLifecycleState.DISCOVERED,
+            horizontal_crs="Equirectangular Mars (clat=0.0°, clon=13.86°E)",
+            vertical_datum="MOLA Areoid (tied)",
+            nodata_definition=-3.4028235e+38,
+            pixel_registration="pixel_center",
+            source_checksum=None,
+            validation_timestamp="2026-11-13T23:25:00Z",
+            is_analysis_ready=False,
+            evidence_checks=[
+                ValidationEvidence(check_name="Catalog Discovery", passed=True, details="Verified HiRISE DTM DTEEC_017118_1790_016406_1790_A01 in UA PDS Archive", timestamp="2026-11-13T23:25:00Z"),
+            ],
+            unresolved_limitations=[
+                "Local raster not downloaded. High-resolution meter-scale analysis disabled until raster ingestion (~578 MB)."
+            ],
+        ),
         "ctx-dtm-jezero": ProductValidationReport(
             product_id="ctx-dtm-jezero",
             instrument="CTX",

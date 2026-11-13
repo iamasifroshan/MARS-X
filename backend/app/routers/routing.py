@@ -1,7 +1,7 @@
 """FastAPI Router for Mars Route Planning and Traverses."""
 
-from typing import Dict, Any
-from fastapi import APIRouter, HTTPException, Path
+from typing import Dict, Any, Optional
+from fastapi import APIRouter, HTTPException, Query, Path
 
 from app.config import API_V1_PREFIX
 from app.routing.route_models import (
@@ -86,3 +86,42 @@ async def compare_route_algorithms(request: RoutePlanRequest) -> RouteComparison
         raise HTTPException(status_code=400, detail=str(e))
     except TimeoutError as e:
         raise HTTPException(status_code=408, detail=str(e))
+
+
+@router.get("/data-availability")
+async def check_route_data_availability(
+    min_lat: float = Query(..., ge=-90.0, le=90.0, description="Minimum latitude in degrees (-90 to 90)"),
+    min_lon: float = Query(..., ge=0.0, le=360.0, description="Minimum longitude in degrees (0 to 360)"),
+    max_lat: float = Query(..., ge=-90.0, le=90.0, description="Maximum latitude in degrees (-90 to 90)"),
+    max_lon: float = Query(..., ge=0.0, le=360.0, description="Maximum longitude in degrees (0 to 360)"),
+) -> Dict[str, Any]:
+    """Check availability of multi-resolution elevation datasets for a candidate route bounding box."""
+    if route_service is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Mars route service is unavailable. Required MOLA 128 raster file not found.",
+        )
+    try:
+        return route_service.check_data_availability(
+            min_lat=min_lat,
+            min_lon=min_lon,
+            max_lat=max_lat,
+            max_lon=max_lon,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# Also expose under /api/v1/routing for routing-convention consistency
+routing_alias_router = APIRouter(prefix=f"{API_V1_PREFIX}/routing", tags=["routing"])
+
+@routing_alias_router.get("/data-availability")
+async def check_routing_data_availability_alias(
+    min_lat: float = Query(..., ge=-90.0, le=90.0),
+    min_lon: float = Query(..., ge=0.0, le=360.0),
+    max_lat: float = Query(..., ge=-90.0, le=90.0),
+    max_lon: float = Query(..., ge=0.0, le=360.0),
+) -> Dict[str, Any]:
+    """Alias for /api/v1/routes/data-availability."""
+    return await check_route_data_availability(min_lat, min_lon, max_lat, max_lon)
+

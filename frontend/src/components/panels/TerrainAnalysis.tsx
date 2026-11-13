@@ -21,6 +21,7 @@ import {
   TerrainHazardPointMetrics,
   HazardEngineMetadata,
 } from "@/lib/types";
+import { MultiResolutionTerrain } from "./MultiResolutionTerrain";
 
 interface TerrainAnalysisProps {
   currentCoordinates?: { lat: number; lon: number } | null;
@@ -36,7 +37,7 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
   const [hazards, setHazards] = useState<TerrainHazardPointMetrics | null>(null);
   const [hazardMeta, setHazardMeta] = useState<HazardEngineMetadata | null>(null);
   
-  const [selectedTab, setSelectedTab] = useState<"layers" | "validation" | "inventory" | "compatibility" | "hazards">("hazards");
+  const [selectedTab, setSelectedTab] = useState<"multires" | "hazards" | "validation" | "inventory" | "compatibility" | "layers">("multires");
   const [compatPair, setCompatPair] = useState<{ a: string; b: string }>({
     a: "mola-megdr-4",
     b: "hirise-dtm-jezero",
@@ -99,12 +100,20 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
             Mars Terrain Intelligence & Hazard Engine
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Phase 5.1 Scientific Calibration & Explainable Complexity (EPSG:104905)
+            Phase 7 Multi-Resolution Planetary Hierarchy & Calibrated Hazard Engine
           </p>
         </div>
 
         {/* Tab Switcher */}
         <div className="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-lg border border-slate-800 text-xs font-mono">
+          <button
+            onClick={() => setSelectedTab("multires")}
+            className={`px-2.5 py-1 rounded transition-colors ${
+              selectedTab === "multires" ? "bg-cyan-950/80 text-cyan-300 border border-cyan-800/60" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            Multi-Res (4 Tiers)
+          </button>
           <button
             onClick={() => setSelectedTab("hazards")}
             className={`px-2.5 py-1 rounded transition-colors ${
@@ -158,6 +167,11 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
         <div className="p-3 bg-red-950/40 border border-red-800/60 rounded text-xs text-red-300">
           {error}
         </div>
+      )}
+
+      {/* 0. MULTI-RESOLUTION TERRAIN INTELLIGENCE */}
+      {selectedTab === "multires" && (
+        <MultiResolutionTerrain currentCoordinates={currentCoordinates} />
       )}
 
       {/* 1. TERRAIN COMPLEXITY & HAZARD INDICATORS */}

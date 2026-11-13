@@ -88,6 +88,24 @@ VERTICAL_EVIDENCE_CATALOG: Dict[str, VerticalEvidenceRecord] = {
         evidence_source="USGS Astrogeology / NASA ASP Jezero DTM Release",
         compatibility_status=VerticalCompatibilityStatus.COMPATIBLE_WITH_DOCUMENTED_TRANSFORMATION,
     ),
+    "ctx-dtm-p21-009323": VerticalEvidenceRecord(
+        product_id="ctx-dtm-p21-009323",
+        original_vertical_reference="MOLA Areoid via NASA Ames Stereo Pipeline (ASP)",
+        mola_reference_model="MOLA PEDR point clouds",
+        adjustment_procedure="Two-step iterative closest point (ASP pc_align) rigid transformation tie",
+        measured_offset_m=None,  # Variable localized vertical adjustment; ASP ICP tied
+        evidence_source="USGS Astrogeology ARD STAC item metadata / ASP run log",
+        compatibility_status=VerticalCompatibilityStatus.COMPATIBLE_WITH_DOCUMENTED_TRANSFORMATION,
+    ),
+    "hirise-dtm-schiaparelli": VerticalEvidenceRecord(
+        product_id="hirise-dtm-schiaparelli",
+        original_vertical_reference="MOLA Areoid via USGS ISIS / SOCET SET",
+        mola_reference_model="MOLA PEDR profiles",
+        adjustment_procedure="Ground control point tie to MOLA tracks with vertical datum adjustment",
+        measured_offset_m=None,
+        evidence_source="University of Arizona HiRISE DTM Archive (ESP_017118_1790)",
+        compatibility_status=VerticalCompatibilityStatus.COMPATIBLE_WITH_DOCUMENTED_TRANSFORMATION,
+    ),
     "hirise-dtm-jezero": VerticalEvidenceRecord(
         product_id="hirise-dtm-jezero",
         original_vertical_reference="MOLA Areoid via USGS ISIS / SOCET SET",

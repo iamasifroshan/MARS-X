@@ -33,6 +33,8 @@ from app.terrain.multi_resolution import (
     MultiResolutionTerrainCatalog,
     DTMProductProfile,
     ResolutionComparisonResult,
+    ProductOverlapResult,
+    RasterElevationComparisonResult,
 )
 from app.terrain.validation import (
     DatasetValidationRegistry,
@@ -356,3 +358,166 @@ async def get_terrain_summary(
     if not summary:
         raise HTTPException(status_code=404, detail=f"Terrain dataset summary for '{dataset_id}' not found.")
     return summary
+
+
+# ==============================================================================
+# PHASE 7 MULTI-RESOLUTION INTELLIGENCE ENDPOINTS
+# ==============================================================================
+
+@router.get("/products")
+async def get_all_terrain_products():
+    """List all terrain products across all resolution tiers with availability and lifecycle states."""
+    products = MultiResolutionTerrainCatalog.get_all_products()
+    results = []
+    for p in products:
+        rep = DatasetValidationRegistry.get_report(p.product_id)
+        results.append({
+            "product_id": p.product_id,
+            "instrument": p.instrument,
+            "mission": p.mission,
+            "tier": p.tier,
+            "pixel_spacing_m": p.pixel_spacing_m,
+            "pixel_spacing_desc": p.pixel_spacing_desc,
+            "geographic_bounds": {
+                "lat_min": p.lat_min,
+                "lat_max": p.lat_max,
+                "lon_min": p.lon_min,
+                "lon_max": p.lon_max,
+            },
+            "horizontal_crs": p.crs,
+            "vertical_datum": p.vertical_datum,
+            "lifecycle_state": rep.lifecycle_state if rep else "registered",
+            "raster_available_locally": rep.raster_available_locally if rep else False,
+            "is_analysis_ready": rep.is_analysis_ready if rep else False,
+            "source_archive": p.source_archive,
+            "download_url": p.download_url,
+            "quality_notes": p.quality_notes,
+        })
+    return {
+        "total_products": len(results),
+        "available_locally_count": sum(1 for r in results if r["raster_available_locally"]),
+        "analysis_ready_count": sum(1 for r in results if r["is_analysis_ready"]),
+        "products": results,
+    }
+
+
+@router.get("/coverage/region")
+async def get_terrain_coverage_region(
+    min_lat: float = Query(..., ge=-90.0, le=90.0),
+    min_lon: float = Query(..., ge=0.0, le=360.0),
+    max_lat: float = Query(..., ge=-90.0, le=90.0),
+    max_lon: float = Query(..., ge=0.0, le=360.0),
+):
+    """Query all terrain products intersecting a geographic bounding box."""
+    if min_lat >= max_lat or min_lon >= max_lon:
+        raise HTTPException(status_code=400, detail="Invalid bounding box: min coordinates must be strictly less than max coordinates.")
+
+    matches = MultiResolutionTerrainCatalog.find_intersecting_dtms_bbox(min_lat, min_lon, max_lat, max_lon)
+    return {
+        "query_bounds": {
+            "min_lat": min_lat,
+            "max_lat": max_lat,
+            "min_lon": min_lon,
+            "max_lon": max_lon,
+        },
+        "matching_products_count": len(matches),
+        "finest_native_resolution_m": matches[0].pixel_spacing_m if matches else None,
+        "available_tiers": list(set(m.tier for m in matches)),
+        "products": matches,
+    }
+
+
+@router.get("/resolution-stack")
+async def get_terrain_resolution_stack(
+    lat: float = Query(..., ge=-90.0, le=90.0),
+    lon: float = Query(..., ge=0.0, le=360.0),
+):
+    """Return available native resolutions intersecting a coordinate, sorted finest to coarsest."""
+    intersecting = MultiResolutionTerrainCatalog.find_intersecting_dtms(lat, lon)
+    stack = []
+    for p in intersecting:
+        rep = DatasetValidationRegistry.get_report(p.product_id)
+        stack.append({
+            "tier": p.tier,
+            "product_id": p.product_id,
+            "instrument": p.instrument,
+            "pixel_spacing_m": p.pixel_spacing_m,
+            "pixel_spacing_desc": p.pixel_spacing_desc,
+            "is_raster_available": rep.raster_available_locally if rep else False,
+            "lifecycle_state": rep.lifecycle_state if rep else "registered",
+            "crs": p.crs,
+            "vertical_datum": p.vertical_datum,
+        })
+    return {
+        "coordinate": {"latitude": lat, "longitude": lon},
+        "tiers_count": len(stack),
+        "finest_pixel_spacing_m": stack[0]["pixel_spacing_m"] if stack else None,
+        "stack": stack,
+    }
+
+
+@router.get("/overlap", response_model=ProductOverlapResult)
+async def get_terrain_product_overlap(
+    product_a: str = Query(..., description="First product ID"),
+    product_b: str = Query(..., description="Second product ID"),
+):
+    """Calculate geographic footprint overlap and resolution ratio between two terrain products."""
+    try:
+        return MultiResolutionTerrainCatalog.calculate_product_overlap(product_a, product_b)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/compare-products")
+async def compare_products_elevation(
+    product_a: str = Query(..., description="First product ID (e.g. 'mola-megdr-128')"),
+    product_b: str = Query(..., description="Second product ID (e.g. 'ctx-dtm-p21-009323')"),
+    run_raster_analysis: bool = Query(False, description="Whether to execute real numerical raster sampling if both are available locally"),
+    sample_points: Optional[int] = Query(None, description="Optional sample points count for real raster comparison"),
+):
+    """Compare two DTM products with compatibility information and optional real raster statistics."""
+    try:
+        comparison = MultiResolutionTerrainCatalog.compare_products(product_a, product_b)
+        overlap = MultiResolutionTerrainCatalog.calculate_product_overlap(product_a, product_b)
+
+        result: Dict[str, Any] = {
+            "comparison": comparison,
+            "overlap": overlap,
+        }
+
+        should_run_raster = run_raster_analysis or (sample_points is not None)
+        if should_run_raster and overlap.both_locally_available and overlap.has_overlap:
+            try:
+                raster_stats = MultiResolutionTerrainCatalog.compare_overlapping_rasters(
+                    product_a, product_b, sample_points=sample_points
+                )
+                result["raster_analysis"] = raster_stats
+                # Also expose flat keys for direct access
+                result["sample_points_count"] = raster_stats.sample_points_count
+                result["mean_delta_m"] = raster_stats.mean_delta_m
+                result["std_delta_m"] = raster_stats.std_delta_m
+                result["mean_elevation_a_m"] = raster_stats.mean_elevation_a_m
+                result["mean_elevation_b_m"] = raster_stats.mean_elevation_b_m
+                result["scientific_interpretation"] = raster_stats.scientific_interpretation
+            except Exception as e:
+                result["raster_analysis_error"] = str(e)
+
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/quality")
+async def get_terrain_quality_metadata(
+    product_id: Optional[str] = Query(None, description="Specific product ID to retrieve quality report for"),
+):
+    """Return scientific validation, uncertainty, and provenance metadata."""
+    if product_id:
+        report = DatasetValidationRegistry.get_report(product_id)
+        if not report:
+            raise HTTPException(status_code=404, detail=f"Quality report for product '{product_id}' not found.")
+        return report
+
+    return {
+        "all_reports": DatasetValidationRegistry.get_all_reports()
+    }

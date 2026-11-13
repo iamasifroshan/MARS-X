@@ -345,3 +345,98 @@ export interface RouteComparisonResponse {
   path_geometries_identical: boolean;
   scientific_synthesis: string;
 }
+
+// ── Phase 7 Multi-Resolution Types ──────────────────────────────────────────
+
+export interface DTMProductProfile {
+  product_id: string;
+  instrument: string;
+  mission: string;
+  tier: "global_coarse" | "global_base" | "regional" | "local_tactical" | string;
+  pixel_spacing_m: number;
+  pixel_spacing_desc: string;
+  lat_min: number;
+  lat_max: number;
+  lon_min: number;
+  lon_max: number;
+  crs: string;
+  vertical_datum: string;
+  nodata_value: number;
+  source_archive: string;
+  download_url: string;
+  is_tiled: boolean;
+  status: string;
+  quality_notes: string;
+}
+
+export interface ProductOverlapResult {
+  product_a: string;
+  product_b: string;
+  has_overlap: boolean;
+  overlap_lat_min?: number | null;
+  overlap_lat_max?: number | null;
+  overlap_lon_min?: number | null;
+  overlap_lon_max?: number | null;
+  overlap_area_km2: number;
+  relative_resolution_ratio: number;
+  both_locally_available: boolean;
+  scientific_compatibility: string;
+  notes: string;
+}
+
+export interface RasterElevationComparisonResult {
+  product_a: string;
+  product_b: string;
+  sample_points_count: number;
+  mean_elevation_a_m: number;
+  mean_elevation_b_m: number;
+  mean_delta_m: number;
+  std_delta_m: number;
+  min_delta_m: number;
+  max_delta_m: number;
+  overlap_bounds: {
+    lat_min: number;
+    lat_max: number;
+    lon_min: number;
+    lon_max: number;
+  };
+  scientific_interpretation: string;
+}
+
+export interface RegionCoverageResult {
+  bounding_box: {
+    min_lat: number;
+    min_lon: number;
+    max_lat: number;
+    max_lon: number;
+  };
+  intersecting_products_count: number;
+  highest_available_resolution_m: number;
+  intersecting_products: DTMProductProfile[];
+}
+
+export interface RoutingDataAvailability {
+  bounding_box: {
+    min_lat: number;
+    min_lon: number;
+    max_lat: number;
+    max_lon: number;
+  };
+  routing_eligible: boolean;
+  available_tiers: string[];
+  intersecting_products_count: number;
+  intersecting_products: Array<{
+    product_id: string;
+    instrument: string;
+    tier: string;
+    pixel_spacing_m: number;
+    vertical_datum: string;
+    status: string;
+  }>;
+  highest_available_resolution_m: number;
+  recommended_product: string;
+  downloaded_mola_tiles: string[];
+  supported_algorithms: string[];
+  scientific_notes: string[];
+}
+

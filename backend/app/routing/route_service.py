@@ -28,6 +28,8 @@ from app.routing.astar import AStarPlanner
 from app.routing.dijkstra import DijkstraPlanner
 from app.routing.route_validator import RouteValidator
 from app.routing.route_metrics import RouteMetricsCalculator
+from app.terrain.multi_resolution import MultiResolutionTerrainCatalog
+from app.terrain.inventory import Mola128InventoryService
 
 
 class MarsRouteService:
@@ -197,3 +199,119 @@ class MarsRouteService:
             path_geometries_identical=geometries_identical,
             scientific_synthesis=synthesis,
         )
+
+    def check_data_availability(
+        self,
+        min_lat: float,
+        min_lon: float,
+        max_lat: float,
+        max_lon: float,
+    ) -> Dict[str, Any]:
+        """Check availability of multi-resolution elevation datasets for a candidate route area."""
+        if min_lat > max_lat:
+            raise ValueError(f"min_lat ({min_lat}) cannot be greater than max_lat ({max_lat})")
+        if min_lon > max_lon:
+            raise ValueError(f"min_lon ({min_lon}) cannot be greater than max_lon ({max_lon})")
+
+        # Query multi-resolution catalog
+        intersecting = MultiResolutionTerrainCatalog.find_intersecting_dtms_bbox(
+            min_lat, min_lon, max_lat, max_lon
+        )
+
+        # Check local files and availability
+        inventory = Mola128InventoryService().get_inventory_report()
+        downloaded_mola_tiles = [t.tile_id for t in inventory.tiles if t.is_downloaded]
+
+        # Check if the region is covered by our active builder footprint
+        in_active_mola_footprint = (
+            min_lat >= MOLA_128_LAT_MIN
+            and max_lat <= MOLA_128_LAT_MAX
+            and min_lon >= MOLA_128_LON_MIN
+            and max_lon <= MOLA_128_LON_MAX
+        )
+
+        # Check intersection with other downloaded MOLA tiles
+        covered_mola_tiles = []
+        for t in inventory.tiles:
+            if t.is_downloaded:
+                # Check overlap
+                lat_overlap = not (max_lat < t.lat_min or min_lat > t.lat_max)
+                lon_overlap = not (max_lon < t.lon_min or min_lon > t.lon_max)
+                if lat_overlap and lon_overlap:
+                    covered_mola_tiles.append(t.tile_id)
+
+        # Check local CTX DTM availability
+        ctx_available = False
+        ctx_product_id = "ctx-dtm-p21-009323"
+        ctx_prof = MultiResolutionTerrainCatalog.get_product(ctx_product_id)
+        if ctx_prof and ctx_prof.status == "analysis_ready":
+            lat_overlap = not (max_lat < ctx_prof.lat_min or min_lat > ctx_prof.lat_max)
+            lon_overlap = not (max_lon < ctx_prof.lon_min or min_lon > ctx_prof.lon_max)
+            if lat_overlap and lon_overlap:
+                ctx_available = True
+
+        available_tiers = ["global_coarse"]  # MOLA 4 ppd is always available
+        if covered_mola_tiles:
+            available_tiers.append("global_base")
+        if ctx_available:
+            available_tiers.append("regional")
+
+        highest_res_m = 14800.0  # MOLA 4 default
+        recommended_product = "mola-megdr-4"
+        if covered_mola_tiles:
+            highest_res_m = 463.08
+            recommended_product = "mola-megdr-128"
+        if ctx_available:
+            highest_res_m = 20.0
+            recommended_product = ctx_product_id
+
+        routing_eligible = in_active_mola_footprint
+
+        notes = []
+        if not routing_eligible:
+            if covered_mola_tiles:
+                notes.append(
+                    f"Region intersects downloaded MOLA tile(s) {covered_mola_tiles}, but active single-tile engine is loaded for megt00n000hb."
+                )
+            else:
+                notes.append(
+                    f"Region is outside currently downloaded MOLA 128 regional tiles (acquired: {downloaded_mola_tiles})."
+                )
+        else:
+            notes.append(
+                "Region is fully inside the active validated MOLA 128 ppd footprint; A* and Dijkstra pathfinding are fully eligible."
+            )
+
+        if ctx_available:
+            notes.append(
+                "High-resolution 20 m/px USGS CTX numerical DTM is available for micro-terrain hazard inspection."
+            )
+
+        return {
+            "bounding_box": {
+                "min_lat": min_lat,
+                "min_lon": min_lon,
+                "max_lat": max_lat,
+                "max_lon": max_lon,
+            },
+            "routing_eligible": routing_eligible,
+            "available_tiers": available_tiers,
+            "intersecting_products_count": len(intersecting),
+            "intersecting_products": [
+                {
+                    "product_id": p.product_id,
+                    "instrument": p.instrument,
+                    "tier": p.tier,
+                    "pixel_spacing_m": p.pixel_spacing_m,
+                    "vertical_datum": p.vertical_datum,
+                    "status": p.status,
+                }
+                for p in intersecting
+            ],
+            "highest_available_resolution_m": highest_res_m,
+            "recommended_product": recommended_product,
+            "downloaded_mola_tiles": downloaded_mola_tiles,
+            "supported_algorithms": ["astar", "dijkstra"] if routing_eligible else [],
+            "scientific_notes": notes,
+        }
+

@@ -14,6 +14,11 @@ import {
   RoutePlanRequest,
   RoutePlanResponse,
   RouteComparisonResponse,
+  DTMProductProfile,
+  ProductOverlapResult,
+  RasterElevationComparisonResult,
+  RegionCoverageResult,
+  RoutingDataAvailability,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -232,3 +237,124 @@ export async function compareMarsRouteAlgorithms(
   }
   return res.json();
 }
+
+// ── Phase 7 Multi-Resolution API Clients ─────────────────────────────────────
+
+export async function fetchTerrainProducts(): Promise<DTMProductProfile[]> {
+  const res = await fetch(`${API_BASE}/api/v1/terrain/products`, {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    throw new Error(`Terrain products fetch failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchCoverageRegion(
+  minLat: number,
+  minLon: number,
+  maxLat: number,
+  maxLon: number
+): Promise<RegionCoverageResult> {
+  const url = new URL(`${API_BASE}/api/v1/terrain/coverage/region`);
+  url.searchParams.set("min_lat", minLat.toString());
+  url.searchParams.set("min_lon", minLon.toString());
+  url.searchParams.set("max_lat", maxLat.toString());
+  url.searchParams.set("max_lon", maxLon.toString());
+
+  const res = await fetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    throw new Error(`Region coverage fetch failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchResolutionStack(
+  lat: number,
+  lon: number
+): Promise<{
+  query_coordinate: { latitude: number; longitude: number };
+  matching_dtms_count: number;
+  finest_available_resolution_m: number | null;
+  resolution_stack: DTMProductProfile[];
+}> {
+  const url = new URL(`${API_BASE}/api/v1/terrain/resolution-stack`);
+  url.searchParams.set("lat", lat.toString());
+  url.searchParams.set("lon", lon.toString());
+
+  const res = await fetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    throw new Error(`Resolution stack fetch failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchProductOverlap(
+  productA: string,
+  productB: string
+): Promise<ProductOverlapResult> {
+  const url = new URL(`${API_BASE}/api/v1/terrain/overlap`);
+  url.searchParams.set("product_a", productA);
+  url.searchParams.set("product_b", productB);
+
+  const res = await fetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    throw new Error(`Product overlap fetch failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function compareProductsElevation(
+  productA: string,
+  productB: string,
+  samplePoints: number = 100
+): Promise<RasterElevationComparisonResult> {
+  const url = new URL(`${API_BASE}/api/v1/terrain/compare-products`);
+  url.searchParams.set("product_a", productA);
+  url.searchParams.set("product_b", productB);
+  url.searchParams.set("sample_points", samplePoints.toString());
+
+  const res = await fetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Elevation comparison failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchRoutingDataAvailability(
+  minLat: number,
+  minLon: number,
+  maxLat: number,
+  maxLon: number
+): Promise<RoutingDataAvailability> {
+  const url = new URL(`${API_BASE}/api/v1/routing/data-availability`);
+  url.searchParams.set("min_lat", minLat.toString());
+  url.searchParams.set("min_lon", minLon.toString());
+  url.searchParams.set("max_lat", maxLat.toString());
+  url.searchParams.set("max_lon", maxLon.toString());
+
+  const res = await fetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Routing data availability check failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
