@@ -156,3 +156,4 @@ def read_pds3_image_binary(
     }
 
     return data, metadata
+

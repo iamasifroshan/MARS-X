@@ -143,3 +143,4 @@ def test_real_mola_elevation_point_sampling():
     assert hellas_res.is_valid is True
     assert hellas_res.elevation_m is not None
     assert hellas_res.elevation_m < -5000.0, f"Hellas floor should be <-5,000m; got {hellas_res.elevation_m}"
+

@@ -126,7 +126,7 @@ export default function ExplorationDashboard() {
             </div>
           ) : activeTab === "terrain" ? (
             <div className="flex-1 p-4 bg-[#0a0c16] overflow-y-auto">
-              <TerrainAnalysis />
+              <TerrainAnalysis currentCoordinates={cursorCoords} />
             </div>
           ) : activeTab === "mission" ? (
             <div className="flex-1 p-4 bg-[#0a0c16] overflow-y-auto">
@@ -164,7 +164,7 @@ export default function ExplorationDashboard() {
 
               {/* Bottom Mission Planning & Terrain Operations Deck */}
               <div className="h-48 border-t border-[#1c2136] bg-[#0b0c16] p-3 grid grid-cols-1 md:grid-cols-3 gap-3 overflow-y-auto select-none z-10">
-                <TerrainAnalysis />
+                <TerrainAnalysis currentCoordinates={cursorCoords} />
                 <RoutePlanning />
                 <MissionInfo />
               </div>

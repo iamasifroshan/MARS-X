@@ -242,3 +242,4 @@ class MOLAIngestionService:
             json.dump(processing_summary, f, indent=2)
 
         return processing_summary
+

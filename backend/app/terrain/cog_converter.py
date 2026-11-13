@@ -90,3 +90,4 @@ def convert_array_to_cog(
         "nodata_value": nodata_value,
         "compression": "deflate",
     }
+
