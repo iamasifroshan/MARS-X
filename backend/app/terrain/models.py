@@ -97,3 +97,4 @@ class SlopeMetricResult(BaseModel):
     valid_cells: int
     nodata_cells: int
     scientific_note: str
+

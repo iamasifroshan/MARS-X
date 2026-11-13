@@ -73,3 +73,4 @@
 1. **Global Base Layer:** MOLA MEGDR Topography at 128 px/deg ($\approx 463\text{ m/px}$) or 64 px/deg ($\approx 926\text{ m/px}$) provides complete planet-wide elevation for macro-topography, regional viewsheds, and boundary constraints.
 2. **Regional Landing Site Context:** HRSC MC-11 mosaic and CTX stereo DTMs ($20\text{ m/px}$) provide regional traverses in candidate exploration zones (Jezero Crater, Gale Crater, Mawrth Vallis).
 3. **Tactical Rover/Marswalk Scale:** HiRISE DTMs ($1.0\text{ m/px}$) provide obstacle-level terrain analysis (boulder fields, sand dunes, steep crater rims) for micro-traverse path planning.
+

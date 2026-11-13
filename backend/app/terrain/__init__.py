@@ -7,7 +7,9 @@ Provides modular architectures for:
 - NoData and valid-data mask handling (NumPy)
 - Pixel resolution reporting and metric spacing conversion
 - Elevation data ingestion and sampling
-- Raster dataset provenance tracking
+- PDS3 label parsing and raw binary raster reading
+- Cloud Optimized GeoTIFF (COG) generation
+- MOLA MEGDR sample ingestion and verification
 - Slope and roughness processing
 """
 
@@ -43,6 +45,15 @@ from app.terrain.elevation_service import (
     TerrainDataEngine,
     engine,
 )
+from app.terrain.pds_parser import (
+    PDS3LabelParser,
+    read_pds3_image_binary,
+)
+from app.terrain.cog_converter import convert_array_to_cog
+from app.terrain.ingestion import (
+    MOLAIngestionService,
+    compute_sha256,
+)
 
 __all__ = [
     "RasterBounds",
@@ -67,4 +78,9 @@ __all__ = [
     "TERRAIN_DATASET_PROVENANCE",
     "TerrainDataEngine",
     "engine",
+    "PDS3LabelParser",
+    "read_pds3_image_binary",
+    "convert_array_to_cog",
+    "MOLAIngestionService",
+    "compute_sha256",
 ]

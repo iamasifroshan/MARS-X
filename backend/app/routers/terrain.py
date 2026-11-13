@@ -87,3 +87,4 @@ async def get_terrain_summary(
     if not summary:
         raise HTTPException(status_code=404, detail=f"Terrain dataset summary for '{dataset_id}' not found.")
     return summary
+

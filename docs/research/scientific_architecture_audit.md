@@ -77,3 +77,4 @@ A comprehensive scientific audit of the MARS-X codebase was conducted across met
    - In equirectangular projections (Plate Carrée), east-west ground distance per degree of longitude shrinks with latitude:
      $$\Delta x = R \cdot \cos(\phi) \cdot \Delta \lambda_{\text{rad}}$$
    - Any gradient, slope, or roughness calculation must compute the local cell width in physical metres using $\cos(\phi)$ at each row, rather than assuming constant Cartesian square pixels.
+

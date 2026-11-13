@@ -88,3 +88,4 @@ def inspect_raster_file(file_path: str, dataset_id: Optional[str] = None) -> Ras
     except rasterio.errors.RasterioIOError as e:
         logger.error("Failed to read raster header: %s", str(e))
         raise ValueError(f"Invalid or corrupted raster file ({file_path}): {str(e)}") from e
+

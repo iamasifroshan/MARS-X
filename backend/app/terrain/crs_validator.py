@@ -89,3 +89,4 @@ def validate_and_identify_crs(crs_input: Any) -> Dict[str, Any]:
         "authority": None,
         "error": f"CRS '{crs_str}' is not recognized as an authoritative Mars planetary reference system.",
     }
+

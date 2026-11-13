@@ -70,12 +70,23 @@ def test_api_terrain_summary_endpoint():
 
 
 def test_api_terrain_metadata_not_downloaded():
-    """Verify 404 without fabrication when raw file is not yet downloaded."""
-    response = client.get("/api/v1/terrain/metadata?dataset_id=mola-megdr")
+    """Verify 404 without fabrication when raw file is not yet downloaded (e.g. hrsc-dtm)."""
+    response = client.get("/api/v1/terrain/metadata?dataset_id=hrsc-dtm")
     assert response.status_code == 404
     detail = response.json()["detail"]
     assert "not yet been downloaded" in detail
     assert "cannot be fabricated" in detail
+
+
+def test_api_terrain_metadata_downloaded_mola():
+    """Verify 200 with real inspected metadata for downloaded mola-megdr."""
+    response = client.get("/api/v1/terrain/metadata?dataset_id=mola-megdr")
+    assert response.status_code == 200
+    meta = response.json()
+    assert meta["dataset_id"] == "mola-megdr"
+    assert meta["width"] == 1440
+    assert meta["height"] == 720
+    assert meta["is_mars_crs"] is True
 
 
 def test_api_terrain_metadata_with_real_raster_file():
@@ -115,3 +126,4 @@ def test_api_terrain_metadata_with_real_raster_file():
     finally:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
+

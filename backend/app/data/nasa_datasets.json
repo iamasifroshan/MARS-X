@@ -5,16 +5,16 @@
     "mission": "Mars Global Surveyor (MGS)",
     "instrument": "Mars Orbiter Laser Altimeter (MOLA)",
     "product_type": "Gridded topography (DEM)",
-    "spatial_resolution": "~463 m/px (1/128° at equator)",
+    "spatial_resolution": "0.0078125°/px (128 px/deg, ~463 m/px) to 0.25°/px (4 px/deg, ~14.8 km/px)",
     "acquisition_date_range": "1999-02 to 2001-06",
-    "geographic_footprint": "Global coverage (±88° latitude)",
+    "geographic_footprint": "Global coverage (±88° latitude for 128 px/deg tiles; ±90° for 4 px/deg)",
     "crs": "IAU:49900",
     "source_url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html",
-    "data_format": "Binary tables / GeoTIFF",
-    "coverage": "Near-global Mars topography derived from over 600 million laser pulse returns",
+    "data_format": "PDS3 IMG / GeoTIFF",
+    "coverage": "Near-global Mars topography from ~600M altimetry returns. Available as 16 regional tiles at 128 px/deg (MEGT*HB) and single global maps at 4 px/deg (MEGT90N000CB), 16 px/deg (MEGT90N000EB), and 32 px/deg (MEGT90N000FB)",
     "processing_status": "registered",
-    "scientific_limitations": "Gaps near poles; accuracy degrades over rough terrain at regional scales; IAU 2000 sphere datum (R=3396.19 km) rather than an ellipsoid",
-    "description": "Global digital elevation model of Mars produced from Mars Global Surveyor MOLA altimetry. The MEGDR product provides elevation referenced to the IAU 2000 areoid at 128 pixels/degree resolution."
+    "scientific_limitations": "Laser track spacing widens near equator (up to 12 km gap between tracks); vertical accuracy ~1 m on flat plains, degrading on steep slopes (>5°); reference surface is IAU 2000 sphere (R=3396.0 km or 3396.19 km) with elevations referenced to MOLA Areoid",
+    "description": "Global digital elevation model of Mars produced from Mars Global Surveyor MOLA altimetry. Elevations represent height in metres relative to the Goddard Mars potential model GMM3 areoid evaluated to degree and order 50."
   },
   {
     "dataset_id": "hrsc-dtm",
@@ -24,14 +24,14 @@
     "product_type": "Stereo-derived DTM",
     "spatial_resolution": "50–100 m/px",
     "acquisition_date_range": "2004-01 to present",
-    "geographic_footprint": "Regional orbital strips (varying latitude/longitude coverage)",
+    "geographic_footprint": "Regional orbital swaths and quadrangle mosaics (non-global, ~50%–70% accumulated coverage)",
     "crs": "IAU:49900",
     "source_url": "https://pds-geosciences.wustl.edu/missions/mars_express/hrsc.htm",
-    "data_format": "GeoTIFF / IMG",
-    "coverage": "Regional stereo DTM strips covering significant portions of Mars surface along orbital ground tracks",
+    "data_format": "GeoTIFF / VICAR / PDS3",
+    "coverage": "Regional stereo DTM swaths along elliptical orbit ground tracks; quadrangle mosaics (e.g. MC-11 Oxia Planum). Not a contiguous global dataset",
     "processing_status": "registered",
-    "scientific_limitations": "Coverage is strip-based, not global; vertical accuracy varies with surface texture and stereo convergence angle; some artifacts at strip boundaries",
-    "description": "High-resolution stereo-photogrammetric digital terrain models derived from Mars Express HRSC imagery. DTMs are produced from along-track stereo pairs and provide higher resolution than MOLA in covered areas."
+    "scientific_limitations": "Coverage is non-contiguous strip-based; vertical accuracy (10–40 m) varies with stereo convergence angle, atmospheric dust opacity, and surface texture contrast; boundary artifacts exist between adjacent orbit strips",
+    "description": "High-resolution stereo-photogrammetric digital terrain models derived from Mars Express HRSC along-track stereo channels. DTMs provide regional 50–100 m/px topography referenced to the MOLA Areoid."
   },
   {
     "dataset_id": "usgs-sim3292",

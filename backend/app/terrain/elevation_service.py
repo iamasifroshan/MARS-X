@@ -27,6 +27,21 @@ class TerrainDataEngine:
     def __init__(self, data_dir: str = "data/raw"):
         self.data_dir = data_dir
         self._loaded_rasters: Dict[str, str] = {}
+        # Auto-discover known processed rasters
+        self._auto_discover_rasters()
+
+    def _auto_discover_rasters(self):
+        candidate_paths = [
+            "data/processed/mola/mola_megt90n000cb_elevation.tif",
+            "../data/processed/mola/mola_megt90n000cb_elevation.tif",
+            os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "processed", "mola", "mola_megt90n000cb_elevation.tif"),
+        ]
+        for p in candidate_paths:
+            abs_p = os.path.abspath(p)
+            if os.path.exists(abs_p):
+                self._loaded_rasters["mola-megdr"] = abs_p
+                logger.info("Auto-discovered MOLA elevation raster: %s", abs_p)
+                break
 
     def register_local_raster(self, dataset_id: str, file_path: str):
         """Register a validated local raster path."""
@@ -166,3 +181,4 @@ class TerrainDataEngine:
 
 # Global terrain engine instance
 engine = TerrainDataEngine()
+

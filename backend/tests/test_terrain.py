@@ -291,9 +291,10 @@ def test_elevation_point_query_unloaded_dataset_refuses_fabrication():
     test_engine = TerrainDataEngine()
     from app.terrain.models import ElevationPointQuery
 
-    query = ElevationPointQuery(latitude=18.38, longitude=77.58, dataset_id="mola-megdr")
+    query = ElevationPointQuery(latitude=18.38, longitude=77.58, dataset_id="hrsc-dtm")
     res = test_engine.query_elevation_point(query)
 
     assert res.is_valid is False
     assert res.elevation_m is None
     assert "not yet downloaded" in res.status_note
+
