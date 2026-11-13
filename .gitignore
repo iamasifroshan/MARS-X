@@ -1,0 +1,68 @@
+# ============================================================
+# MARS-X .gitignore
+# ============================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+*.whl
+
+# Virtual environments
+backend/.venv/
+backend/venv/
+.venv/
+venv/
+
+# pytest / coverage
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# mypy
+.mypy_cache/
+
+# --- Node.js / Next.js ---
+node_modules/
+frontend/.next/
+frontend/out/
+.next/
+
+# --- Environment ---
+.env
+.env.local
+.env.*.local
+*.env
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- Data (large files) ---
+data/raw/*
+data/processed/*
+data/cache/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/cache/.gitkeep
+
+# --- GDAL / Raster temp ---
+*.tif.aux.xml
+*.tif.ovr
+

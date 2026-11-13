@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mars-x.dev/schemas/dataset-metadata.json",
+  "title": "MARS-X Dataset Metadata",
+  "description": "Schema for validating NASA/ESA Mars dataset metadata entries used in the MARS-X platform.",
+  "type": "object",
+  "required": [
+    "dataset_id",
+    "name",
+    "mission",
+    "instrument",
+    "product_type",
+    "crs",
+    "source_url",
+    "data_format",
+    "processing_status"
+  ],
+  "properties": {
+    "dataset_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "Unique lowercase identifier for this dataset (letters, digits, hyphens, underscores only)."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable name of the dataset."
+    },
+    "mission": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Space mission that produced the data (e.g. Mars Global Surveyor, Mars Reconnaissance Orbiter)."
+    },
+    "instrument": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Instrument or camera that acquired the data."
+    },
+    "product_type": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Type of data product (e.g. DTM, image, spectral cube, geologic map)."
+    },
+    "spatial_resolution": {
+      "type": ["string", "null"],
+      "description": "Ground sampling distance or spatial resolution (e.g. '463 m/px'). Null for non-spatial datasets."
+    },
+    "acquisition_date_range": {
+      "type": ["string", "null"],
+      "description": "Temporal coverage of the dataset (e.g. '1999-2001'). Null if not applicable."
+    },
+    "geographic_footprint": {
+      "type": ["string", "null"],
+      "description": "Spatial extent description (e.g. 'Global', 'Gale Crater'). Null if not defined."
+    },
+    "crs": {
+      "type": "string",
+      "description": "Coordinate reference system identifier (e.g. 'IAU:49900', 'EPSG:104905')."
+    },
+    "source_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Primary URL for accessing or learning about this dataset."
+    },
+    "data_format": {
+      "type": "string",
+      "minLength": 1,
+      "description": "File format of the data product (e.g. GeoTIFF, PDS IMG, JPEG, CSV)."
+    },
+    "coverage": {
+      "type": ["string", "null"],
+      "description": "Description of spatial/temporal coverage. Null if not specified."
+    },
+    "processing_status": {
+      "type": "string",
+      "enum": ["registered", "available", "downloaded", "validated", "error"],
+      "description": "Current state of this dataset in the MARS-X pipeline."
+    },
+    "scientific_limitations": {
+      "type": ["string", "null"],
+      "description": "Known limitations or caveats for scientific use. Null if none documented."
+    },
+    "description": {
+      "type": "string",
+      "description": "Full description of the dataset and its scientific purpose."
+    }
+  },
+  "additionalProperties": false
+}
