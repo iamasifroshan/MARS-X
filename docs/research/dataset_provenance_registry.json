@@ -810,16 +810,16 @@
       "native_resolution": {
         "scale": "1:20,000,000",
         "polygon_count": 1311,
-        "distinct_units": 39,
+        "distinct_units": 44,
         "description": "Global chronostratigraphic and geological unit classification"
       },
       "integration_status": {
         "file_integrity_verified": true,
         "product_identity_verified": true,
         "scientific_metadata_verified": true,
-        "application_integration_verified": false,
-        "scientific_analysis_readiness": "ready_for_vector_pipeline",
-        "integration_note": "Acquired and schema verified on disk (1,311 units, 3,800 contacts, 3,593 structures, 9 landing sites). Not yet integrated into live MapLibre frontend vector layers or backend API routes."
+        "application_integration_verified": true,
+        "scientific_analysis_readiness": "integrated_in_production",
+        "integration_note": "Acquired and schema verified on disk (1,311 units across 44 recognized chronostratigraphic units, 3,800 contacts, 3,593 structures, 9 landing sites). Fully integrated into live MapLibre frontend vector layers and backend API routes (/api/v1/geology/*)."
       },
       "production_usage": [
         "Geological exploration, chronostratigraphic unit boundary and contact analysis (offline GIS dataset)"

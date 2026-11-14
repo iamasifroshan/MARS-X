@@ -91,13 +91,13 @@ const INITIAL_LAYERS: MapLayer[] = [
   },
   {
     id: "themis-ir-regional",
-    name: "THEMIS 100m IR Mosaic (Sinus Meridiani)",
+    name: "THEMIS 100m IR Mosaic (256 ppd Regional, Sinus Meridiani)",
     mission: "2001 Mars Odyssey",
     type: "orbital_imagery",
     crs: "IAU:49900",
     enabled: false,
     isAvailable: true,
-    statusNote: "Authentic 256 ppd Band 9 visual display DN (lat -30..0°, lon 0..30°E). Qualitative.",
+    statusNote: "256 ppd (~231.5 m/px) Band 9 visual display DN (lat -30..0°, lon 0..30°E). Qualitative only.",
   },
   {
     id: "sim3292-geology",

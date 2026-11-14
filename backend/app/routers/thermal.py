@@ -31,7 +31,9 @@ async def query_thermal_inertia_at_point(
 ) -> Dict[str, Any]:
     """Query calibrated Martian thermal inertia (in tiu) at a specific latitude and longitude.
 
-    IMPORTANT: Values are Thermal Inertia (J m^-2 K^-1 s^-1/2), NOT temperature.
+    IMPORTANT: Values are legend-calibrated estimates of Apparent Thermal Inertia (J m^-2 K^-1 s^-1/2),
+    derived via 790-step reverse lookup of the Putzig & Mellon (2007) published color palette.
+    They are NOT temperature or radiant heat.
     """
     service = get_thermal_service()
     try:

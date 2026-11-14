@@ -129,7 +129,7 @@ Thermal inertia is a thermophysical property representing resistance to temperat
 | `ctx-dtm-controlled-t01-000893` | CTX | `T01_000893_1847` | Apollinaris Sulci | **20.0 m/px** | MOLA Geoid Adjusted | Active |
 | `ctx-dtm-p21-009323` | CTX | `P21_009323_1754` | Tyrrhena Terra | **20.0128 m/px** | MOLA Areoid Datum | Active |
 | `mola-megdr-128` | MOLA | `megt00n000hb`, etc. | Regional (3 tiles) | **463.08 m/px** | MOLA Areoid Datum | Active |
-| `mola-megdr-4` | MOLA | `megt90n000cb` | Global | **4,630.8 m/px** | MOLA Areoid Datum | Active |
+| `mola-megdr-4` | MOLA | `megt90n000cb` | Global | **14,818.7 m/px** | MOLA Areoid Datum | Active |
 | `ctx-dtm-jezero` | CTX | N/A | Jezero Crater | 20.0 m/px | N/A | Catalog Unavailable |
 | `hirise-dtm-jezero` | HiRISE | N/A | Jezero Crater | 1.0 m/px | N/A | Catalog Unavailable |
 
@@ -142,7 +142,7 @@ The sampling pipeline in `backend/app/routers/terrain.py` evaluates point elevat
 3. **Operational Tyrrhena CTX DTM (20.0128 m/px):** Checked next if coordinates fall within Tyrrhena Terra (`lat=-5.19 to -4.01`, `lon=66.03 to 66.61`).
    - Query at `lat=-4.600`, `lon=66.317` yields **$+2189.49\text{ m}$** (exact bitwise parity with verified benchmark).
 4. **Regional MOLA 128 ppd Tiles (463.08 m/px):** Checked across tiles `00n000`, `44n000`, `00n090`.
-5. **Global MOLA 4 ppd Baseline (4630.8 m/px):** Global planetary fallback.
+5. **Global MOLA 4 ppd Baseline (~14.8 km/px):** Global planetary fallback.
 
 ---
 

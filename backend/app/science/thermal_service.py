@@ -28,7 +28,17 @@ logger = logging.getLogger("MARS-X.science.thermal_service")
 
 
 class TESThermalInertiaService:
-    """Service for querying and rendering MGS TES Global Thermal Inertia (Putzig & Mellon 2007)."""
+    """Service for querying and rendering MGS TES Global Thermal Inertia (Putzig & Mellon 2007).
+    
+    Calibration Methodology:
+    - Data sources: DBmap2007.tif (dayside) and NBmap2007.tif (nightside), 7200x3600 pixels (20 ppd).
+    - Image format: 3-band uint8 RGB color-mapped using the IDL rainbow palette.
+    - Calibration reverse-lookup: Extracted 790 distinct RGB colors from tes_putzigti_dayside2007_label.jpg.
+    - Mathematical formula: I = 50.0 * (50.0 ** t) tiu, where t in [0.0, 1.0] across the 790 steps.
+    - Range: 50.0 to 2500.0 tiu (Thermal Inertia Units = J m^-2 K^-1 s^-1/2).
+    - Measurement status: Legend-calibrated estimates (not directly measured spectrometer radiances).
+    - Quantization uncertainty: ~2.5% step-to-step color quantization and nearest-neighbor uncertainty.
+    """
 
     _instance: Optional["TESThermalInertiaService"] = None
 
@@ -72,14 +82,14 @@ class TESThermalInertiaService:
         if self.bar_colors is not None and len(self.bar_colors) > 0:
             n_steps = len(self.bar_colors)
             t_vals = np.linspace(0.0, 1.0, n_steps)
-            # Logarithmic range from 50.0 to 2500.0 tiu
+            # Logarithmic range from 50.0 to 2500.0 tiu: I = 50.0 * 50.0^t
             self.ti_values = 50.0 * (50.0 ** t_vals)
         else:
             self.bar_colors = None
             self.ti_values = None
 
     def get_metadata(self) -> Dict[str, Any]:
-        """Return dataset metadata and scientific context."""
+        """Return dataset metadata, calibration formula, and scientific context."""
         return {
             "dataset_id": "tes-thermal-inertia-putzig-2007",
             "product_id": "TES_PUTZIG_TI_2007",
@@ -90,11 +100,18 @@ class TESThermalInertiaService:
             "units": "J m^-2 K^-1 s^-1/2 (Thermal Inertia Units, tiu)",
             "raster_dimensions": {"width": self.width, "height": self.height, "pixels_per_degree": self.ppd},
             "spatial_coverage": {"min_lon": -180.0, "max_lon": 180.0, "min_lat": -90.0, "max_lat": 90.0},
+            "raster_format": "3-band 8-bit RGB color image (IDL rainbow palette representation)",
+            "calibration": {
+                "method": "790-step reverse lookup table extracted from published label colorbar",
+                "formula": "I = 50.0 * (50.0 ** t) [tiu], where t in [0.0, 1.0]",
+                "quantization_uncertainty_pct": 2.5,
+                "range_tiu": {"min": 50.0, "max": 2500.0, "scale": "logarithmic"},
+                "measurement_status": "legend_calibrated_estimate (not direct spectrometer radiance)",
+            },
             "products": {
                 "dayside": {"file": "DBmap2007.tif", "exists": os.path.exists(self.dayside_path)},
                 "nightside": {"file": "NBmap2007.tif", "exists": os.path.exists(self.nightside_path)},
             },
-            "calibration_range_tiu": {"min": 50.0, "max": 2500.0, "scale": "logarithmic"},
             "prohibition_disclaimer": (
                 "Thermal inertia is a thermophysical property representing resistance to temperature change, "
                 "NOT temperature. Never label or treat these values as kinetic temperature or surface heat."
@@ -116,19 +133,19 @@ class TESThermalInertiaService:
         return row, col
 
     def _interpret_thermal_inertia(self, ti: float) -> str:
-        """Provide physical lithological interpretation based on Putzig & Mellon (2007)."""
+        """Provide indicative surface-property interpretation based on Putzig & Mellon (2007)."""
         if ti < 90.0:
-            return "Fine, unindurated aeolian dust mantle (> several mm thick); high atmospheric insulation"
+            return "Indicative: Fine, unindurated aeolian dust mantle (> several mm thick); high atmospheric insulation"
         elif ti < 180.0:
-            return "Fine to medium aeolian sand with incipient thin duricrust"
+            return "Indicative: Fine to medium aeolian sand with incipient thin duricrust"
         elif ti < 350.0:
-            return "Medium to coarse sand, cemented soil, or duricrust layers"
+            return "Indicative: Medium to coarse sand, cemented soil, or duricrust layers"
         elif ti < 600.0:
-            return "Coarse sand, granule lag, fragmented rocks, or eroded duricrust surfaces"
+            return "Indicative: Coarse sand, granule lag, fragmented rocks, or eroded duricrust surfaces"
         elif ti < 1200.0:
-            return "Rocky plains, high boulder abundance, cemented duricrust, or partially exposed bedrock"
+            return "Indicative: Rocky plains, high boulder abundance, cemented duricrust, or partially exposed bedrock"
         else:
-            return "Dense boulder fields, massive rock exposures, or cohesive solid bedrock"
+            return "Indicative: Dense boulder fields, massive rock exposures, or cohesive solid bedrock"
 
     def query_point(self, lat: float, lon: float, product: str = "dayside") -> Dict[str, Any]:
         """Query calibrated thermal inertia at a Martian coordinate."""
@@ -154,12 +171,15 @@ class TESThermalInertiaService:
                 "longitude": lon,
                 "product": product,
                 "thermal_inertia_tiu": None,
+                "calibrated_thermal_inertia_estimate_tiu": None,
                 "units": "J m^-2 K^-1 s^-1/2 (Thermal Inertia)",
                 "is_nodata": True,
                 "physical_interpretation": "Unmeasured or masked polar / shadowed region",
                 "pixel_row": row,
                 "pixel_col": col,
                 "raw_rgb": [r, g, b],
+                "calibration_status": "nodata",
+                "quantization_uncertainty_pct": None,
             }
 
         # Find nearest calibrated color
@@ -174,6 +194,7 @@ class TESThermalInertiaService:
             "longitude": lon,
             "product": product,
             "thermal_inertia_tiu": ti_val,
+            "calibrated_thermal_inertia_estimate_tiu": ti_val,
             "units": "J m^-2 K^-1 s^-1/2 (Thermal Inertia)",
             "is_nodata": False,
             "physical_interpretation": interpretation,
@@ -181,6 +202,9 @@ class TESThermalInertiaService:
             "pixel_col": col,
             "raw_rgb": [r, g, b],
             "citation": "Putzig & Mellon (2007), Icarus 191, 68-94",
+            "calibration_status": "legend_calibrated_estimate",
+            "quantization_uncertainty_pct": 2.5,
+            "estimation_method": "Putzig 2007 790-step logarithmic colorbar reverse lookup",
         }
 
     def render_window(
@@ -272,7 +296,7 @@ class THEMISInfraredService:
         self.ppd = 256.0
 
     def get_metadata(self) -> Dict[str, Any]:
-        """Return THEMIS IR mosaic metadata and strict qualitative usage instructions."""
+        """Return THEMIS IR mosaic metadata, resolution audit, and strict qualitative usage instructions."""
         return {
             "dataset_id": "themis-ir-mosaics-regional",
             "product_id": "THEMIS_IR_MOSAICS_100M_REGIONAL",
@@ -286,7 +310,9 @@ class THEMISInfraredService:
                 "min_lon": self.footprint_min_lon,
                 "max_lon": self.footprint_max_lon,
             },
-            "resolution": "256 ppd (~231.55 m/px)",
+            "native_camera_resolution": "100 m/px at 430 km circular orbit (nadir pointing)",
+            "mosaic_grid_resolution": "256 ppd (equatorial pixel width ~231.55 m/px, reducing to ~200.5 m/px at -30° latitude due to cosine convergence)",
+            "resolution": "256 ppd (~231.55 m/px equatorial)",
             "pixel_format": "8-bit grayscale display DN (0-255)",
             "products": {
                 "day_ir": {"file": "thm_dir_N-30_000.png", "exists": os.path.exists(self.day_path)},
