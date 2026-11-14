@@ -7,6 +7,7 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { StatusBar } from "../components/layout/StatusBar";
 import { LayerSelector } from "../components/map/LayerSelector";
 import { CoordinateInspector } from "../components/panels/CoordinateInspector";
+import { ElevationProfilePanel } from "../components/panels/ElevationProfilePanel";
 import { DatasetCatalogue } from "../components/panels/DatasetCatalogue";
 import { TerrainAnalysis } from "../components/panels/TerrainAnalysis";
 import { RoutePlanning } from "../components/panels/RoutePlanning";
@@ -69,6 +70,16 @@ const INITIAL_LAYERS: MapLayer[] = [
     statusNote: "Mars 2000 Sphere coordinate reference graticule",
   },
   {
+    id: "dataset-footprints",
+    name: "Coverage Footprints & Boundaries",
+    mission: "Multi-Mission Envelopes",
+    type: "geology",
+    crs: "EPSG:104905",
+    enabled: true,
+    isAvailable: true,
+    statusNote: "Polygons marking acquired CTX & MOLA 128 coverage boundaries",
+  },
+  {
     id: "hirise-rdr-imagery",
     name: "HiRISE Jezero Crater DTM (1.0m/px)",
     mission: "Mars Reconnaissance Orbiter (MRO)",
@@ -84,9 +95,13 @@ export default function ExplorationDashboard() {
   const healthState = useBackendHealth(15000);
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [cursorCoords, setCursorCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [inspectedCoords, setInspectedCoords] = useState<{ lat: number; lon: number } | null>({
+    lat: -4.600,
+    lon: 66.317,
+  });
   const [layers, setLayers] = useState<MapLayer[]>(INITIAL_LAYERS);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(true);
-  const [drawerSubTab, setDrawerSubTab] = useState<"layers" | "coords" | "presets">("layers");
+  const [drawerSubTab, setDrawerSubTab] = useState<"layers" | "coords" | "profile" | "presets">("layers");
 
   const handleToggleLayer = (layerId: string) => {
     setLayers((prev) =>
@@ -133,6 +148,14 @@ export default function ExplorationDashboard() {
                 <TerrainAnalysis currentCoordinates={cursorCoords} />
               </div>
             </div>
+          ) : activeTab === "profile" ? (
+            <div className="flex-1 p-6 bg-[#0a0c16] overflow-y-auto">
+              <div className="max-w-7xl mx-auto">
+                <div className="bg-[#101322]/90 border border-[#232840] rounded-lg p-5 backdrop-blur-md shadow-2xl">
+                  <ElevationProfilePanel />
+                </div>
+              </div>
+            </div>
           ) : activeTab === "route" ? (
             <div className="flex-1 p-6 bg-[#0a0c16] overflow-y-auto">
               <div className="max-w-7xl mx-auto">
@@ -167,6 +190,12 @@ export default function ExplorationDashboard() {
               <div className="flex-1 relative h-full">
                 <MapContainer
                   onCoordinateChange={setCursorCoords}
+                  onCoordinateInspect={(coords) => {
+                    setInspectedCoords(coords);
+                    setIsDrawerOpen(true);
+                    setDrawerSubTab("coords");
+                  }}
+                  inspectedCoord={inspectedCoords}
                   layers={layers}
                 />
               </div>
@@ -196,6 +225,16 @@ export default function ExplorationDashboard() {
                         }`}
                       >
                         Inspector
+                      </button>
+                      <button
+                        onClick={() => setDrawerSubTab("profile")}
+                        className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                          drawerSubTab === "profile"
+                            ? "bg-orange-500/20 text-orange-400 border border-orange-500/40"
+                            : "text-gray-400 hover:text-white"
+                        }`}
+                      >
+                        Profile
                       </button>
                       <button
                         onClick={() => setDrawerSubTab("presets")}
@@ -228,7 +267,14 @@ export default function ExplorationDashboard() {
                     )}
 
                     {drawerSubTab === "coords" && (
-                      <CoordinateInspector coords={cursorCoords} />
+                      <CoordinateInspector
+                        coords={inspectedCoords || cursorCoords}
+                        onInspectCoord={setInspectedCoords}
+                      />
+                    )}
+
+                    {drawerSubTab === "profile" && (
+                      <ElevationProfilePanel />
                     )}
 
                     {drawerSubTab === "presets" && (
@@ -248,7 +294,10 @@ export default function ExplorationDashboard() {
                             Open Full Routing Suite ⮞
                           </button>
                         </div>
-                        <CoordinateInspector coords={cursorCoords} />
+                        <CoordinateInspector
+                          coords={inspectedCoords || cursorCoords}
+                          onInspectCoord={setInspectedCoords}
+                        />
                       </div>
                     )}
                   </div>

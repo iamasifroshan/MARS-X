@@ -19,6 +19,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: "dashboard", label: "Console", icon: "🗺️", tooltip: "Exploration Console & Map" },
     { id: "catalogue", label: "Catalogue", icon: "📚", tooltip: "NASA PDS Dataset Catalogue" },
     { id: "terrain", label: "Terrain", icon: "⛰️", tooltip: "Multi-Resolution Terrain Intelligence" },
+    { id: "profile", label: "Profile", icon: "📈", tooltip: "Mars Great-Circle Elevation Profile" },
     { id: "route", label: "Routing", icon: "🥾", tooltip: "Marswalk Pathfinding (A* & Dijkstra)" },
     { id: "mission", label: "Mission", icon: "🧑‍🚀", tooltip: "EVA Traverse Constraints & Logistics" },
     { id: "provenance", label: "Science", icon: "🔬", tooltip: "Planetary CRS & Geodetic Provenance" },

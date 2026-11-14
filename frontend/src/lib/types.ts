@@ -633,3 +633,62 @@ export interface RouteTerrainSourceResponse {
   selection_rationale: string;
   scientific_limitations: string[];
 }
+
+export interface PointElevationDetail {
+  latitude: number;
+  longitude: number;
+  elevation_m: number | null;
+  dataset_id: string;
+  instrument: string;
+  tier: string;
+  native_resolution_m: number;
+  native_resolution_desc: string;
+  display_resolution_m: number | null;
+  crs: string;
+  vertical_reference: string;
+  is_nodata: boolean;
+  is_valid: boolean;
+  query_status: string;
+  status_note: string;
+  source_checksum: string;
+}
+
+export interface ElevationProfilePoint {
+  point_index: number;
+  lat: number;
+  lon: number;
+  distance_m: number;
+  elevation_m: number | null;
+  dataset_id: string;
+  resolution_m: number;
+  is_nodata: boolean;
+}
+
+export interface ElevationProfileResponse {
+  start_lat: number;
+  start_lon: number;
+  end_lat: number;
+  end_lon: number;
+  total_distance_m: number;
+  sampling_interval_m: number;
+  num_samples: number;
+  min_elevation_m: number | null;
+  max_elevation_m: number | null;
+  elevation_gain_m: number;
+  elevation_loss_m: number;
+  datasets_used: string[];
+  nodata_count: number;
+  points: ElevationProfilePoint[];
+}
+
+export interface WindowRenderMetadata {
+  bbox: number[];
+  width: number;
+  height: number;
+  dataset_id: string;
+  source_resolution_m: number;
+  display_resolution_m: number;
+  resampling_method: string;
+  source_checksum: string;
+}
+

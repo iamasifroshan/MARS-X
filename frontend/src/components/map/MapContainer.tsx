@@ -13,6 +13,8 @@ if (typeof window !== "undefined") {
 
 interface MapContainerProps {
   onCoordinateChange?: (coords: { lat: number; lon: number } | null) => void;
+  onCoordinateInspect?: (coords: { lat: number; lon: number }) => void;
+  inspectedCoord?: { lat: number; lon: number } | null;
   selectedCrater?: string | null;
   layers?: MapLayer[];
 }
@@ -197,12 +199,16 @@ function generateAcquiredFootprints(): GeoJSON.FeatureCollection {
 
 export const MapContainer: React.FC<MapContainerProps> = ({
   onCoordinateChange,
+  onCoordinateInspect,
+  inspectedCoord,
   layers,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
+  const inspectorMarkerRef = useRef<Marker | null>(null);
   const [activeSite, setActiveSite] = useState<MarsFeature | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState<boolean>(false);
+  const [currentZoom, setCurrentZoom] = useState<number>(1.5);
   const [activeElevationMode, setActiveElevationMode] = useState<"global" | "ctx">("global");
 
   const flyToSite = useCallback((site: MarsFeature) => {
@@ -238,6 +244,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     const molaTiles = layers.find((l) => l.id === "mola-128-tiles");
     const ctxDtm = layers.find((l) => l.id === "ctx-dtm-p21-009323");
     const graticule = layers.find((l) => l.id === "mars-graticule-grid");
+    const footprints = layers.find((l) => l.id === "dataset-footprints");
 
     if (globalMola) {
       setVisibility("layer-mola-east", globalMola.enabled);
@@ -254,7 +261,44 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     if (graticule) {
       setVisibility("mars-graticule-lines", graticule.enabled);
     }
+    if (footprints) {
+      setVisibility("mars-footprints-fill", footprints.enabled);
+      setVisibility("mars-footprints-border", footprints.enabled);
+    }
   }, [layers, isMapLoaded]);
+
+  // Sync inspection marker reticle
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isMapLoaded) return;
+
+    if (!inspectedCoord) {
+      if (inspectorMarkerRef.current) {
+        inspectorMarkerRef.current.remove();
+        inspectorMarkerRef.current = null;
+      }
+      return;
+    }
+
+    const displayLon = inspectedCoord.lon > 180 ? inspectedCoord.lon - 360 : inspectedCoord.lon;
+
+    if (!inspectorMarkerRef.current) {
+      const el = document.createElement("div");
+      el.className = "inspector-target-reticle pointer-events-none";
+      el.innerHTML = `
+        <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
+          <div class="w-8 h-8 rounded-full border-2 border-emerald-400 animate-ping absolute opacity-75"></div>
+          <div class="w-6 h-6 rounded-full border border-dashed border-emerald-300 animate-spin absolute"></div>
+          <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></div>
+        </div>
+      `;
+      inspectorMarkerRef.current = new Marker({ element: el })
+        .setLngLat([displayLon, inspectedCoord.lat])
+        .addTo(map);
+    } else {
+      inspectorMarkerRef.current.setLngLat([displayLon, inspectedCoord.lat]);
+    }
+  }, [inspectedCoord, isMapLoaded]);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -497,6 +541,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       setIsMapLoaded(true);
     });
 
+    map.on("zoom", () => {
+      setCurrentZoom(map.getZoom());
+    });
+
     map.on("mousemove", (e) => {
       if (onCoordinateChange) {
         const rawLon = e.lngLat.lng;
@@ -514,11 +562,22 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       }
     });
 
+    map.on("click", (e) => {
+      if (onCoordinateInspect) {
+        const rawLon = e.lngLat.lng;
+        const normalizedLon = rawLon < 0 ? rawLon + 360 : rawLon;
+        onCoordinateInspect({
+          lat: Number(e.lngLat.lat.toFixed(5)),
+          lon: Number(normalizedLon.toFixed(5)),
+        });
+      }
+    });
+
     return () => {
       map.remove();
       mapRef.current = null;
     };
-  }, [onCoordinateChange, flyToSite]);
+  }, [onCoordinateChange, onCoordinateInspect, flyToSite]);
 
   return (
     <div className="relative w-full h-full bg-[#06070d] overflow-hidden select-none">
@@ -561,6 +620,38 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           <span>Datum: Mars 2000 Sphere / Areoid</span>
           <span className="text-emerald-400 font-medium">Turbo Hypsometric Shader</span>
         </div>
+      </div>
+
+      {/* Active Resolution Tier HUD */}
+      <div className="absolute top-12 right-14 bg-[#0d0f1c]/95 border border-[#262c45] rounded-lg px-3 py-2 backdrop-blur-md shadow-2xl text-[10px] font-mono pointer-events-auto flex items-center space-x-3">
+        <div className="flex flex-col">
+          <span className="text-[9px] text-gray-400 uppercase tracking-wider font-semibold">Active Resolution Tier</span>
+          <div className="flex items-center space-x-1.5 mt-0.5">
+            {currentZoom >= 7 ? (
+              <span className="px-1.5 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                LOCAL: CTX Stereo DTM (20.0 m/px)
+              </span>
+            ) : currentZoom >= 3 ? (
+              <span className="px-1.5 py-0.5 rounded bg-orange-950/80 border border-orange-500/60 text-orange-300 font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
+                REGIONAL: MOLA 128 (463.1 m/px)
+              </span>
+            ) : (
+              <span className="px-1.5 py-0.5 rounded bg-blue-950/80 border border-blue-500/60 text-blue-300 font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                GLOBAL: MOLA MEGDR 4 ppd (14.8 km/px)
+              </span>
+            )}
+            <span className="text-gray-400 font-mono text-[9px]">z: {currentZoom.toFixed(1)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Click-to-inspect helper */}
+      <div className="absolute bottom-3 left-3 bg-[#0d0f1c]/90 border border-[#232840] rounded px-2.5 py-1 text-[10px] font-mono text-gray-400 pointer-events-none flex items-center gap-1.5 z-10">
+        <span className="text-emerald-400 font-bold">⊕</span>
+        <span>Click anywhere to inspect numerical elevation</span>
       </div>
 
       {/* Elevation Color Ramp Legend */}

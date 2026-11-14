@@ -98,3 +98,66 @@ class SlopeMetricResult(BaseModel):
     nodata_cells: int
     scientific_note: str
 
+
+class PointElevationDetailResult(BaseModel):
+    """Rich single-point elevation query result with full multi-resolution provenance."""
+    latitude: float
+    longitude: float
+    elevation_m: Optional[float] = None
+    dataset_id: str
+    instrument: str
+    tier: str
+    native_resolution_m: float
+    native_resolution_desc: str
+    display_resolution_m: Optional[float] = None
+    crs: str
+    vertical_reference: str
+    is_nodata: bool
+    is_valid: bool
+    query_status: str
+    status_note: str
+    source_checksum: str
+
+
+class ElevationProfilePoint(BaseModel):
+    """Individual sampled point along a great-circle terrain profile."""
+    point_index: int
+    lat: float
+    lon: float
+    distance_m: float
+    elevation_m: Optional[float] = None
+    dataset_id: str
+    resolution_m: float
+    is_nodata: bool
+
+
+class ElevationProfileResult(BaseModel):
+    """Great-circle geodesic elevation profile across Martian terrain."""
+    start_lat: float
+    start_lon: float
+    end_lat: float
+    end_lon: float
+    total_distance_m: float
+    sampling_interval_m: float
+    num_samples: int
+    min_elevation_m: Optional[float] = None
+    max_elevation_m: Optional[float] = None
+    elevation_gain_m: float = 0.0
+    elevation_loss_m: float = 0.0
+    datasets_used: List[str]
+    nodata_count: int
+    points: List[ElevationProfilePoint]
+
+
+class WindowRenderMetadata(BaseModel):
+    """Metadata describing a windowed raster rendering output."""
+    bbox: List[float]
+    width: int
+    height: int
+    dataset_id: str
+    source_resolution_m: float
+    display_resolution_m: float
+    resampling_method: str
+    source_checksum: str
+
+

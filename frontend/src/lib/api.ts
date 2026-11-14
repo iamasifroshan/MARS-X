@@ -25,6 +25,9 @@ import {
   RegionTerrainAssessment,
   RegionComparisonResponse,
   RouteTerrainSourceResponse,
+  PointElevationDetail,
+  ElevationProfileResponse,
+  WindowRenderMetadata,
 } from "./types";
 
 
@@ -530,3 +533,72 @@ export async function fetchRouteTerrainSource(
   }
   return res.json();
 }
+
+export async function fetchPointElevation(lat: number, lon: number): Promise<PointElevationDetail> {
+  const url = new URL(`${API_BASE}/api/v1/terrain/elevation/point`);
+  url.searchParams.set("lat", lat.toString());
+  url.searchParams.set("lon", lon.toString());
+
+  const res = await apiFetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Point elevation query failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchElevationProfile(
+  startLat: number,
+  startLon: number,
+  endLat: number,
+  endLon: number,
+  numSamples: number = 100
+): Promise<ElevationProfileResponse> {
+  const url = new URL(`${API_BASE}/api/v1/terrain/elevation/profile`);
+  url.searchParams.set("start_lat", startLat.toString());
+  url.searchParams.set("start_lon", startLon.toString());
+  url.searchParams.set("end_lat", endLat.toString());
+  url.searchParams.set("end_lon", endLon.toString());
+  url.searchParams.set("num_samples", numSamples.toString());
+
+  const res = await apiFetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Elevation profile query failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchWindowRenderMetadata(
+  minLon: number,
+  minLat: number,
+  maxLon: number,
+  maxLat: number,
+  width: number = 512,
+  height: number = 512
+): Promise<WindowRenderMetadata> {
+  const url = new URL(`${API_BASE}/api/v1/terrain/render/window/metadata`);
+  url.searchParams.set("min_lon", minLon.toString());
+  url.searchParams.set("min_lat", minLat.toString());
+  url.searchParams.set("max_lon", maxLon.toString());
+  url.searchParams.set("max_lat", maxLat.toString());
+  url.searchParams.set("width", width.toString());
+  url.searchParams.set("height", height.toString());
+
+  const res = await apiFetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Window render metadata query failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+

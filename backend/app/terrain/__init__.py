@@ -22,6 +22,10 @@ from app.terrain.models import (
     ElevationPointQuery,
     ElevationPointResult,
     SlopeMetricResult,
+    PointElevationDetailResult,
+    ElevationProfilePoint,
+    ElevationProfileResult,
+    WindowRenderMetadata,
 )
 from app.terrain.crs_validator import (
     validate_and_identify_crs,

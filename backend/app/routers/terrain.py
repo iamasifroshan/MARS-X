@@ -10,8 +10,9 @@ Exposes endpoints for:
 """
 
 import os
+import math
 import numpy as np
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 from fastapi import APIRouter, HTTPException, Query, Path
 
 from app.config import API_V1_PREFIX
@@ -20,6 +21,10 @@ from app.terrain.models import (
     RasterCoverageResponse,
     RasterMetadataResponse,
     ElevationPointQuery,
+    PointElevationDetailResult,
+    ElevationProfilePoint,
+    ElevationProfileResult,
+    WindowRenderMetadata,
 )
 from app.terrain.provenance import (
     list_terrain_datasets,
@@ -642,4 +647,573 @@ async def render_ctx_dtm():
     # CTX elevation range: ~800m to 2520m
     png_bytes = _render_turbo_rgba(elev, nodata_mask, vmin=800.0, vmax=2520.0, alpha_val=245)
     return Response(content=png_bytes, media_type="image/png")
+
+
+# -------------------------------------------------------------
+# PHASE 8.3: MULTI-RESOLUTION POINT INSPECTOR & ELEVATION PROFILE
+# -------------------------------------------------------------
+
+_MEMMAPS_128: Dict[str, np.memmap] = {}
+_WINDOW_CACHE: Dict[str, Tuple[bytes, Dict[str, str]]] = {}
+_MAX_WINDOW_CACHE = 64
+
+
+def _get_mola128_mm(tile_id: str) -> Optional[np.memmap]:
+    """Retrieve or initialize memory map for MOLA 128 ppd tile."""
+    if tile_id in _MEMMAPS_128:
+        return _MEMMAPS_128[tile_id]
+
+    filename_map = {
+        "00n000": "megt00n000hb.img",
+        "44n000": "megt44n000hb.img",
+        "00n090": "megt00n090hb.img",
+    }
+    fname = filename_map.get(tile_id)
+    if not fname:
+        return None
+
+    raw_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "raw", "mola", fname)
+    )
+    if not os.path.exists(raw_path):
+        return None
+
+    mm = np.memmap(raw_path, dtype=">i2", mode="r", shape=(5632, 11520))
+    _MEMMAPS_128[tile_id] = mm
+    return mm
+
+
+def _sample_point_elevation(lat: float, lon: float) -> PointElevationDetailResult:
+    """Sample elevation from highest available resolution covering the given coordinates."""
+    norm_lon = lon % 360.0
+    if norm_lon < 0.0:
+        norm_lon += 360.0
+
+    # 1. Out of physical planetary bounds check
+    if abs(lat) > 90.0:
+        return PointElevationDetailResult(
+            latitude=lat,
+            longitude=lon,
+            elevation_m=None,
+            dataset_id="none",
+            instrument="none",
+            tier="none",
+            native_resolution_m=0.0,
+            native_resolution_desc="N/A",
+            display_resolution_m=None,
+            crs="none",
+            vertical_reference="none",
+            is_nodata=True,
+            is_valid=False,
+            query_status="unsupported_out_of_bounds",
+            status_note=f"Latitude {lat}° exceeds physical planetary bounds [-90.0°, +90.0°].",
+            source_checksum="",
+        )
+
+    # 2. Priority 1: CTX Numerical DTM (20.0128 m/px, IAU:49910)
+    ctx_path = os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "..",
+            "data",
+            "raw",
+            "ctx",
+            "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif",
+        )
+    )
+    if os.path.exists(ctx_path):
+        with rasterio.open(ctx_path) as ctx_src:
+            # Check projected coordinates in IAU:49910 (radius 3,396,190 m)
+            R_IAU = 3396190.0
+            x_ctx = math.radians(norm_lon) * R_IAU
+            y_ctx = math.radians(lat) * R_IAU
+            if (ctx_src.bounds.left <= x_ctx <= ctx_src.bounds.right) and (
+                ctx_src.bounds.bottom <= y_ctx <= ctx_src.bounds.top
+            ):
+                r_ctx, c_ctx = ctx_src.index(x_ctx, y_ctx)
+                if 0 <= r_ctx < ctx_src.height and 0 <= c_ctx < ctx_src.width:
+                    val = float(ctx_src.read(1, window=((r_ctx, r_ctx + 1), (c_ctx, c_ctx + 1)))[0, 0])
+                    is_nodata = (val == ctx_src.nodata) or (val < -30000.0) or not math.isfinite(val)
+                    return PointElevationDetailResult(
+                        latitude=lat,
+                        longitude=norm_lon,
+                        elevation_m=None if is_nodata else round(val, 2),
+                        dataset_id="ctx-dtm-p21-009323",
+                        instrument="CTX (Context Camera)",
+                        tier="local_high_resolution",
+                        native_resolution_m=20.0128,
+                        native_resolution_desc="20.01 m/px stereo numerical DTM",
+                        display_resolution_m=80.05,
+                        crs="IAU:49910 (Equirectangular Mars Sphere, R=3396190 m)",
+                        vertical_reference="MOLA Areoid (ASP pc_align tied)",
+                        is_nodata=is_nodata,
+                        is_valid=not is_nodata,
+                        query_status="nodata_void" if is_nodata else "success_high_resolution_ctx",
+                        status_note=(
+                            "Unmeasured stereo correlation void"
+                            if is_nodata
+                            else "Sampled from authentic USGS 20m numerical CTX DTM."
+                        ),
+                        source_checksum="a4edb9f414500fe44e1a3c2ba06ee39e5c060cf1483619e43f461be29d31aff2",
+                    )
+
+    # 3. Priority 2: Regional MOLA 128 ppd Tile (~463.08 m/px, IAU:49900)
+    tile_info = None
+    if -44.0 <= lat <= 0.0 and 0.0 <= norm_lon <= 90.0:
+        tile_info = (
+            "00n000",
+            "megt00n000hb",
+            -lat * 128.0,
+            norm_lon * 128.0,
+            "f57274b5e459ab35a1975ca5f186f98bdb929475a4557098a7c632b9aa175c75",
+        )
+    elif 0.0 < lat <= 44.0 and 0.0 <= norm_lon <= 90.0:
+        tile_info = (
+            "44n000",
+            "megt44n000hb",
+            (44.0 - lat) * 128.0,
+            norm_lon * 128.0,
+            "14022166079edafc99650f354e5a634e6eb2c2ea544b444c01cd8ee55437df36",
+        )
+    elif -44.0 <= lat <= 0.0 and 90.0 < norm_lon <= 180.0:
+        tile_info = (
+            "00n090",
+            "megt00n090hb",
+            -lat * 128.0,
+            (norm_lon - 90.0) * 128.0,
+            "764946162d4c650abfb22aa284595a15374a7185f302a639c19e6602c67a1d6e",
+        )
+
+    if tile_info:
+        tile_key, tile_id, raw_r, raw_c, tile_sha = tile_info
+        mm = _get_mola128_mm(tile_key)
+        if mm is not None:
+            r = min(max(int(round(raw_r)), 0), 5631)
+            c = min(max(int(round(raw_c)), 0), 11519)
+            val = float(mm[r, c])
+            is_nodata = val == -32768.0
+            return PointElevationDetailResult(
+                latitude=lat,
+                longitude=norm_lon,
+                elevation_m=None if is_nodata else val,
+                dataset_id=f"mola-megdr-128 ({tile_id})",
+                instrument="MOLA (Mars Orbiter Laser Altimeter)",
+                tier="regional_high_resolution",
+                native_resolution_m=463.08,
+                native_resolution_desc="0.0078125°/px (~463.08 m/px at equator)",
+                display_resolution_m=7409.3,
+                crs="IAU:49900 (Simple Cylindrical / Mars Sphere R=3396000 m)",
+                vertical_reference="MOLA Areoid (GMM3 mgm1025 degree 50)",
+                is_nodata=is_nodata,
+                is_valid=not is_nodata,
+                query_status="nodata_void" if is_nodata else "success_regional_mola_128",
+                status_note=(
+                    "Altimetry unmeasured void"
+                    if is_nodata
+                    else f"Sampled from authentic regional MOLA 128 ppd tile {tile_id}."
+                ),
+                source_checksum=tile_sha,
+            )
+
+    # 4. Priority 3: Global MOLA 4 ppd Baseline (~14.8 km/px, IAU:49900)
+    cog_path = os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "..",
+            "data",
+            "processed",
+            "mola",
+            "mola_megt90n000cb_elevation.tif",
+        )
+    )
+    if os.path.exists(cog_path):
+        with rasterio.open(cog_path) as mola4_src:
+            r, c = mola4_src.index(norm_lon, lat)
+            if 0 <= r < mola4_src.height and 0 <= c < mola4_src.width:
+                val = float(mola4_src.read(1, window=((r, r + 1), (c, c + 1)))[0, 0])
+                is_nodata = not math.isfinite(val) or (val == mola4_src.nodata)
+                return PointElevationDetailResult(
+                    latitude=lat,
+                    longitude=norm_lon,
+                    elevation_m=None if is_nodata else round(val, 2),
+                    dataset_id="mola-megdr-4",
+                    instrument="MOLA (Mars Orbiter Laser Altimeter)",
+                    tier="global_baseline",
+                    native_resolution_m=14818.67,
+                    native_resolution_desc="0.25°/px (~14.8 km/px at equator)",
+                    display_resolution_m=14818.67,
+                    crs="IAU:49900 (Equirectangular Mars Sphere R=3396000 m)",
+                    vertical_reference="MOLA Areoid (GMM3 mgm1025 degree 50)",
+                    is_nodata=is_nodata,
+                    is_valid=not is_nodata,
+                    query_status="nodata_void" if is_nodata else "success_global_mola_baseline",
+                    status_note=(
+                        "NoData cell"
+                        if is_nodata
+                        else "Sampled from authentic Global MOLA 4 ppd continuous elevation baseline."
+                    ),
+                    source_checksum="25f16fb7aaf857898dcf98bc4f841341a24f8b9f7e98453ca083bc45d897ca2c",
+                )
+
+    return PointElevationDetailResult(
+        latitude=lat,
+        longitude=norm_lon,
+        elevation_m=None,
+        dataset_id="none",
+        instrument="none",
+        tier="none",
+        native_resolution_m=0.0,
+        native_resolution_desc="N/A",
+        display_resolution_m=None,
+        crs="none",
+        vertical_reference="none",
+        is_nodata=True,
+        is_valid=False,
+        query_status="unsupported_region",
+        status_note="No verified numerical elevation raster covers this coordinate.",
+        source_checksum="",
+    )
+
+
+def _haversine_distance_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculate great-circle spherical distance on Mars (radius 3,396,190 m)."""
+    R = 3396190.0
+    phi1, lam1 = math.radians(lat1), math.radians(lon1)
+    phi2, lam2 = math.radians(lat2), math.radians(lon2)
+    dphi = phi2 - phi1
+    dlam = lam2 - lam1
+    a = math.sin(dphi / 2.0) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlam / 2.0) ** 2
+    sigma = 2.0 * math.atan2(math.sqrt(a), math.sqrt(max(0.0, 1.0 - a)))
+    return R * sigma
+
+
+def _slerp_great_circle(lat1: float, lon1: float, lat2: float, lon2: float, f: float) -> Tuple[float, float]:
+    """Spherical linear interpolation along great-circle arc."""
+    phi1, lam1 = math.radians(lat1), math.radians(lon1)
+    phi2, lam2 = math.radians(lat2), math.radians(lon2)
+    dphi = phi2 - phi1
+    dlam = lam2 - lam1
+    a = math.sin(dphi / 2.0) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlam / 2.0) ** 2
+    sigma = 2.0 * math.atan2(math.sqrt(a), math.sqrt(max(0.0, 1.0 - a)))
+    if sigma < 1e-12:
+        return lat1, lon1 % 360.0
+    A = math.sin((1.0 - f) * sigma) / math.sin(sigma)
+    B = math.sin(f * sigma) / math.sin(sigma)
+    x = A * math.cos(phi1) * math.cos(lam1) + B * math.cos(phi2) * math.cos(lam2)
+    y = A * math.cos(phi1) * math.sin(lam1) + B * math.cos(phi2) * math.sin(lam2)
+    z = A * math.sin(phi1) + B * math.sin(phi2)
+    lat_f = math.degrees(math.atan2(z, math.sqrt(x * x + y * y)))
+    lon_f = math.degrees(math.atan2(y, x)) % 360.0
+    return lat_f, lon_f
+
+
+@router.get("/elevation/point", response_model=PointElevationDetailResult)
+async def get_point_elevation(
+    lat: float = Query(..., ge=-90.0, le=90.0, description="Planetocentric latitude in degrees"),
+    lon: float = Query(..., description="East longitude in degrees (0 to 360 or -180 to 180)"),
+):
+    """Query authentic numerical elevation at a single Martian coordinate across multi-resolution hierarchy."""
+    return _sample_point_elevation(lat, lon)
+
+
+@router.get("/elevation/profile", response_model=ElevationProfileResult)
+async def get_elevation_profile(
+    start_lat: float = Query(..., ge=-90.0, le=90.0),
+    start_lon: float = Query(...),
+    end_lat: float = Query(..., ge=-90.0, le=90.0),
+    end_lon: float = Query(...),
+    num_samples: int = Query(default=100, ge=10, le=500),
+):
+    """Compute great-circle geodesic elevation profile across authentic multi-resolution Martian terrain."""
+    total_dist_m = _haversine_distance_m(start_lat, start_lon, end_lat, end_lon)
+    sampling_interval_m = total_dist_m / max(num_samples - 1, 1)
+
+    points: List[ElevationProfilePoint] = []
+    datasets_used_set = set()
+    nodata_count = 0
+    valid_elevations: List[float] = []
+    elevation_gain_m = 0.0
+    elevation_loss_m = 0.0
+    prev_elev: Optional[float] = None
+
+    for i in range(num_samples):
+        frac = i / float(num_samples - 1) if num_samples > 1 else 0.0
+        lat_i, lon_i = _slerp_great_circle(start_lat, start_lon, end_lat, end_lon, frac)
+        dist_i = frac * total_dist_m
+
+        pt_res = _sample_point_elevation(lat_i, lon_i)
+        datasets_used_set.add(pt_res.dataset_id)
+
+        if pt_res.is_nodata or pt_res.elevation_m is None:
+            nodata_count += 1
+            elev = None
+        else:
+            elev = pt_res.elevation_m
+            valid_elevations.append(elev)
+            if prev_elev is not None:
+                diff = elev - prev_elev
+                if diff > 0:
+                    elevation_gain_m += diff
+                else:
+                    elevation_loss_m += abs(diff)
+            prev_elev = elev
+
+        points.append(
+            ElevationProfilePoint(
+                point_index=i,
+                lat=round(lat_i, 5),
+                lon=round(lon_i, 5),
+                distance_m=round(dist_i, 1),
+                elevation_m=elev,
+                dataset_id=pt_res.dataset_id,
+                resolution_m=pt_res.native_resolution_m,
+                is_nodata=pt_res.is_nodata,
+            )
+        )
+
+    return ElevationProfileResult(
+        start_lat=start_lat,
+        start_lon=start_lon % 360.0,
+        end_lat=end_lat,
+        end_lon=end_lon % 360.0,
+        total_distance_m=round(total_dist_m, 2),
+        sampling_interval_m=round(sampling_interval_m, 2),
+        num_samples=num_samples,
+        min_elevation_m=min(valid_elevations) if valid_elevations else None,
+        max_elevation_m=max(valid_elevations) if valid_elevations else None,
+        elevation_gain_m=round(elevation_gain_m, 2),
+        elevation_loss_m=round(elevation_loss_m, 2),
+        datasets_used=sorted(list(datasets_used_set)),
+        nodata_count=nodata_count,
+        points=points,
+    )
+
+
+@router.get("/render/window")
+async def render_terrain_window(
+    min_lon: float = Query(...),
+    min_lat: float = Query(...),
+    max_lon: float = Query(...),
+    max_lat: float = Query(...),
+    width: int = Query(default=512, ge=64, le=1024),
+    height: int = Query(default=512, ge=64, le=1024),
+    preferred_tier: str = Query(default="auto"),
+):
+    """Progressive windowed raster rendering endpoint supporting dynamic viewport queries with custom headers."""
+    # Check cache
+    cache_key = f"{min_lon:.4f}_{min_lat:.4f}_{max_lon:.4f}_{max_lat:.4f}_{width}_{height}_{preferred_tier}"
+    if cache_key in _WINDOW_CACHE:
+        png_bytes, headers = _WINDOW_CACHE[cache_key]
+        cached_headers = dict(headers)
+        cached_headers["X-Cache-Status"] = "HIT"
+        return Response(content=png_bytes, media_type="image/png", headers=cached_headers)
+
+    # Normalize bounds
+    lon_min_norm = min_lon % 360.0
+    lon_max_norm = max_lon % 360.0
+    if lon_max_norm < lon_min_norm:
+        lon_max_norm += 360.0
+
+    # 1. Check if window intersects CTX DTM
+    ctx_path = os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "..",
+            "data",
+            "raw",
+            "ctx",
+            "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif",
+        )
+    )
+    # CTX extent: Lat [-5.19, -4.01], Lon [66.03, 66.60]
+    has_ctx_overlap = (
+        not (max_lat < -5.19 or min_lat > -4.01 or lon_max_norm < 66.03 or lon_min_norm > 66.61)
+        and (max_lat - min_lat <= 2.5)
+    )
+
+    if has_ctx_overlap and preferred_tier in ["auto", "ctx"] and os.path.exists(ctx_path):
+        with rasterio.open(ctx_path) as ctx_src:
+            R_IAU = 3396190.0
+            x_min = math.radians(lon_min_norm) * R_IAU
+            x_max = math.radians(lon_max_norm) * R_IAU
+            y_min = math.radians(min_lat) * R_IAU
+            y_max = math.radians(max_lat) * R_IAU
+
+            from rasterio.windows import from_bounds
+
+            win = from_bounds(x_min, y_min, x_max, y_max, ctx_src.transform)
+            arr = ctx_src.read(
+                1,
+                window=win,
+                out_shape=(height, width),
+                resampling=Resampling.bilinear,
+                boundless=True,
+                fill_value=-32767.0,
+            )
+
+            nodata_mask = (arr == -32767.0) | (arr < -30000.0) | ~np.isfinite(arr)
+            png_bytes = _render_turbo_rgba(arr, nodata_mask, vmin=800.0, vmax=2520.0, alpha_val=245)
+
+            disp_res = (x_max - x_min) / float(width)
+            headers = {
+                "X-Source-Dataset": "ctx-dtm-p21-009323",
+                "X-Source-Resolution": "20.0128 m/px",
+                "X-Display-Resolution": f"{disp_res:.2f} m/px",
+                "X-Resampling-Method": "bilinear",
+                "X-Source-Checksum": "a4edb9f414500fe44e1a3c2ba06ee39e5c060cf1483619e43f461be29d31aff2",
+                "X-Geographic-Bounds": f"[{min_lon:.4f}, {min_lat:.4f}, {max_lon:.4f}, {max_lat:.4f}]",
+                "X-Cache-Status": "MISS",
+            }
+            if len(_WINDOW_CACHE) < _MAX_WINDOW_CACHE:
+                _WINDOW_CACHE[cache_key] = (png_bytes, headers)
+            return Response(content=png_bytes, media_type="image/png", headers=headers)
+
+    # 2. Check if window intersects MOLA 128 Tile 00n000
+    if not (
+        max_lat < -44.0 or min_lat > 0.0 or lon_max_norm < 0.0 or lon_min_norm > 90.0
+    ) and preferred_tier in ["auto", "mola_128"]:
+        mm = _get_mola128_mm("00n000")
+        if mm is not None:
+            clamped_min_lat = max(min_lat, -44.0)
+            clamped_max_lat = min(max_lat, 0.0)
+            clamped_min_lon = max(lon_min_norm, 0.0)
+            clamped_max_lon = min(lon_max_norm, 90.0)
+
+            r_start = min(max(int(round(-clamped_max_lat * 128.0)), 0), 5631)
+            r_end = min(max(int(round(-clamped_min_lat * 128.0)), 0), 5632)
+            c_start = min(max(int(round(clamped_min_lon * 128.0)), 0), 11519)
+            c_end = min(max(int(round(clamped_max_lon * 128.0)), 0), 11520)
+
+            if r_end > r_start and c_end > c_start:
+                sub = mm[r_start:r_end, c_start:c_end]
+                r_idx = np.linspace(0, sub.shape[0] - 1, height).astype(np.intp)
+                c_idx = np.linspace(0, sub.shape[1] - 1, width).astype(np.intp)
+                arr = sub[np.ix_(r_idx, c_idx)].astype(np.float32)
+
+                nodata_mask = arr == -32768.0
+                png_bytes = _render_turbo_rgba(arr, nodata_mask, vmin=-6000.0, vmax=4000.0, alpha_val=240)
+
+                disp_res = ((lon_max_norm - lon_min_norm) * (3396190.0 * math.pi / 180.0)) / float(width)
+                headers = {
+                    "X-Source-Dataset": "mola-megdr-128",
+                    "X-Source-Resolution": "463.08 m/px",
+                    "X-Display-Resolution": f"{disp_res:.2f} m/px",
+                    "X-Resampling-Method": "stride_subsample",
+                    "X-Source-Checksum": "f57274b5e459ab35a1975ca5f186f98bdb929475a4557098a7c632b9aa175c75",
+                    "X-Geographic-Bounds": f"[{min_lon:.4f}, {min_lat:.4f}, {max_lon:.4f}, {max_lat:.4f}]",
+                    "X-Cache-Status": "MISS",
+                }
+                if len(_WINDOW_CACHE) < _MAX_WINDOW_CACHE:
+                    _WINDOW_CACHE[cache_key] = (png_bytes, headers)
+                return Response(content=png_bytes, media_type="image/png", headers=headers)
+
+    # 3. Fallback: Global MOLA 4 ppd windowed read
+    cog_path = os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "..",
+            "data",
+            "processed",
+            "mola",
+            "mola_megt90n000cb_elevation.tif",
+        )
+    )
+    with rasterio.open(cog_path) as mola4_src:
+        from rasterio.windows import from_bounds
+
+        win = from_bounds(lon_min_norm, min_lat, lon_max_norm, max_lat, mola4_src.transform)
+        arr = mola4_src.read(
+            1,
+            window=win,
+            out_shape=(height, width),
+            resampling=Resampling.bilinear,
+            boundless=True,
+            fill_value=mola4_src.nodata,
+        )
+        nodata_mask = (arr == mola4_src.nodata) | ~np.isfinite(arr)
+        png_bytes = _render_turbo_rgba(arr, nodata_mask, vmin=-8200.0, vmax=21200.0, alpha_val=230)
+
+        disp_res = ((lon_max_norm - lon_min_norm) * (3396190.0 * math.pi / 180.0)) / float(width)
+        headers = {
+            "X-Source-Dataset": "mola-megdr-4",
+            "X-Source-Resolution": "14818.67 m/px",
+            "X-Display-Resolution": f"{disp_res:.2f} m/px",
+            "X-Resampling-Method": "bilinear",
+            "X-Source-Checksum": "25f16fb7aaf857898dcf98bc4f841341a24f8b9f7e98453ca083bc45d897ca2c",
+            "X-Geographic-Bounds": f"[{min_lon:.4f}, {min_lat:.4f}, {max_lon:.4f}, {max_lat:.4f}]",
+            "X-Cache-Status": "MISS",
+        }
+        if len(_WINDOW_CACHE) < _MAX_WINDOW_CACHE:
+            _WINDOW_CACHE[cache_key] = (png_bytes, headers)
+        return Response(content=png_bytes, media_type="image/png", headers=headers)
+
+
+@router.get("/render/window/metadata", response_model=WindowRenderMetadata)
+async def get_window_render_metadata(
+    min_lon: float = Query(...),
+    min_lat: float = Query(...),
+    max_lon: float = Query(...),
+    max_lat: float = Query(...),
+    width: int = Query(default=512),
+    height: int = Query(default=512),
+):
+    """Retrieve metadata for a requested raster window."""
+    lon_min_norm = min_lon % 360.0
+    lon_max_norm = max_lon % 360.0
+    if lon_max_norm < lon_min_norm:
+        lon_max_norm += 360.0
+
+    has_ctx_overlap = (
+        not (max_lat < -5.19 or min_lat > -4.01 or lon_max_norm < 66.03 or lon_min_norm > 66.61)
+        and (max_lat - min_lat <= 2.5)
+    )
+
+    if has_ctx_overlap:
+        R_IAU = 3396190.0
+        x_min = math.radians(lon_min_norm) * R_IAU
+        x_max = math.radians(lon_max_norm) * R_IAU
+        disp_res = (x_max - x_min) / float(width)
+        return WindowRenderMetadata(
+            bbox=[min_lon, min_lat, max_lon, max_lat],
+            width=width,
+            height=height,
+            dataset_id="ctx-dtm-p21-009323",
+            source_resolution_m=20.0128,
+            display_resolution_m=round(disp_res, 2),
+            resampling_method="bilinear",
+            source_checksum="a4edb9f414500fe44e1a3c2ba06ee39e5c060cf1483619e43f461be29d31aff2",
+        )
+    elif not (max_lat < -44.0 or min_lat > 0.0 or lon_max_norm < 0.0 or lon_min_norm > 90.0):
+        disp_res = ((lon_max_norm - lon_min_norm) * (3396190.0 * math.pi / 180.0)) / float(width)
+        return WindowRenderMetadata(
+            bbox=[min_lon, min_lat, max_lon, max_lat],
+            width=width,
+            height=height,
+            dataset_id="mola-megdr-128",
+            source_resolution_m=463.08,
+            display_resolution_m=round(disp_res, 2),
+            resampling_method="stride_subsample",
+            source_checksum="f57274b5e459ab35a1975ca5f186f98bdb929475a4557098a7c632b9aa175c75",
+        )
+    else:
+        disp_res = ((lon_max_norm - lon_min_norm) * (3396190.0 * math.pi / 180.0)) / float(width)
+        return WindowRenderMetadata(
+            bbox=[min_lon, min_lat, max_lon, max_lat],
+            width=width,
+            height=height,
+            dataset_id="mola-megdr-4",
+            source_resolution_m=14818.67,
+            display_resolution_m=round(disp_res, 2),
+            resampling_method="bilinear",
+            source_checksum="25f16fb7aaf857898dcf98bc4f841341a24f8b9f7e98453ca083bc45d897ca2c",
+        )
+
 
