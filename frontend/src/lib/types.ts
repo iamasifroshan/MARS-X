@@ -822,4 +822,98 @@ export interface ScienceComparisonResponse {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Phase 8.8.1: Terrain Traversability Foundation
+// ---------------------------------------------------------------------------
+
+export type SlopeCategory = "low" | "moderate" | "high" | "very_high" | "unknown";
+
+export interface TraversabilityMetadata {
+  description: string;
+  slope_algorithm: string;
+  slope_units: string;
+  slope_thresholds_deg: Record<string, [number, number]>;
+  slope_disclaimer: string;
+  vertical_datum_policy: string;
+  source_selection_policy: string[];
+  anti_upsampling_guarantee: string;
+  nodata_policy: string;
+  terrain_sources: Array<{
+    source_id: string;
+    instrument: string;
+    mission: string;
+    tier: string;
+    pixel_spacing_m: number;
+    pixel_spacing_desc: string;
+    crs: string;
+    vertical_datum: string;
+    vertical_datum_type: string;
+    product_id: string;
+    coverage_note: string;
+    elevation_file_available: boolean;
+    slope_file_available: boolean;
+  }>;
+}
+
+export interface TraversabilityPointResult {
+  latitude: number;
+  longitude: number;
+  elevation_m: number | null;
+  slope_deg: number | null;
+  slope_pct: number | null;
+  slope_category: SlopeCategory;
+  source_id: string;
+  instrument: string;
+  native_pixel_spacing_m: number;
+  native_pixel_spacing_desc: string;
+  vertical_datum: string;
+  vertical_datum_type: string;
+  is_elevation_nodata: boolean;
+  is_slope_nodata: boolean;
+  source_selection_reason: string;
+  fallback_chain: string[];
+  slope_disclaimer: string;
+  slope_thresholds_deg: Record<string, [number, number]>;
+}
+
+export interface TraversabilityWindowResult {
+  bbox: number[];
+  width_px: number;
+  height_px: number;
+  source_id: string;
+  native_pixel_spacing_m: number;
+  display_pixel_spacing_m: number;
+  sampling_regime: string;
+  slope_values: Array<Array<number | null>>;
+  slope_categories: Array<Array<string>>;
+  nodata_fraction: number;
+  coverage_within_bbox_fraction: number;
+  slope_disclaimer: string;
+}
+
+export interface TraversabilityCoverageEntry {
+  source_id: string;
+  instrument: string;
+  tier: string;
+  pixel_spacing_m: number;
+  pixel_spacing_desc: string;
+  lat_min: number;
+  lat_max: number;
+  lon_min: number;
+  lon_max: number;
+  elevation_file_available: boolean;
+  slope_file_available: boolean;
+  coverage_note: string;
+  vertical_datum: string;
+}
+
+export interface TraversabilityLegendEntry {
+  category: string;
+  label: string;
+  slope_range_deg: string;
+  color_hex: string;
+  description: string;
+}
+
+
 

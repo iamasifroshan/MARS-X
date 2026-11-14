@@ -15,6 +15,7 @@ from app.routers import geology as geology_router
 from app.routers import thermal as thermal_router
 from app.routers import themis as themis_router
 from app.routers import discovery as discovery_router
+from app.routers import traversability as traversability_router
 
 
 # ── Logging ────────────────────────────────────────────────────────────────
@@ -56,6 +57,7 @@ app.include_router(geology_router.router)
 app.include_router(thermal_router.router)
 app.include_router(themis_router.router)
 app.include_router(discovery_router.router)
+app.include_router(traversability_router.router)
 
 
 

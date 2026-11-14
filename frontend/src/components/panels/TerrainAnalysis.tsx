@@ -23,6 +23,7 @@ import {
 } from "@/lib/types";
 import { MultiResolutionTerrain } from "./MultiResolutionTerrain";
 import { TerrainIntelligencePanel } from "./TerrainIntelligencePanel";
+import { TraversabilityPanel } from "./TraversabilityPanel";
 
 
 interface TerrainAnalysisProps {
@@ -39,7 +40,7 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
   const [hazards, setHazards] = useState<TerrainHazardPointMetrics | null>(null);
   const [hazardMeta, setHazardMeta] = useState<HazardEngineMetadata | null>(null);
   
-  const [selectedTab, setSelectedTab] = useState<"intelligence" | "multires" | "hazards" | "validation" | "inventory" | "compatibility" | "layers">("intelligence");
+  const [selectedTab, setSelectedTab] = useState<"traversability" | "intelligence" | "multires" | "hazards" | "validation" | "inventory" | "compatibility" | "layers">("traversability");
 
   const [compatPair, setCompatPair] = useState<{ a: string; b: string }>({
     a: "mola-megdr-4",
@@ -110,6 +111,14 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
         {/* Tab Switcher */}
         <div className="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-lg border border-slate-800 text-xs font-mono overflow-x-auto">
           <button
+            onClick={() => setSelectedTab("traversability")}
+            className={`px-2.5 py-1 rounded transition-colors whitespace-nowrap ${
+              selectedTab === "traversability" ? "bg-orange-600 text-white font-bold shadow-md" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            Traversability (P8.8.1)
+          </button>
+          <button
             onClick={() => setSelectedTab("intelligence")}
             className={`px-2.5 py-1 rounded transition-colors whitespace-nowrap ${
               selectedTab === "intelligence" ? "bg-orange-950/80 text-orange-400 border border-orange-500/60 font-bold" : "text-slate-400 hover:text-white"
@@ -179,6 +188,11 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
         <div className="p-3 bg-red-950/40 border border-red-800/60 rounded text-xs text-red-300">
           {error}
         </div>
+      )}
+
+      {/* 0. TRAVERSABILITY FOUNDATION (PHASE 8.8.1) */}
+      {selectedTab === "traversability" && (
+        <TraversabilityPanel currentCoordinates={currentCoordinates} />
       )}
 
       {/* 0. RESOLUTION-AWARE TERRAIN INTELLIGENCE (PHASE 8) */}

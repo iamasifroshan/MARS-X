@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { fetchPointElevation, fetchGeologyPoint, fetchThermalPoint } from "../../lib/api";
-import { PointElevationDetail } from "../../lib/types";
+import { fetchPointElevation, fetchGeologyPoint, fetchThermalPoint, fetchTraversabilityPoint } from "../../lib/api";
+import { PointElevationDetail, TraversabilityPointResult } from "../../lib/types";
 
 interface CoordinateInspectorProps {
   coords: { lat: number; lon: number } | null;
@@ -21,6 +21,7 @@ export const CoordinateInspector: React.FC<CoordinateInspectorProps> = ({
   const [pointData, setPointData] = useState<PointElevationDetail | null>(null);
   const [geologyData, setGeologyData] = useState<any | null>(null);
   const [thermalData, setThermalData] = useState<any | null>(null);
+  const [traversabilityData, setTraversabilityData] = useState<TraversabilityPointResult | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,14 +29,16 @@ export const CoordinateInspector: React.FC<CoordinateInspectorProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const [elev, geo, therm] = await Promise.allSettled([
+      const [elev, geo, therm, trav] = await Promise.allSettled([
         fetchPointElevation(lat, lon),
         fetchGeologyPoint(lat, lon),
         fetchThermalPoint(lat, lon, "dayside"),
+        fetchTraversabilityPoint(lat, lon),
       ]);
       if (elev.status === "fulfilled") setPointData(elev.value);
       if (geo.status === "fulfilled") setGeologyData(geo.value);
       if (therm.status === "fulfilled") setThermalData(therm.value);
+      if (trav.status === "fulfilled") setTraversabilityData(trav.value);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Elevation query failed");
       setPointData(null);
@@ -247,6 +250,41 @@ export const CoordinateInspector: React.FC<CoordinateInspectorProps> = ({
           </div>
           <div className="text-[8px] text-cyan-300/80 bg-cyan-950/30 p-1.5 rounded border border-cyan-900/30 leading-snug">
             ⚠️ <span className="font-bold">Not Temperature:</span> Represents regolith thermal resistance (J m⁻² K⁻¹ s⁻¹/²). High values = bedrock/lag; low values = fine dust. Unvalidated proxy estimate.
+          </div>
+        </div>
+      )}
+
+      {/* Phase 8.8.1 Terrain Traversability & Slope Classification */}
+      {traversabilityData && (
+        <div className="bg-[#0c0e1a] p-2.5 rounded-lg border border-[#1b2034] text-[10px] space-y-1.5">
+          <div className="flex items-center justify-between border-b border-[#181d30] pb-1">
+            <span className="font-bold text-orange-400 uppercase tracking-wider text-[10px]">
+              Terrain Slope (Phase 8.8.1)
+            </span>
+            {traversabilityData.slope_category && (
+              <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase border ${
+                traversabilityData.slope_category === "low" ? "bg-emerald-950/60 text-emerald-300 border-emerald-800/40" :
+                traversabilityData.slope_category === "moderate" ? "bg-amber-950/60 text-amber-300 border-amber-800/40" :
+                traversabilityData.slope_category === "high" ? "bg-orange-950/60 text-orange-300 border-orange-800/40" :
+                traversabilityData.slope_category === "very_high" ? "bg-purple-950/60 text-purple-300 border-purple-800/40" :
+                "bg-slate-900 text-slate-400 border-slate-700"
+              }`}>
+                {traversabilityData.slope_category.replace("_", " ")}
+              </span>
+            )}
+          </div>
+          <div className="flex justify-between items-center text-gray-200 text-[10px]">
+            <span>Calculated Slope:</span>
+            <span className="font-bold text-white">
+              {traversabilityData.slope_deg !== null ? `${traversabilityData.slope_deg.toFixed(2)}° (${traversabilityData.slope_pct?.toFixed(1)}% grade)` : "NoData Void"}
+            </span>
+          </div>
+          <div className="flex justify-between text-[9px] text-gray-400 border-t border-[#181d30] pt-1">
+            <span>Source: <span className="text-orange-300">{traversabilityData.source_id}</span></span>
+            <span>Resolution: <span className="text-emerald-300">{traversabilityData.native_pixel_spacing_desc}</span></span>
+          </div>
+          <div className="text-[8px] text-amber-300/80 bg-amber-950/20 p-1 rounded border border-amber-900/30 leading-snug">
+            ⚠️ <span className="font-bold">Analytical Only:</span> Slope bands are orbital DEM derivatives and do NOT establish astronaut safety or EVA mobility.
           </div>
         </div>
       )}

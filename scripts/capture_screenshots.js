@@ -21,11 +21,9 @@ async function capture() {
     // 1. Capture Science Explorer Panel
     console.log("Navigating to Science Discovery panel...");
     await page.goto("http://localhost:3005/?tab=discovery", {
-      waitUntil: "networkidle2",
+      waitUntil: "domcontentloaded",
       timeout: 30000,
     });
-    // Wait for candidate discoveries to load
-    await page.waitForSelector("h1", { timeout: 10000 });
     await new Promise((r) => setTimeout(r, 3000));
 
     const path1 = path.resolve(__dirname, "../docs/research/screenshots/08_science_explorer_panel.png");
@@ -35,15 +33,26 @@ async function capture() {
     // 2. Capture Discovery Map Markers and Docked Drawer
     console.log("Navigating to Map with Discovery Drawer...");
     await page.goto("http://localhost:3005/?tab=dashboard&drawer=discovery", {
-      waitUntil: "networkidle2",
+      waitUntil: "domcontentloaded",
       timeout: 30000,
     });
-    // Wait for map canvas and drawer
     await new Promise((r) => setTimeout(r, 4000));
 
     const path2 = path.resolve(__dirname, "../docs/research/screenshots/09_discovery_map_markers.png");
     await page.screenshot({ path: path2, fullPage: false });
     console.log(`Saved screenshot 2 to: ${path2}`);
+
+    // 3. Capture Traversability Panel
+    console.log("Navigating to Terrain Traversability panel...");
+    await page.goto("http://localhost:3005/?tab=terrain", {
+      waitUntil: "domcontentloaded",
+      timeout: 30000,
+    });
+    await new Promise((r) => setTimeout(r, 4000));
+
+    const path3 = path.resolve(__dirname, "../docs/research/screenshots/10_terrain_traversability_panel.png");
+    await page.screenshot({ path: path3, fullPage: false });
+    console.log(`Saved screenshot 3 to: ${path3}`);
 
     console.log("All screenshots captured successfully!");
   } finally {

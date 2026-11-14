@@ -32,6 +32,11 @@ import {
   ScienceDiscovery,
   ScienceProfile,
   ScienceComparisonResponse,
+  TraversabilityMetadata,
+  TraversabilityPointResult,
+  TraversabilityWindowResult,
+  TraversabilityCoverageEntry,
+  TraversabilityLegendEntry,
 } from "./types";
 
 
@@ -838,6 +843,73 @@ export async function compareScienceLocations(
   }
   return res.json();
 }
+
+// ---------------------------------------------------------------------------
+// Phase 8.8.1: Terrain Traversability Foundation API
+// ---------------------------------------------------------------------------
+
+export async function fetchTraversabilityMetadata(): Promise<TraversabilityMetadata> {
+  const res = await apiFetch(`${API_BASE}/api/v1/traversability/metadata`);
+  if (!res.ok) {
+    throw new Error(`Traversability metadata fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchTraversabilityPoint(
+  lat: number,
+  lon: number
+): Promise<TraversabilityPointResult> {
+  const url = new URL(`${API_BASE}/api/v1/traversability/point`);
+  url.searchParams.set("lat", lat.toString());
+  url.searchParams.set("lon", lon.toString());
+
+  const res = await apiFetch(url.toString());
+  if (!res.ok) {
+    throw new Error(`Traversability point query failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchTraversabilityWindow(
+  minLat: number,
+  maxLat: number,
+  minLon: number,
+  maxLon: number,
+  width: number = 64,
+  height: number = 32
+): Promise<TraversabilityWindowResult> {
+  const url = new URL(`${API_BASE}/api/v1/traversability/window`);
+  url.searchParams.set("min_lat", minLat.toString());
+  url.searchParams.set("max_lat", maxLat.toString());
+  url.searchParams.set("min_lon", minLon.toString());
+  url.searchParams.set("max_lon", maxLon.toString());
+  url.searchParams.set("width", width.toString());
+  url.searchParams.set("height", height.toString());
+
+  const res = await apiFetch(url.toString());
+  if (!res.ok) {
+    throw new Error(`Traversability window query failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchTraversabilityCoverage(): Promise<TraversabilityCoverageEntry[]> {
+  const res = await apiFetch(`${API_BASE}/api/v1/traversability/coverage`);
+  if (!res.ok) {
+    throw new Error(`Traversability coverage fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchTraversabilityLegend(): Promise<TraversabilityLegendEntry[]> {
+  const res = await apiFetch(`${API_BASE}/api/v1/traversability/legend`);
+  if (!res.ok) {
+    throw new Error(`Traversability legend fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
 
 
 
