@@ -32,44 +32,44 @@ Phase 8.5.1 establishes rigorous, independent verification of the authentic scie
 
 Every physical scientific file present in the repository was inspected directly on disk. File sizes and SHA-256 cryptographic hashes were recalculated from disk bytes and verified against `data/manifests/acquisition_inventory.csv` and `data/manifests/checksums.sha256`.
 
-### Table 2.1: Physical Asset Audit (34 Verified Files)
+### Table 2.1: Physical Asset Audit (34 Verified Files in acquisition_inventory.csv)
 
-| # | Local Path | Size (Bytes) | Recalculated SHA-256 | Official Archive Source | Production Status |
+| # | Local Path | Size (Bytes) | Recalculated SHA-256 | Discipline / Instrument | Production Status |
 |---|---|---:|---|---|---|
-| 1 | `data/originals/geology/sim3292_database.zip` | 808,910,442 | `ef75f059b1f2f5a47aff55e6c6e39500cf1ab65e743fabc5d463b97bc10b6541` | USGS Pubs SIM 3292 | `downloaded_verified` |
-| 2 | `data/originals/geology/sim3292_pamphlet.pdf` | 13,858,358 | `b78fdfe590f65355e1be871788c75d4001c29657788da294c7b39a489569720b` | USGS Pubs SIM 3292 | `downloaded_verified` |
-| 3 | `data/originals/geology/sim3292_metadata.xml` | 129,541 | `473133ff03d0aa21021bc82f34f7130a4421b0dc372f87c936df76eb655513d7` | USGS Pubs SIM 3292 | `downloaded_verified` |
-| 4 | `data/originals/themis/thm_dir_N-30_000.png` | 38,612,248 | `0f80f5cd8a4bdc59d7f9f3b9d1c566bd8f9437cccff68c873d1394b1aa19d7af` | ASU THEMIS Archive | `downloaded_verified` |
-| 5 | `data/originals/themis/themis_nightir_N-30_000.png` | 33,391,327 | `dfa98e82a9386d38e0788ee5c898c8c7f96bc8e617d917ce5cb89ceb9b18fc6f` | ASU THEMIS Archive | `downloaded_verified` |
-| 6 | `data/originals/themis/DBmap2007.tif` | 5,618,349 | `f1295b9d29dd54ddfc8b31a8fc378d30e32f78ea2054ff56801905342a3cfef9` | USGS Astrogeology | `downloaded_verified` |
-| 7 | `data/originals/themis/NBmap2007.tif` | 5,618,349 | `011a68735df7a1cfec830cb8dd177399583db6aa1767098e9fc781b0f5b128cb` | USGS Astrogeology | `downloaded_verified` |
-| 8 | `data/originals/themis/themis_color_legend.png` | 27,249 | `a5fce4dd047c8f7fb0434db026402ecf048d88e00194451fc70dbcfc97808726` | ASU THEMIS Archive | `downloaded_verified` |
-| 9 | `data/originals/hrsc/h0018_0000_dt4.img` | 86,686,886 | `ea9b9776f827918d09f7a731efc1bfca40683a45c6114eb16e6d445cb75ff131` | ESA PSA / DLR | `downloaded_validation_pending` |
-| 10 | `data/originals/ctx/J03_028442_1753_XN_04S293W_MarsX_Tyrrhena_geodiff_residuals.csv` | 1,225,581 | `abf099043e7424614a84fdff15206c0ec18ae7ea57aa17ca728e20aa0c242a08` | MARS-X Geodiff | `downloaded_verified` |
-| 11 | `data/originals/ctx/J03_028442_1753_XN_04S293W_MarsX_Tyrrhena_provenance.json` | 1,847 | `510c4d284a1a7c36aebfe80bf9d249f074d2846fdb75ba9d4c7b8e19e7a2b97d` | MARS-X Provenance | `downloaded_verified` |
-| 12 | `data/originals/ctx/J03_028442_1753_XN_04S293W_MarsX_Tyrrhena_Equi.tif` | 100,536,290 | `5ca14798e29a99f1fa02b9e6fa9a9c97b8ec5a1093113dd8b2098670a4a82b98` | USGS Astrogeology / ODE | `downloaded_verified` |
-| 13 | `data/originals/hirise/ESP_037131_1755_RED_MarsX_Jezero_Equi_provenance.json` | 1,811 | `6b97397b91d2db44d3d81d2eb3e46c7fc6332ec693bb5bfdf3ce82df43ca86e0` | MARS-X Provenance | `downloaded_verified` |
-| 14 | `data/originals/hirise/DTEEC_037131_1755_037843_1755_U01.IMG.lbl` | 16,846 | `935c1ba16d9fcb306b5a3713532c54cae4b10b00c3b9b4661ea77699994c9247` | PDS Geosciences Node | `downloaded_verified` |
-| 15 | `data/originals/hirise/ESP_037131_1755_RED.LBL` | 15,316 | `15e57ee90a42691e8ea7970d235cfd37e2ca488424a737f174786fc4c32aeafb` | PDS Geosciences Node | `downloaded_verified` |
-| 16 | `data/originals/crism/frt000027b2_01_if156l_trr3.img` | 276,480,000 | `313d33930ee77be71f114c0049405d6cb46e85aa3e35a146eefaa6a43f55099f` | PDS Geosciences Node | `downloaded_validation_pending` |
-| 17 | `data/originals/crism/frt000027b2_01_if156l_trr3.lbl` | 15,229 | `a5f4bb5b67e21a2245b7367c300845a7593d623fcb51be47bf84175b11eb1ef2` | PDS Geosciences Node | `downloaded_validation_pending` |
-| 18 | `data/originals/crism/frt000027b2_01_su156l_trr3.img` | 2,764,800 | `ef8b1a82da6dff6d3187c385bb3c613093b163e8df3114cfb5c00e57207604f5` | PDS Geosciences Node | `downloaded_validation_pending` |
-| 19 | `data/originals/crism/frt000027b2_01_su156l_trr3.lbl` | 12,084 | `c21748805f153a7dc93f0b0c2a2202611e9f059cb210926dc97b7cb1723e20e1` | PDS Geosciences Node | `downloaded_validation_pending` |
-| 20 | `data/originals/crism/frt000027b2_01_if156s_trr3.lbl` | 15,200 | `6fbcf4a4073fb114eeb5b018b3cb3d8b139580b5cf848602b9ff9b86ee943c70` | PDS Geosciences Node | `downloaded_validation_pending` |
-| 21 | `data/originals/meda/WE__0001___________SEN_N__01.CSV` | 37,213 | `21b38e078ba15174094feec81ba74b4ce63b404d7010a30704d2e7d7a71dc12e` | PDS Atmospheres Node | `downloaded_verified` |
-| 22 | `data/originals/meda/WE__0001___________SEN_N__01.xml` | 15,701 | `6ba1cc6b6bc779b5c37eb6441bf7eaec7be01bc03e2bf598fcb4c8035fb14c35` | PDS Atmospheres Node | `downloaded_verified` |
-| 23 | `data/originals/rems/RME_400262489EDR_F0010000REMS_M1.TAB` | 120,400 | `ba3aeaebe5fae1ea571b7f0356bf240fb68e99120610fdfd91f42d2a45da4c56` | PDS Atmospheres Node | `downloaded_verified` |
-| 24 | `data/originals/rems/RME_400262489EDR_F0010000REMS_M1.xml` | 27,272 | `60a4f5f543e49be28ca8d9600aee62310f8457d9760778c187be8d1fc4220ec2` | PDS Atmospheres Node | `downloaded_verified` |
-| 25 | `data/visualization/nasa_3d/Perseverance.glb` | 33,656,588 | `b782942475e2f7b764c919a32cba9df1b9a91fe9705a415ff68ab654d241775f` | NASA 3D Resources | `downloaded_verified` |
-| 26 | `data/visualization/nasa_3d/Ingenuity.glb` | 14,037,796 | `b09b5550269f886fcfa02f14aa9ba798fc1f91d09ba249622d997d812450c0bb` | NASA 3D Resources | `downloaded_verified` |
-| 27 | `data/visualization/nasa_3d/Mars_1_6792.glb` | 2,752,900 | `c010c28ea969a5a54ebfc978ddc1b26fa0764ef02ddfa7350cb4a275215099e2` | NASA 3D Resources | `downloaded_verified` |
-| 28 | `data/raw/mola/megt90n000cb.img` | 18,662,400 | `f6a455a29ddc27636e2f114c000ff97ae89d6e7bf782c3c90710609384724c98` | PDS Geosciences Node | `downloaded_verified` |
-| 29 | `data/raw/mola/megt90n000cb.lbl` | 2,342 | `0015570dd471017efad8d7f76fc7b93fd7f47432e1858712da05d3b6fb6e6a17` | PDS Geosciences Node | `downloaded_verified` |
-| 30 | `data/raw/mola/megt00n000eb.img` | 147,456,000 | `9b114d7285623ba9df0739ba64e40e33ef745494d451296c6b4122d26d83a1f1` | PDS Geosciences Node | `downloaded_verified` |
-| 31 | `data/raw/mola/megt00n000eb.lbl` | 2,333 | `c0d758063a82dbdfa4f02a00c6d2fe2b9f6b95574768393e16fc415950d68bbd` | PDS Geosciences Node | `downloaded_verified` |
-| 32 | `data/raw/mola/megt00n090eb.img` | 147,456,000 | `e5a3c10323984cae6973041ecfa051187c34e8f192b0c4c478a855fc30ce1fe7` | PDS Geosciences Node | `downloaded_verified` |
-| 33 | `data/raw/mola/megt00n090eb.lbl` | 2,333 | `30a6c65fe36294ccbf016738b5569429ae705ca69ba8c91834241ca6c2ebdd7d` | PDS Geosciences Node | `downloaded_verified` |
-| 34 | `data/raw/mola/megt44n180eb.lbl` | 2,333 | `984661448b1bfb94ec89736c4b277b0c36f23f669a92c019ff3be60a35ebcbba` | PDS Geosciences Node | `downloaded_verified` |
+| 1 | `data/originals/crism/frt000027b2_01_if156l_trr3.img` | 1,682,944 | `8bc9dda308c3cbfb7a25c65a20d0af7310a4c21192ef8c2733b69bf0a80f5cef` | MRO CRISM | `downloaded_validation_pending` |
+| 2 | `data/originals/crism/frt000027b2_01_if156l_trr3.lbl` | 9,512 | `559e303df765174b0f5710a89718a4b7ae7f96d2c5cc528cd5d4df33b43decb7` | MRO CRISM | `downloaded_verified` |
+| 3 | `data/originals/crism/frt000027b2_01_ra156l_trr3.lbl` | 9,528 | `60ffe446ab0306ed1ac30759f1902301719b5d867e711fe5b25766031cb55a35` | MRO CRISM | `downloaded_verified` |
+| 4 | `data/originals/ctx/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif` | 6,526,946 | `4888a180ba6e868cb4fc0f33478723587499cf40e780af15983b615ce62f3c51` | MRO CTX | `downloaded_verified` |
+| 5 | `data/originals/ctx/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-FINAL_geodiff-diff.csv` | 51,977 | `6dda3d8ec0c3c4f10b34852bc04c9a8e635c76c217a64d6d6710305516aaea06` | MRO CTX / MOLA | `downloaded_verified` |
+| 6 | `data/originals/ctx/T01_000893_provenance.txt` | 9,605 | `b973a7ae6361908fe09570d62b903ed7d14283da14f5c6189773d3c5b57e6e6f` | MRO CTX | `downloaded_verified` |
+| 7 | `data/originals/geology/sim3292_database.zip` | 808,910,442 | `ef75f059b1f2f5a47aff55e6c6e39500cf1ab65e743fabc5d463b97bc10b6541` | USGS SIM 3292 (Tanaka 2014) | `downloaded_verified` |
+| 8 | `data/originals/geology/sim3292_metadata.txt` | 14,233 | `f6124030ad026b0f0f249f9aff64b733dcfe0174c97aa8027b7af33b6f3527a6` | USGS SIM 3292 | `downloaded_verified` |
+| 9 | `data/originals/geology/sim3292_metadata.xml` | 14,721 | `38806845cae2354e4ab65c55f57819d3e001b3865aceb5a24426efd5412683f8` | USGS SIM 3292 | `downloaded_verified` |
+| 10 | `data/originals/geology/sim3292_pamphlet.pdf` | 3,415,492 | `18d3f0547e2f8cd82891f5adc454a8177ab62339c0b4a7f8370d8d2ecbce16ca` | USGS SIM 3292 | `downloaded_verified` |
+| 11 | `data/originals/geology/sim3292_readme.txt` | 5,580 | `702c8d8dd705a7746dad2b47a36f85fd850cc44939388ccc5f8e636369731aeb` | USGS SIM 3292 | `downloaded_verified` |
+| 12 | `data/originals/hirise/DTEEC_011635_1510_029542_1510_A01.tif` | 65,126,266 | `a3b3c22912b2b23675c1a91a6287200b2794f1f10cfb878c41aebc954ee655ad` | MRO HiRISE | `downloaded_verified` |
+| 13 | `data/originals/hirise/ESP_011635_1510_RED_A_02_ORTHO.LBL` | 5,406 | `d980d74f4519e773efe80aa98415614476db7c545dcde00d04a616c015c7b677` | MRO HiRISE | `downloaded_verified` |
+| 14 | `data/originals/hirise/provenance.txt` | 3,024 | `f64e16114ebd512e47df3323ce2c42e53edb1490fcc36097873fc944a8353051` | MRO HiRISE | `downloaded_verified` |
+| 15 | `data/originals/hrsc/h0018_0000_dt4.img` | 86,686,886 | `32270e0a565624d3c9f8032c7ec616b85cc939be63bce3c2ee7cac1c9937a43e` | MEX HRSC | `downloaded_validation_pending` |
+| 16 | `data/originals/meda/WE__0001___________DER_PS__________________P02.CSV` | 125,877 | `600d8d11b26b2127ba66f90889e7ba5621a0b8b788146bf5bf72a02be2e0a16c` | Mars 2020 MEDA | `downloaded_verified` |
+| 17 | `data/originals/meda/WE__0001___________DER_PS__________________P02.xml` | 9,326 | `bf91828374f61d9267baf2f35b2784e50ffd44ea4b3559e023295ff075068c91` | Mars 2020 MEDA | `downloaded_verified` |
+| 18 | `data/originals/meda/WE__0001___________DER_RHS_________________P03.CSV` | 102,060 | `00271c06137f76294541e2c028c1ed76fca85a11829cf7c76c82fb2cd86e35d8` | Mars 2020 MEDA | `downloaded_verified` |
+| 19 | `data/originals/meda/WE__0001___________DER_RHS_________________P03.xml` | 10,880 | `29cb6b7cfff3ca88404df1311b58a2e2931f8dfada46b253faa25dd4e7d50a84` | Mars 2020 MEDA | `downloaded_verified` |
+| 20 | `data/originals/meda/WE__0001___________DER_TIRS________________P04.CSV` | 7,417 | `ded7c255c90ede5fbbfbb66396c562b0ebc4d1682b71e29976e23cbc4cb47815` | Mars 2020 MEDA | `downloaded_verified` |
+| 21 | `data/originals/meda/WE__0001___________DER_TIRS________________P04.xml` | 13,751 | `970c099fd89a2c01b9e442613d60104c1a76e5f71b7957867fd519c51b5d3673` | Mars 2020 MEDA | `downloaded_verified` |
+| 22 | `data/originals/rems/RME_397535244ADR00010000000_______P9.TAB` | 114,152 | `d5edd3d49198992bd36244b4b151b8850befce2d91b9c774cce72a40e254d194` | MSL REMS | `downloaded_verified` |
+| 23 | `data/originals/rems/RME_397535244ADR00010000000_______P9.xml` | 17,146 | `c74c1258074918630f716a2dcadf24f272c9501a034ebb06d88d130840f86618` | MSL REMS | `downloaded_verified` |
+| 24 | `data/originals/rems/RME_397535244RMD00010000000_______PA.TAB` | 279,000 | `e38f69846b30e84c13d6bc916b04e2ff27a782172c35bc025faca65740f3669f` | MSL REMS | `downloaded_verified` |
+| 25 | `data/originals/rems/RME_397535244RMD00010000000_______PA.xml` | 28,154 | `ce4d63f2be20f8d55d4a2ffaea8a5fedc2338f134243b96396af7af39c123af9` | MSL REMS | `downloaded_verified` |
+| 26 | `data/originals/themis/DBmap2007.tif` | 77,789,206 | `0b2ca94b9414cd7c74e73f8df9ccb4a3c104bef24da932c4dc43fb246bc71a4b` | MGS TES (Putzig 2007) | `downloaded_verified` |
+| 27 | `data/originals/themis/NBmap2007.tif` | 77,789,206 | `ea428e4424f412fc8c94c10e73ed88176f812c2a10fd2e81e9b7d37a5828802e` | MGS TES (Putzig 2007) | `downloaded_verified` |
+| 28 | `data/originals/themis/tes_putzigti_dayside2007_label.jpg` | 3,464,102 | `e3e35d17bf9abf0bfe09c943ee239071e06adc4b486863281649e71c65571fb2` | MGS TES | `downloaded_verified` |
+| 29 | `data/originals/themis/tes_putzigti_nightside2007_label.jpg` | 2,991,218 | `1dc5d3c7dbe9ab31314455ab2d9eb2be1ad51d10453d516a2139e9388d83d6d9` | MGS TES | `downloaded_verified` |
+| 30 | `data/originals/themis/themis_nightir_N-30_000.png` | 49,490,620 | `ebd045a3ca522624ec41c41611415095d07db9452b867cbb205ddba2c2a2f66d` | 2001 Mars Odyssey THEMIS IR | `downloaded_verified` |
+| 31 | `data/originals/themis/thm_dir_N-30_000.png` | 38,612,248 | `0f80f5cd8a4bdc59d7f9f3b9d1c566bd8f9437cccff68c873d1394b1aa19d7af` | 2001 Mars Odyssey THEMIS IR | `downloaded_verified` |
+| 32 | `data/visualization/nasa_3d/Ingenuity_Mars_Helicopter.glb` | 2,019,408 | `9e5a5398ab335eae7d46335085301ce46fb7de052300b645debe8bac6d39f2b5` | NASA 3D Resources | `downloaded_verified` |
+| 33 | `data/visualization/nasa_3d/Mars_2020_Perseverance_Rover.glb` | 4,987,176 | `10db7c03a5e63a5a3b3e7baa6243aa4918ba045fa8ff0a731d0217491adc727f` | NASA 3D Resources | `downloaded_verified` |
+| 34 | `data/visualization/nasa_3d/Mars_Globe_Texture.jpg` | 972,896 | `12ec6bf02ebd42a246edc778cb2ce8c595b4d9f0892badf0bfff8abb2303c780` | NASA 3D Resources | `downloaded_verified` |
 
 ---
 

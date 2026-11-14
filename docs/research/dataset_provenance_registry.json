@@ -726,15 +726,26 @@
       },
       "crs": "Simple Cylindrical Mars",
       "vertical_datum": "N/A",
-      "units": "Calibrated Band 9 (12.57 um) Infrared Brightness Temperature / Radiance DN",
+      "measurement_semantics": {
+        "measurement_type": "Qualitative 8-bit visualization display mosaic",
+        "bit_depth": 8,
+        "pixel_format": "8-bit grayscale (0-255 DN)",
+        "band": "Band 9 (12.57 um)",
+        "tone_mapping": "Contrast-stretched and track-feathered photographic mosaic",
+        "quantitative_analysis_supported": false,
+        "temperature_prohibition_note": "Pixel values represent non-linearly stretched visual display values (0-255 DN). Direct quantitative conversion to brightness temperature (K), kinetic temperature, or radiance is scientifically unsupported and prohibited. Quantitative thermal analysis must use calibrated TES Thermal Inertia GeoTIFFs (Putzig & Mellon 2007) or PDS Level 2 calibrated radiances.",
+        "coverage_scope": "Regional tile N-30_000 (covers lat -30 to 0 deg, lon 0 to 30 deg E; 1 of 72 regional tiles composing the global 256 ppd mosaic)"
+      },
+      "units": "8-bit visual display DN (qualitative visualization, NOT calibrated temperature)",
       "nodata_value": 0,
       "native_resolution": {
-        "pixel_size_m": 100.0,
+        "pixel_size_m": 231.55,
+        "pixels_per_degree": 256.0,
         "footprint": "lat -30 to 0, lon 0 to 30",
-        "description": "100 m/px regional daytime and nighttime calibrated infrared mosaics"
+        "description": "256 ppd (~231.55 m/px) regional daytime and nighttime infrared visual mosaics"
       },
       "production_usage": [
-        "Thermal brightness, night warming / bedrock exposure, regional context"
+        "Visual thermal contrast, relative nighttime warmth / bedrock exposure, regional geomorphological context"
       ]
     },
     {
@@ -784,8 +795,16 @@
         "distinct_units": 39,
         "description": "Global chronostratigraphic and geological unit classification"
       },
+      "integration_status": {
+        "file_integrity_verified": true,
+        "product_identity_verified": true,
+        "scientific_metadata_verified": true,
+        "application_integration_verified": false,
+        "scientific_analysis_readiness": "ready_for_vector_pipeline",
+        "integration_note": "Acquired and schema verified on disk (1,311 units, 3,800 contacts, 3,593 structures, 9 landing sites). Not yet integrated into live MapLibre frontend vector layers or backend API routes."
+      },
       "production_usage": [
-        "Geological exploration, chronostratigraphic unit boundary and contact analysis"
+        "Geological exploration, chronostratigraphic unit boundary and contact analysis (offline GIS dataset)"
       ]
     },
     {
