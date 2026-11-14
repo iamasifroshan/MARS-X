@@ -103,24 +103,103 @@ VALIDATED_CORRIDORS: List[ValidatedCorridorPreset] = [
     ),
 ]
 
+# Engine and algorithmic version definitions for cache identity and invalidation
+MARSWALK_ALGORITHM_VERSION = "astar-8way-v1.2"
+MARSWALK_COST_FUNCTION_VERSION = "quad-theta15-v1.0"
+MARSWALK_DERIVATIVE_VERSION = "horn-slope-3x3-v1.0"
+
 # In-memory LRU route cache with deterministic request hash mapping
 _ROUTE_CACHE: Dict[str, MarswalkRouteResponse] = {}
 _REQUEST_HASH_TO_ROUTE_ID: Dict[str, str] = {}
 _MAX_CACHE_SIZE = 50
 
 
-def compute_request_hash(request: MarswalkRouteRequest) -> str:
-    """Compute deterministic cryptographic hash of all route parameters."""
+def get_source_version_tag(source_id: str) -> str:
+    """Compute an immutable version signature for a terrain dataset.
+
+    Includes dataset source ID, product ID, and underlying elevation/slope file
+    modification times and sizes on disk. Any modification to DEM or slope rasters
+    will automatically alter this tag and invalidate cached routes.
+    """
+    src = next((s for s in TERRAIN_SOURCES if s["source_id"] == source_id), None)
+    if not src:
+        return f"{source_id}:unknown"
+
+    elev_path = src.get("elev_path", "")
+    slope_path = src.get("slope_path", "")
+    product_id = src.get("product_id", "")
+
+    elev_tag = "missing"
+    if elev_path and os.path.isfile(elev_path):
+        try:
+            st = os.stat(elev_path)
+            elev_tag = f"{int(st.st_mtime)}:{st.st_size}"
+        except OSError:
+            elev_tag = "stat_err"
+
+    slope_tag = "none"
+    if slope_path and os.path.isfile(slope_path):
+        try:
+            st = os.stat(slope_path)
+            slope_tag = f"{int(st.st_mtime)}:{st.st_size}"
+        except OSError:
+            slope_tag = "stat_err"
+
+    return f"{source_id}:{product_id}:{elev_tag}:{slope_tag}"
+
+
+def compute_request_hash(
+    request: MarswalkRouteRequest,
+    resolved_source_id: Optional[str] = None,
+) -> str:
+    """Compute deterministic cryptographic hash of all route parameters, datasets, and algorithm versions.
+
+    Hash components:
+      1. Start latitude and normalized longitude (6 decimals).
+      2. Destination latitude and normalized longitude (6 decimals).
+      3. Resolved terrain dataset source ID.
+      4. Dataset version signature (mtime + size of elevation and slope rasters).
+      5. Quadratic slope penalty factor (beta).
+      6. Hard slope cutoff angle (max_slope_deg).
+      7. Search node expansion limit (max_search_nodes).
+      8. Search algorithm ("astar" vs "dijkstra").
+      9. Algorithm implementation version (MARSWALK_ALGORITHM_VERSION).
+     10. Cost function definition version (MARSWALK_COST_FUNCTION_VERSION).
+     11. Derivative algorithm version (MARSWALK_DERIVATIVE_VERSION).
+     12. Optional custom route name.
+    """
     norm_start_lon = request.start_lon % 360.0
     norm_dest_lon = request.dest_lon % 360.0
     algo = getattr(request, "algorithm", "astar") or "astar"
-    pref = request.preferred_source or "auto"
     name = getattr(request, "route_name", None) or ""
+
+    if resolved_source_id is None:
+        try:
+            source = MarswalkPlanner.select_source(
+                start_lat=request.start_lat,
+                start_lon=request.start_lon,
+                dest_lat=request.dest_lat,
+                dest_lon=request.dest_lon,
+                preferred_source=request.preferred_source,
+            )
+            resolved_source_id = source["source_id"]
+        except Exception:
+            resolved_source_id = request.preferred_source or "auto"
+
+    source_tag = get_source_version_tag(resolved_source_id)
+
     raw = (
         f"{request.start_lat:.6f}:{norm_start_lon:.6f}:"
         f"{request.dest_lat:.6f}:{norm_dest_lon:.6f}:"
-        f"{pref}:{request.slope_penalty_factor:.3f}:"
-        f"{request.max_slope_deg:.2f}:{request.max_search_nodes}:{algo}:{name}"
+        f"{resolved_source_id}:{source_tag}:"
+        f"{request.slope_penalty_factor:.3f}:"
+        f"{request.max_slope_deg:.2f}:"
+        f"{request.max_search_nodes}:"
+        f"{algo}:"
+        f"{MARSWALK_ALGORITHM_VERSION}:"
+        f"{MARSWALK_COST_FUNCTION_VERSION}:"
+        f"{MARSWALK_DERIVATIVE_VERSION}:"
+        f"{name}"
     )
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
@@ -721,7 +800,7 @@ class MarswalkPlanner:
             safety_disclaimer=MARSWALK_SAFETY_DISCLAIMER,
         )
 
-        _cache_route(response, request_hash=compute_request_hash(request))
+        _cache_route(response, request_hash=compute_request_hash(request, resolved_source_id=source["source_id"]))
         return response
 
     @classmethod
@@ -941,6 +1020,11 @@ class MarswalkPlanner:
             },
             cost_function_definition="Cost(u, v) = d_surface * [1.0 + beta * (theta_v / 15.0)^2]",
             heuristic_definition="h(u, G) = 0.999 * sqrt(D_horiz(u, G)^2 + (z_G - z_u)^2)",
+            engine_versions={
+                "algorithm_version": MARSWALK_ALGORITHM_VERSION,
+                "cost_function_version": MARSWALK_COST_FUNCTION_VERSION,
+                "derivative_version": MARSWALK_DERIVATIVE_VERSION,
+            },
             safety_disclaimer=MARSWALK_SAFETY_DISCLAIMER,
             validated_corridors=VALIDATED_CORRIDORS,
         )

@@ -126,5 +126,6 @@ class MarswalkMetadataResponse(BaseModel):
     default_parameters: Dict[str, Any]
     cost_function_definition: str
     heuristic_definition: str
+    engine_versions: Optional[Dict[str, str]] = None
     safety_disclaimer: str = MARSWALK_SAFETY_DISCLAIMER
     validated_corridors: List[ValidatedCorridorPreset]
