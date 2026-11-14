@@ -18,10 +18,10 @@ import { MapLayer } from "../lib/types";
 const MapContainer = dynamic(() => import("../components/map/MapContainer"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full bg-[#0a0b12] flex items-center justify-center font-mono text-xs text-gray-500">
+    <div className="w-full h-full bg-[#06070d] flex items-center justify-center font-mono text-xs text-gray-500">
       <div className="flex items-center space-x-2">
-        <div className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
-        <span>Initializing Planetary Coordinate Canvas...</span>
+        <div className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-ping" />
+        <span>Initializing Authentic Planetary Raster Canvas...</span>
       </div>
     </div>
   ),
@@ -29,44 +29,54 @@ const MapContainer = dynamic(() => import("../components/map/MapContainer"), {
 
 const INITIAL_LAYERS: MapLayer[] = [
   {
-    id: "mola-shaded-relief",
-    name: "MOLA Global Shaded Relief",
-    mission: "Mars Global Surveyor",
-    type: "shaded_relief",
+    id: "mola-elevation-global",
+    name: "MOLA Global Topography (4 px/deg)",
+    mission: "Mars Global Surveyor (MGS)",
+    type: "elevation_dtm",
+    crs: "IAU:49900",
+    enabled: true,
+    isAvailable: true,
+    statusNote: "Authentic global numerical elevation COG with Turbo hypsometry",
+  },
+  {
+    id: "mola-128-tiles",
+    name: "MOLA High-Res Regional Tiles (128 px/deg)",
+    mission: "Mars Global Surveyor (MGS)",
+    type: "elevation_dtm",
+    crs: "IAU:49900",
+    enabled: true,
+    isAvailable: true,
+    statusNote: "Authentic 463 m/px numerical tiles (00n000, 44n000, 00n090)",
+  },
+  {
+    id: "ctx-dtm-p21-009323",
+    name: "USGS CTX DTM: Tyrrhena Terra (20m/px)",
+    mission: "Mars Reconnaissance Orbiter (MRO)",
+    type: "elevation_dtm",
+    crs: "IAU:49910",
+    enabled: true,
+    isAvailable: true,
+    statusNote: "Authentic 20m numerical stereo elevation model",
+  },
+  {
+    id: "mars-graticule-grid",
+    name: "Mars Coordinate Graticule (30° mesh)",
+    mission: "MARS-X Cartography",
+    type: "geology",
     crs: "EPSG:104905",
-    enabled: false,
-    isAvailable: false,
-    statusNote: "WMTS tile connection pending EPSG:104905 client reprojection",
-  },
-  {
-    id: "mola-elevation-dtm",
-    name: "MOLA MEGDR Topography (128 px/deg)",
-    mission: "Mars Global Surveyor",
-    type: "elevation_dtm",
-    crs: "IAU:49900",
-    enabled: false,
-    isAvailable: false,
-    statusNote: "Numerical raster pending backend GDAL/Rasterio pipeline",
-  },
-  {
-    id: "hrsc-dtm-regional",
-    name: "HRSC Regional Stereo DTM (50m)",
-    mission: "Mars Express (ESA)",
-    type: "elevation_dtm",
-    crs: "IAU:49900",
-    enabled: false,
-    isAvailable: false,
-    statusNote: "Regional stereophotogrammetry awaiting download & indexing",
+    enabled: true,
+    isAvailable: true,
+    statusNote: "Mars 2000 Sphere coordinate reference graticule",
   },
   {
     id: "hirise-rdr-imagery",
-    name: "HiRISE RDR High-Resolution Swaths",
-    mission: "Mars Reconnaissance Orbiter",
-    type: "orbital_imagery",
-    crs: "Equirectangular Mars",
+    name: "HiRISE Jezero Crater DTM (1.0m/px)",
+    mission: "Mars Reconnaissance Orbiter (MRO)",
+    type: "elevation_dtm",
+    crs: "IAU:49900",
     enabled: false,
     isAvailable: false,
-    statusNote: "0.25m/px targeting mosaic pending PDS pipeline ingestion",
+    statusNote: "Discovered PDS product metadata (Awaiting local acquisition)",
   },
 ];
 
@@ -75,19 +85,8 @@ export default function ExplorationDashboard() {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [cursorCoords, setCursorCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [layers, setLayers] = useState<MapLayer[]>(INITIAL_LAYERS);
-
-  const [openPanels, setOpenPanels] = useState({
-    layers: true,
-    datasets: true,
-    coords: true,
-    route: false,
-    terrain: false,
-    mission: false,
-  });
-
-  const togglePanel = (panel: keyof typeof openPanels) => {
-    setOpenPanels((prev) => ({ ...prev, [panel]: !prev[panel] }));
-  };
+  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(true);
+  const [drawerSubTab, setDrawerSubTab] = useState<"layers" | "coords" | "presets">("layers");
 
   const handleToggleLayer = (layerId: string) => {
     setLayers((prev) =>
@@ -110,64 +109,162 @@ export default function ExplorationDashboard() {
         <Sidebar
           activeSection={activeTab}
           setActiveSection={setActiveTab}
-          openPanels={openPanels}
-          togglePanel={togglePanel}
+          isDrawerOpen={isDrawerOpen}
+          onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
         />
 
         {/* Center / Primary Display Area */}
         <main className="flex-1 flex flex-col overflow-hidden relative">
           {activeTab === "catalogue" ? (
-            <div className="flex-1 p-4 bg-[#0a0c16] overflow-y-auto">
-              <DatasetCatalogue />
+            <div className="flex-1 p-6 bg-[#0a0c16] overflow-y-auto">
+              <div className="max-w-7xl mx-auto h-full">
+                <DatasetCatalogue />
+              </div>
             </div>
           ) : activeTab === "provenance" ? (
-            <div className="flex-1 p-4 bg-[#0a0c16] overflow-y-auto">
-              <ScienceProvenance />
+            <div className="flex-1 p-6 bg-[#0a0c16] overflow-y-auto">
+              <div className="max-w-7xl mx-auto">
+                <ScienceProvenance />
+              </div>
             </div>
           ) : activeTab === "terrain" ? (
-            <div className="flex-1 p-4 bg-[#0a0c16] overflow-y-auto">
-              <TerrainAnalysis currentCoordinates={cursorCoords} />
+            <div className="flex-1 p-6 bg-[#0a0c16] overflow-y-auto">
+              <div className="max-w-7xl mx-auto">
+                <TerrainAnalysis currentCoordinates={cursorCoords} />
+              </div>
+            </div>
+          ) : activeTab === "route" ? (
+            <div className="flex-1 p-6 bg-[#0a0c16] overflow-y-auto">
+              <div className="max-w-7xl mx-auto">
+                <div className="bg-[#101322]/90 border border-[#232840] rounded-lg p-5 backdrop-blur-md shadow-2xl">
+                  <div className="flex items-center justify-between border-b border-[#232840] pb-3 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xl">🥾</span>
+                      <div>
+                        <h2 className="font-bold text-sm text-gray-100 uppercase tracking-wider font-mono">
+                          Marswalk Route Intelligence &amp; Autonomous Pathfinding
+                        </h2>
+                        <p className="text-[11px] text-gray-400 font-mono">
+                          Terrain-constrained A* and Dijkstra path optimization on authentic MOLA 128 ppd elevation data.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <RoutePlanning />
+                </div>
+              </div>
             </div>
           ) : activeTab === "mission" ? (
-            <div className="flex-1 p-4 bg-[#0a0c16] overflow-y-auto">
-              <MissionInfo />
-            </div>
-          ) : (
-            /* Main Exploration Console (Map + Side Panels + Bottom Deck) */
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <div className="flex-1 flex overflow-hidden relative">
-                {/* Interactive Mars Map */}
-                <div className="flex-1 relative">
-                  <MapContainer onCoordinateChange={setCursorCoords} />
-                </div>
-
-                {/* Right Floating / Docked Panels */}
-                <div className="w-80 md:w-96 border-l border-[#1d2238] bg-[#0c0e1a]/90 backdrop-blur-md flex flex-col p-3 space-y-3 overflow-y-auto z-10 shadow-2xl">
-                  {openPanels.coords && (
-                    <CoordinateInspector coords={cursorCoords} />
-                  )}
-
-                  {openPanels.layers && (
-                    <LayerSelector
-                      layers={layers}
-                      onToggleLayer={handleToggleLayer}
-                    />
-                  )}
-
-                  {openPanels.datasets && (
-                    <div className="flex-1 min-h-[300px]">
-                      <DatasetCatalogue />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Bottom Mission Planning & Terrain Operations Deck */}
-              <div className="h-48 border-t border-[#1c2136] bg-[#0b0c16] p-3 grid grid-cols-1 md:grid-cols-3 gap-3 overflow-y-auto select-none z-10">
-                <TerrainAnalysis currentCoordinates={cursorCoords} />
-                <RoutePlanning />
+            <div className="flex-1 p-6 bg-[#0a0c16] overflow-y-auto">
+              <div className="max-w-7xl mx-auto">
                 <MissionInfo />
               </div>
+            </div>
+          ) : (
+            /* Main Exploration Console (Full Map with Docked/Collapsible Side Drawer) */
+            <div className="flex-1 flex overflow-hidden relative">
+              {/* Interactive Mars Map */}
+              <div className="flex-1 relative h-full">
+                <MapContainer
+                  onCoordinateChange={setCursorCoords}
+                  layers={layers}
+                />
+              </div>
+
+              {/* Collapsible Right Docked Drawer */}
+              {isDrawerOpen ? (
+                <div className="w-84 md:w-96 border-l border-[#1d2238] bg-[#0c0e1a]/95 backdrop-blur-md flex flex-col z-10 shadow-2xl overflow-hidden transition-all duration-200">
+                  {/* Drawer Tab Header */}
+                  <div className="flex items-center justify-between border-b border-[#1f253d] px-3 py-2 bg-[#090b14] text-xs font-mono">
+                    <div className="flex space-x-1">
+                      <button
+                        onClick={() => setDrawerSubTab("layers")}
+                        className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                          drawerSubTab === "layers"
+                            ? "bg-orange-500/20 text-orange-400 border border-orange-500/40"
+                            : "text-gray-400 hover:text-white"
+                        }`}
+                      >
+                        Layers ({layers.filter((l) => l.enabled).length})
+                      </button>
+                      <button
+                        onClick={() => setDrawerSubTab("coords")}
+                        className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                          drawerSubTab === "coords"
+                            ? "bg-orange-500/20 text-orange-400 border border-orange-500/40"
+                            : "text-gray-400 hover:text-white"
+                        }`}
+                      >
+                        Inspector
+                      </button>
+                      <button
+                        onClick={() => setDrawerSubTab("presets")}
+                        className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                          drawerSubTab === "presets"
+                            ? "bg-orange-500/20 text-orange-400 border border-orange-500/40"
+                            : "text-gray-400 hover:text-white"
+                        }`}
+                      >
+                        Quick Route
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => setIsDrawerOpen(false)}
+                      title="Collapse Drawer"
+                      className="text-gray-400 hover:text-white px-1.5 py-0.5 rounded hover:bg-[#181d30]"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Drawer Content */}
+                  <div className="flex-1 p-3 overflow-y-auto space-y-3 font-mono text-xs">
+                    {drawerSubTab === "layers" && (
+                      <LayerSelector
+                        layers={layers}
+                        onToggleLayer={handleToggleLayer}
+                      />
+                    )}
+
+                    {drawerSubTab === "coords" && (
+                      <CoordinateInspector coords={cursorCoords} />
+                    )}
+
+                    {drawerSubTab === "presets" && (
+                      <div className="space-y-3">
+                        <div className="p-3 bg-[#111322] border border-[#23293f] rounded-lg">
+                          <div className="font-bold text-orange-400 mb-1 flex items-center gap-1.5">
+                            <span>🥾</span>
+                            <span>Marswalk Quick Traverse</span>
+                          </div>
+                          <p className="text-[11px] text-gray-300 mb-3 leading-relaxed">
+                            Select a target to run terrain-constrained routing in MOLA tile megt00n000hb.
+                          </p>
+                          <button
+                            onClick={() => setActiveTab("route")}
+                            className="w-full py-2 bg-gradient-to-r from-orange-600 to-red-600 text-white font-bold rounded shadow-lg hover:from-orange-500 hover:to-red-500 transition-all text-xs tracking-wider uppercase"
+                          >
+                            Open Full Routing Suite ⮞
+                          </button>
+                        </div>
+                        <CoordinateInspector coords={cursorCoords} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* Collapsed Drawer Open Button */
+                <button
+                  onClick={() => setIsDrawerOpen(true)}
+                  title="Expand Layer & Coordinate Drawer"
+                  className="absolute right-3 top-3 z-10 bg-[#0c0e1a]/90 border border-orange-500/40 text-orange-400 px-3 py-1.5 rounded-lg text-xs font-mono shadow-2xl backdrop-blur-md hover:bg-orange-600 hover:text-white transition-all flex items-center gap-1.5"
+                >
+                  <span>🗺️</span>
+                  <span>Open Layers Panel</span>
+                  <span>⮜</span>
+                </button>
+              )}
             </div>
           )}
         </main>

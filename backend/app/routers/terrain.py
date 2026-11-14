@@ -55,6 +55,10 @@ from app.terrain.hazard_engine import (
     HazardEngineMetadata,
     HazardThresholds,
 )
+from fastapi.responses import Response
+import rasterio
+from rasterio.io import MemoryFile
+from rasterio.enums import Resampling
 
 router = APIRouter(prefix=f"{API_V1_PREFIX}/terrain", tags=["terrain"])
 
@@ -137,6 +141,21 @@ async def get_terrain_layers():
             "is_available": os.path.exists(os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "raw", "mola", "megt00n000hb.img")),
             "file_format": "PDS3 IMG / Tiled",
             "coverage_footprint": "Lat [-44.0°, 0.0°], Lon [0.0°, 90.0°E]",
+        },
+        {
+            "layer_id": "ctx-dtm-p21-009323",
+            "name": "USGS CTX DTM: Tyrrhena Terra (20m/px)",
+            "product_type": "elevation",
+            "instrument": "CTX",
+            "resolution_desc": "20.01 m/px post-spacing",
+            "ground_spacing_m": 20.01,
+            "crs": "IAU:49910",
+            "vertical_datum": "MOLA Areoid (ASP tied)",
+            "unit": "metres",
+            "value_range": {"min": 800.0, "max": 2520.0},
+            "is_available": os.path.exists(os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "raw", "ctx", "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif")),
+            "file_format": "GeoTIFF (Stereo numerical DTM)",
+            "coverage_footprint": "Lat [-5.19°, -4.01°N], Lon [66.03°, 66.60°E]",
         },
         {
             "layer_id": "hirise-dtm-jezero",
@@ -521,3 +540,106 @@ async def get_terrain_quality_metadata(
     return {
         "all_reports": DatasetValidationRegistry.get_all_reports()
     }
+
+
+def _render_turbo_rgba(elev: np.ndarray, nodata_mask: np.ndarray, vmin: float, vmax: float, alpha_val: int = 235) -> bytes:
+    """Helper to convert elevation grid to colored RGBA PNG bytes with NoData transparency using Turbo color mapping."""
+    norm = np.clip((elev - vmin) / max(vmax - vmin, 1e-4), 0.0, 1.0)
+    # Polynomial Turbo approximation
+    kR = [0.13572138, 4.61539260, -42.66032258, 132.13108234, -152.94239396, 59.28637943]
+    kG = [0.09140261, 2.19418839, 4.84296658, -14.18503333, 4.27729857, 2.82956604]
+    kB = [0.10798322, 8.44582113, -34.80584489, 43.16781254, -28.91494539, 5.09355606]
+    r = np.polyval(kR[::-1], norm)
+    g = np.polyval(kG[::-1], norm)
+    b = np.polyval(kB[::-1], norm)
+
+    h, w = elev.shape
+    rgba = np.zeros((4, h, w), dtype=np.uint8)
+    valid = ~nodata_mask
+    rgba[0] = np.where(valid, np.clip(r * 255.0, 0, 255).astype(np.uint8), 0)
+    rgba[1] = np.where(valid, np.clip(g * 255.0, 0, 255).astype(np.uint8), 0)
+    rgba[2] = np.where(valid, np.clip(b * 255.0, 0, 255).astype(np.uint8), 0)
+    rgba[3] = np.where(valid, alpha_val, 0)
+
+    with MemoryFile() as memfile:
+        with memfile.open(
+            driver="PNG",
+            height=h,
+            width=w,
+            count=4,
+            dtype=np.uint8,
+        ) as dst:
+            dst.write(rgba)
+        return memfile.read()
+
+
+@router.get("/render/global-mola")
+async def render_global_mola(hemisphere: str = Query(default="east", pattern="^(east|west)$")):
+    """Render authentic Global MOLA numerical elevation as colored RGBA PNG with NoData transparency.
+    - east: Longitude [0°, 180°E], Latitude [-90°, 90°N]
+    - west: Longitude [-180°, 0°E] (180°E to 360°E), Latitude [-90°, 90°N]
+    """
+    cog_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "processed", "mola", "mola_megt90n000cb_elevation.tif")
+    )
+    if not os.path.exists(cog_path):
+        raise HTTPException(status_code=404, detail="Processed Global MOLA COG raster not found on disk.")
+
+    with rasterio.open(cog_path) as src:
+        elev = src.read(1)
+        nodata = src.nodata
+
+    if hemisphere == "east":
+        sub_elev = elev[:, :720]
+    else:
+        sub_elev = elev[:, 720:]
+
+    nodata_mask = (sub_elev == nodata) | ~np.isfinite(sub_elev)
+    png_bytes = _render_turbo_rgba(sub_elev, nodata_mask, vmin=-8200.0, vmax=21200.0, alpha_val=230)
+    return Response(content=png_bytes, media_type="image/png")
+
+
+@router.get("/render/mola-128-tile")
+async def render_mola_128_tile(tile_id: str = Query(default="00n000", pattern="^(00n000|44n000|00n090)$")):
+    """Render authentic regional MOLA 128 ppd tile numerical elevation as colored RGBA PNG."""
+    filename_map = {
+        "00n000": "megt00n000hb.img",
+        "44n000": "megt44n000hb.img",
+        "00n090": "megt00n090hb.img",
+    }
+    raw_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "raw", "mola", filename_map[tile_id])
+    )
+    if not os.path.exists(raw_path):
+        raise HTTPException(status_code=404, detail=f"MOLA 128 tile '{tile_id}' not found on disk.")
+
+    # 5632 lines x 11520 samples, 16-bit big-endian signed integer
+    mm = np.memmap(raw_path, dtype=">i2", mode="r", shape=(5632, 11520))
+    # Subsample 16x for responsive rendering (352 lines x 720 samples)
+    sub = mm[::16, ::16].astype(np.float32)
+    nodata_mask = (sub == -32768)
+
+    # Elevation range for tiles: ~-6000m to +4000m
+    png_bytes = _render_turbo_rgba(sub, nodata_mask, vmin=-6000.0, vmax=4000.0, alpha_val=240)
+    return Response(content=png_bytes, media_type="image/png")
+
+
+@router.get("/render/ctx-dtm")
+async def render_ctx_dtm():
+    """Render authentic USGS 20m CTX numerical DTM as colored high-contrast RGBA PNG."""
+    ctx_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "raw", "ctx", "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif")
+    )
+    if not os.path.exists(ctx_path):
+        raise HTTPException(status_code=404, detail="USGS CTX DTM raster not found on disk.")
+
+    with rasterio.open(ctx_path) as src:
+        out_shape = (src.height // 4, src.width // 4)
+        elev = src.read(1, out_shape=out_shape, resampling=Resampling.bilinear)
+        nodata = src.nodata
+
+    nodata_mask = (elev == nodata) | (elev < -30000) | ~np.isfinite(elev)
+    # CTX elevation range: ~800m to 2520m
+    png_bytes = _render_turbo_rgba(elev, nodata_mask, vmin=800.0, vmax=2520.0, alpha_val=245)
+    return Response(content=png_bytes, media_type="image/png")
+
