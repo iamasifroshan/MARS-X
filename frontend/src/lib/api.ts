@@ -28,6 +28,10 @@ import {
   PointElevationDetail,
   ElevationProfileResponse,
   WindowRenderMetadata,
+  DiscoveryCategory,
+  ScienceDiscovery,
+  ScienceProfile,
+  ScienceComparisonResponse,
 } from "./types";
 
 
@@ -666,5 +670,171 @@ export async function fetchScientificProvenance(): Promise<any> {
   }
   return res.json();
 }
+
+// ---------------------------------------------------------------------------
+// Phase 8.7 Science Discovery API Functions
+// ---------------------------------------------------------------------------
+
+export async function fetchDiscoveryCategories(): Promise<DiscoveryCategory[]> {
+  const res = await apiFetch(`${API_BASE}/api/v1/discovery/categories`);
+  if (!res.ok) {
+    throw new Error(`Discovery categories query failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+function toArray(val: any): string[] {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val === "string") return [val];
+  return [];
+}
+
+function normalizeDiscovery(d: any): ScienceDiscovery {
+  const opps = toArray(d.suggested_investigations || d.investigation_opportunities);
+  const limits = toArray(d.scientific_limitations || d.limitations);
+
+  let evidenceClasses = d.evidence_classes;
+  if (!evidenceClasses || typeof evidenceClasses !== "object" || Array.isArray(evidenceClasses)) {
+    evidenceClasses = {
+      measured_observations: [
+        "Calibrated instrument sensor observation",
+        ...(d.supporting_datasets || []),
+      ],
+      derived_measurements: [
+        d.spatial_resolution_desc ? `Spatial ground spacing: ${d.spatial_resolution_desc}` : "Interpolated elevation and slope",
+      ],
+      indicative_proxies: [
+        "Thermophysical grain-size proxy from MGS TES thermal inertia",
+      ],
+      potential_investigations: opps.slice(0, 3),
+    };
+  }
+
+  return {
+    id: d.id,
+    name: d.name || d.title || "Unnamed Discovery",
+    category: d.category,
+    latitude: d.latitude,
+    longitude: d.longitude,
+    primary_feature: d.primary_feature || d.target_site || d.title || "",
+    scientific_significance: d.scientific_significance || "",
+    geological_context: d.geological_context || {
+      unit_symbol: d.live_measurements?.geology_unit_code,
+      unit_name: d.live_measurements?.geology_unit_name,
+      stratigraphic_age: d.live_measurements?.geology_age,
+      primary_lithology: d.live_measurements?.geology_lithology,
+    },
+    thermal_context: d.thermal_context || {
+      tes_thermal_inertia_si: d.live_measurements?.tes_thermal_inertia_si,
+      thermophysical_unit: d.live_measurements?.thermal_unit,
+      themis_ir_covered: d.live_measurements?.themis_day_ir_dn !== null && d.live_measurements?.themis_day_ir_dn !== undefined,
+      themis_band_9_dn: d.live_measurements?.themis_day_ir_dn,
+    },
+    terrain_context: d.terrain_context || {
+      mola_elevation_m: d.live_measurements?.mola_elevation_m,
+      best_dtm_elevation_m: d.live_measurements?.best_dtm_elevation_m,
+      highest_resolution_tier: d.live_measurements?.highest_tier,
+      finest_ground_spacing_m: d.live_measurements?.finest_ground_spacing_m,
+    },
+    supporting_datasets: toArray(d.supporting_datasets),
+    evidence_classes: evidenceClasses,
+    suggested_investigations: opps,
+    scientific_limitations: limits,
+    derived_metrics: d.derived_metrics || {},
+    distance_km: d.distance_km,
+  };
+}
+
+export async function fetchDiscoveries(params?: {
+  category?: string;
+  minLat?: number;
+  maxLat?: number;
+  minLon?: number;
+  maxLon?: number;
+  search?: string;
+}): Promise<ScienceDiscovery[]> {
+  const url = new URL(`${API_BASE}/api/v1/discovery/list`);
+  if (params?.category) url.searchParams.set("category", params.category);
+  if (params?.minLat !== undefined) url.searchParams.set("min_lat", params.minLat.toString());
+  if (params?.maxLat !== undefined) url.searchParams.set("max_lat", params.maxLat.toString());
+  if (params?.minLon !== undefined) url.searchParams.set("min_lon", params.minLon.toString());
+  if (params?.maxLon !== undefined) url.searchParams.set("max_lon", params.maxLon.toString());
+  if (params?.search) url.searchParams.set("search", params.search);
+
+  const res = await apiFetch(url.toString());
+  if (!res.ok) {
+    throw new Error(`Discoveries query failed: ${res.status}`);
+  }
+  const json = await res.json();
+  const list = Array.isArray(json) ? json : json.discoveries || [];
+  return list.map(normalizeDiscovery);
+}
+
+export async function fetchDiscoveryById(discoveryId: string): Promise<ScienceDiscovery> {
+  const res = await apiFetch(`${API_BASE}/api/v1/discovery/${encodeURIComponent(discoveryId)}`);
+  if (!res.ok) {
+    throw new Error(`Discovery detail query failed: ${res.status}`);
+  }
+  const d = await res.json();
+  return normalizeDiscovery(d);
+}
+
+export async function fetchScienceProfile(
+  lat: number,
+  lon: number,
+  radiusKm: number = 250.0
+): Promise<ScienceProfile> {
+  const url = new URL(`${API_BASE}/api/v1/discovery/profile`);
+  url.searchParams.set("lat", lat.toString());
+  url.searchParams.set("lon", lon.toString());
+  url.searchParams.set("radius_km", radiusKm.toString());
+
+  const res = await apiFetch(url.toString());
+  if (!res.ok) {
+    throw new Error(`Science profile query failed: ${res.status}`);
+  }
+  const json = await res.json();
+  if (json.nearby_candidate_discoveries) {
+    json.nearby_candidate_discoveries = json.nearby_candidate_discoveries.map(normalizeDiscovery);
+  }
+  return json;
+}
+
+export async function fetchNearbyDiscoveries(
+  lat: number,
+  lon: number,
+  radiusKm: number = 500.0,
+  limit: number = 5
+): Promise<ScienceDiscovery[]> {
+  const url = new URL(`${API_BASE}/api/v1/discovery/nearby`);
+  url.searchParams.set("lat", lat.toString());
+  url.searchParams.set("lon", lon.toString());
+  url.searchParams.set("radius_km", radiusKm.toString());
+  url.searchParams.set("limit", limit.toString());
+
+  const res = await apiFetch(url.toString());
+  if (!res.ok) {
+    throw new Error(`Nearby discoveries query failed: ${res.status}`);
+  }
+  const json = await res.json();
+  const list = Array.isArray(json) ? json : json.nearby_discoveries || [];
+  return list.map(normalizeDiscovery);
+}
+
+export async function compareScienceLocations(
+  locations: Array<{ lat: number; lon: number; label?: string }>
+): Promise<ScienceComparisonResponse> {
+  const res = await apiFetch(`${API_BASE}/api/v1/discovery/compare`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ locations }),
+  });
+  if (!res.ok) {
+    throw new Error(`Science comparison failed: ${res.status}`);
+  }
+  return res.json();
+}
+
 
 

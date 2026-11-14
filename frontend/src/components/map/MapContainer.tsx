@@ -3,8 +3,8 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Map, NavigationControl, Marker, setWorkerUrl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { API_BASE } from "../../lib/api";
-import { MapLayer } from "../../lib/types";
+import { API_BASE, fetchDiscoveries } from "../../lib/api";
+import { MapLayer, ScienceDiscovery } from "../../lib/types";
 
 // Configure MapLibre worker to local public bundle to prevent worker load failure
 if (typeof window !== "undefined") {
@@ -287,7 +287,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
   const inspectorMarkerRef = useRef<Marker | null>(null);
+  const discoveryMarkersRef = useRef<Marker[]>([]);
   const [activeSite, setActiveSite] = useState<MarsFeature | null>(null);
+  const [activeDiscovery, setActiveDiscovery] = useState<ScienceDiscovery | null>(null);
+  const [discoveries, setDiscoveries] = useState<ScienceDiscovery[]>([]);
   const [isMapLoaded, setIsMapLoaded] = useState<boolean>(false);
   const [currentZoom, setCurrentZoom] = useState<number>(1.5);
   const [activeElevationMode, setActiveElevationMode] = useState<"global" | "ctx">("global");
@@ -401,6 +404,85 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       inspectorMarkerRef.current.setLngLat([displayLon, inspectedCoord.lat]);
     }
   }, [inspectedCoord, isMapLoaded]);
+
+  // Load and place interactive Science Discovery markers on the Mars map
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isMapLoaded) return;
+
+    fetchDiscoveries()
+      .then((data) => {
+        setDiscoveries(data);
+        // Clear any previous markers
+        discoveryMarkersRef.current.forEach((m) => m.remove());
+        discoveryMarkersRef.current = [];
+
+        data.forEach((disc) => {
+          const el = document.createElement("div");
+          el.className = "group relative cursor-pointer";
+          const displayLon = disc.longitude > 180 ? disc.longitude - 360 : disc.longitude;
+
+          let badgeColor = "bg-orange-500 border-amber-300";
+          let icon = "📍";
+          if (disc.category === "high_res_terrain") {
+            badgeColor = "bg-emerald-500 border-emerald-200";
+            icon = "🔬";
+          } else if (disc.category === "landing_site") {
+            badgeColor = "bg-blue-600 border-blue-200";
+            icon = "🚀";
+          } else if (disc.category === "geological_unit_contact") {
+            badgeColor = "bg-amber-600 border-amber-200";
+            icon = "🌋";
+          } else if (disc.category === "structural_feature") {
+            badgeColor = "bg-purple-600 border-purple-200";
+            icon = "⚡";
+          } else if (disc.category === "thermal_contrast") {
+            badgeColor = "bg-cyan-600 border-cyan-200";
+            icon = "🌡️";
+          } else if (disc.category === "multi_dataset_intersection") {
+            badgeColor = "bg-rose-600 border-rose-200";
+            icon = "🎯";
+          }
+
+          el.innerHTML = `
+            <div class="w-5 h-5 rounded-full ${badgeColor} border shadow-lg flex items-center justify-center transform hover:scale-135 transition-transform" title="${disc.name} (${disc.category.replace(/_/g, ' ')})">
+              <span class="text-[10px] leading-none">${icon}</span>
+            </div>
+          `;
+
+          el.addEventListener("click", () => {
+            setActiveDiscovery(disc);
+            setActiveSite(null);
+            if (mapRef.current) {
+              mapRef.current.flyTo({
+                center: [displayLon, disc.latitude],
+                zoom: disc.category === "high_res_terrain" ? 8.5 : 5.5,
+                essential: true,
+                duration: 1500,
+              });
+            }
+            if (onCoordinateInspect) {
+              onCoordinateInspect({
+                lat: Number(disc.latitude.toFixed(5)),
+                lon: Number(disc.longitude.toFixed(5)),
+              });
+            }
+          });
+
+          const m = new Marker({ element: el })
+            .setLngLat([displayLon, disc.latitude])
+            .addTo(map);
+
+          discoveryMarkersRef.current.push(m);
+        });
+      })
+      .catch((err) => console.error("Failed to load map discoveries:", err));
+
+    return () => {
+      discoveryMarkersRef.current.forEach((m) => m.remove());
+      discoveryMarkersRef.current = [];
+    };
+  }, [isMapLoaded, onCoordinateInspect]);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -975,6 +1057,55 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             <div>Lon: <span className="text-gray-200">{activeSite.lon.toFixed(3)}°E</span></div>
             <div className="col-span-2">Type: <span className="text-amber-400">{activeSite.type}</span></div>
           </div>
+        </div>
+      )}
+
+      {/* Active Science Discovery Target Card */}
+      {activeDiscovery && (
+        <div className="absolute bottom-3 left-3 max-w-sm bg-[#0e1122]/95 border border-[#2b3556] rounded-xl p-3.5 backdrop-blur-md shadow-2xl text-xs font-mono z-10 pointer-events-auto">
+          <div className="flex items-center justify-between border-b border-[#212942] pb-1.5 mb-2">
+            <div className="flex items-center space-x-1.5">
+              <span className="text-sm">🔭</span>
+              <span className="font-bold text-gray-100">{activeDiscovery.name}</span>
+            </div>
+            <button
+              onClick={() => setActiveDiscovery(null)}
+              className="text-gray-400 hover:text-white px-1 text-xs"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="flex items-center space-x-2 mb-2">
+            <span className="px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[9px] font-semibold uppercase">
+              {activeDiscovery.category.replace(/_/g, " ")}
+            </span>
+            <span className="text-[10px] text-gray-400">
+              {activeDiscovery.primary_feature}
+            </span>
+          </div>
+          <p className="text-[11px] text-gray-300 mb-2.5 leading-relaxed line-clamp-3">
+            {activeDiscovery.scientific_significance}
+          </p>
+          <div className="text-[10px] grid grid-cols-2 gap-1.5 text-gray-400 bg-[#080a14] p-2 rounded-lg border border-[#1d2338] mb-2.5">
+            <div>Lat: <span className="text-amber-300 font-bold">{activeDiscovery.latitude.toFixed(4)}°</span></div>
+            <div>Lon: <span className="text-amber-300 font-bold">{activeDiscovery.longitude.toFixed(4)}°E</span></div>
+            <div className="col-span-2 text-[9px] text-gray-400 truncate">
+              Datasets: <span className="text-gray-300">{activeDiscovery.supporting_datasets.join(", ")}</span>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              if (onCoordinateInspect) {
+                onCoordinateInspect({
+                  lat: Number(activeDiscovery.latitude.toFixed(5)),
+                  lon: Number(activeDiscovery.longitude.toFixed(5)),
+                });
+              }
+            }}
+            className="w-full py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded font-bold text-[10px] transition-colors uppercase tracking-wider text-center"
+          >
+            Inspect Geodetic &amp; Geological Profile ➔
+          </button>
         </div>
       )}
 

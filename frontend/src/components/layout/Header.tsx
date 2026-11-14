@@ -16,6 +16,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const tabs = [
     { id: "dashboard", label: "EXPLORATION CONSOLE" },
+    { id: "discovery", label: "SCIENCE DISCOVERY" },
     { id: "catalogue", label: "DATASET CATALOGUE" },
     { id: "terrain", label: "TERRAIN INTELLIGENCE" },
     { id: "profile", label: "ELEVATION PROFILE" },

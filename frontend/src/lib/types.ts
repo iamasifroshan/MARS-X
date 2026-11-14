@@ -692,3 +692,121 @@ export interface WindowRenderMetadata {
   source_checksum: string;
 }
 
+// ---------------------------------------------------------------------------
+// Phase 8.7 Science Discovery Types
+// ---------------------------------------------------------------------------
+
+export interface DiscoveryCategory {
+  id: string;
+  title: string;
+  description: string;
+  badge_color: string;
+  icon: string;
+  discovery_count: number;
+}
+
+export interface ScienceDiscovery {
+  id: string;
+  name: string;
+  category: string;
+  latitude: number;
+  longitude: number;
+  primary_feature: string;
+  scientific_significance: string;
+  geological_context: {
+    unit_symbol?: string;
+    unit_name?: string;
+    stratigraphic_age?: string;
+    primary_lithology?: string;
+    geologic_province?: string;
+    [key: string]: any;
+  };
+  thermal_context: {
+    tes_thermal_inertia_si?: number;
+    thermophysical_unit?: string;
+    themis_ir_covered?: boolean;
+    themis_band_9_dn?: number;
+    [key: string]: any;
+  };
+  terrain_context: {
+    mola_elevation_m?: number;
+    best_dtm_elevation_m?: number;
+    highest_resolution_tier?: string;
+    finest_ground_spacing_m?: number;
+    [key: string]: any;
+  };
+  supporting_datasets: string[];
+  evidence_classes: {
+    measured_observations: string[];
+    derived_measurements: string[];
+    indicative_proxies: string[];
+    potential_investigations: string[];
+  };
+  suggested_investigations: string[];
+  scientific_limitations: string[];
+  derived_metrics?: Record<string, any>;
+  distance_km?: number;
+}
+
+export interface ScienceProfile {
+  query_latitude: number;
+  query_longitude: number;
+  elevation_analysis: {
+    elevation_m: number | null;
+    highest_tier: string;
+    resolution_m: number;
+    vertical_datum: string;
+    horizontal_crs: string;
+    source_dataset_id: string;
+  };
+  geological_analysis: {
+    unit_code: string | null;
+    unit_name: string | null;
+    stratigraphic_age: string | null;
+    lithology: string | null;
+    province: string | null;
+    interpretation: string | null;
+    nearest_contact: {
+      type: string;
+      units: string;
+      distance_km: number;
+    } | null;
+    nearest_structure: {
+      type: string;
+      class: string;
+      distance_km: number;
+    } | null;
+  };
+  thermal_analysis: {
+    tes_thermal_inertia_si: number | null;
+    thermal_unit: string;
+    themis_day_ir: {
+      covered: boolean;
+      product_id: string | null;
+      band_9_dn: number | null;
+      resolution_m: number | null;
+    };
+    thermophysical_interpretation: string;
+  };
+  terrain_analysis: {
+    finest_tier: string;
+    ground_spacing_m: number;
+    available_dtms: string[];
+  };
+  potential_investigations: string[];
+  scientific_limitations: string[];
+  nearby_candidate_discoveries: ScienceDiscovery[];
+}
+
+export interface ScienceComparisonResponse {
+  sites: ScienceProfile[];
+  summary: {
+    count: number;
+    highest_elevation_site: { lat: number; lon: number; elevation_m: number };
+    lowest_elevation_site: { lat: number; lon: number; elevation_m: number };
+    highest_thermal_inertia_site: { lat: number; lon: number; ti: number };
+    geological_diversity: string[];
+  };
+}
+
+

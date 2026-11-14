@@ -17,6 +17,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const navItems = [
     { id: "dashboard", label: "Console", icon: "🗺️", tooltip: "Exploration Console & Map" },
+    { id: "discovery", label: "Discovery", icon: "🔭", tooltip: "Evidence-Based Science Discovery System" },
     { id: "catalogue", label: "Catalogue", icon: "📚", tooltip: "NASA PDS Dataset Catalogue" },
     { id: "terrain", label: "Terrain", icon: "⛰️", tooltip: "Multi-Resolution Terrain Intelligence" },
     { id: "profile", label: "Profile", icon: "📈", tooltip: "Mars Great-Circle Elevation Profile" },
