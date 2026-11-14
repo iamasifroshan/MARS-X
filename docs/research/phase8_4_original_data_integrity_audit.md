@@ -225,3 +225,4 @@ backend\tests\test_phase8_4_data_integrity.py::test_mola_seam_2_90_east_correct_
 Phase 8.4 has established an auditable, cryptographic foundation of planetary data integrity. Every active layer in MARS-X is traced to an official NASA or USGS archive, tile physics and coordinate registration are proven, test fixtures are isolated, and automated test enforcement guarantees that no synthetic data can enter the system.
 
 **Phase 8.4 is complete and verified.**
+

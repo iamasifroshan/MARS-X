@@ -236,3 +236,4 @@ def test_mola_seam_2_90_east_correct_adjacency():
 
         diff = abs(val_w - val_e)
         assert diff < 50, f"Seam 2 discontinuity at lat {lat} deg N: diff = {diff} m"
+

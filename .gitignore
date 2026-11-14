@@ -58,9 +58,15 @@ Desktop.ini
 data/raw/*
 data/processed/*
 data/cache/*
+data/originals/*
+data/derived/*
+data/visualization/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/cache/.gitkeep
+!data/originals/**/.gitkeep
+!data/derived/**/.gitkeep
+!data/visualization/**/.gitkeep
 
 # --- GDAL / Raster temp ---
 *.tif.aux.xml

@@ -1,6 +1,6 @@
 {
   "registry_version": "1.0.0",
-  "last_audited_utc": "2026-11-14T13:50:00Z",
+  "last_audited_utc": "2026-11-14T14:50:00Z",
   "policy_compliance": "POL-SCI-001",
   "datasets": [
     {
@@ -529,6 +529,364 @@
       "nodata_value": -3.4028235e+38,
       "production_usage": [],
       "status_note": "Product catalogued; file not downloaded to local workspace. Analysis disabled."
+    },
+    {
+      "dataset_id": "hrsc-dtm-h0018",
+      "product_id": "H0018_0000_DT4",
+      "mission": "Mars Express (ESA / NASA PDS)",
+      "instrument": "High Resolution Stereo Camera (HRSC)",
+      "provenance_status": "authoritative_original",
+      "official_archive": "NASA Planetary Data System (PDS) Geosciences Node / ESA PSA",
+      "archive_collection": "MEX-M-HRSC-5-REFDR-DTM-V1.0 (mexhrs_2001)",
+      "official_urls": {
+        "image": "https://pds-geosciences.wustl.edu/mex/mex-m-hrsc-5-refdr-dtm-v1/mexhrs_2001/data/0018/h0018_0000_dt4.img"
+      },
+      "original_filename": "h0018_0000_dt4.img",
+      "local_files": {
+        "image": "data/originals/hrsc/h0018_0000_dt4.img"
+      },
+      "local_availability": "available",
+      "published_checksum": {
+        "type": "MD5",
+        "value": "BFAF16E930228E9C9ACA7E10B396446F",
+        "source_manifest": "mexhrs_2001_161028.md5",
+        "verified": true
+      },
+      "sha256": {
+        "image": "32270e0a565624d3c9f8032c7ec616b85cc939be63bce3c2ee7cac1c9937a43e"
+      },
+      "crs": "Sinusoidal / Mars Sphere R=3,396,190 m",
+      "vertical_datum": "MOLA Areoid",
+      "units": "metres relative to MOLA Areoid",
+      "nodata_value": -32768.0,
+      "native_resolution": {
+        "pixel_size_m": 50.0,
+        "description": "50 m/px Level 4 Digital Terrain Model"
+      },
+      "production_usage": [
+        "Regional high-resolution terrain validation and elevation profiles"
+      ]
+    },
+    {
+      "dataset_id": "ctx-dtm-controlled-t01-000893",
+      "product_id": "T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W",
+      "mission": "Mars Reconnaissance Orbiter (MRO)",
+      "instrument": "Context Camera (CTX)",
+      "provenance_status": "authoritative_original",
+      "official_archive": "USGS Astrogeology Science Center / AWS Open Data",
+      "archive_collection": "USGS Controlled CTX DTMs (mars/mro/ctx/controlled/dtm)",
+      "official_urls": {
+        "geotiff": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/ctx/controlled/dtm/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif",
+        "residuals": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/ctx/controlled/dtm/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-FINAL_geodiff-diff.csv",
+        "provenance": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/ctx/controlled/dtm/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W/provenance.txt"
+      },
+      "original_filename": "T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif",
+      "local_files": {
+        "geotiff": "data/originals/ctx/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif",
+        "residuals": "data/originals/ctx/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-FINAL_geodiff-diff.csv",
+        "provenance": "data/originals/ctx/T01_000893_provenance.txt"
+      },
+      "local_availability": "available",
+      "published_checksum": null,
+      "sha256": {
+        "geotiff": "4888a180ba6e868cb4fc0f33478723587499cf40e780af15983b615ce62f3c51",
+        "residuals": "6dda3d8ec0c3c4f10b34852bc04c9a8e635c76c217a64d6d6710305516aaea06",
+        "provenance": "b973a7ae6361908fe09570d62b903ed7d14283da14f5c6189773d3c5b57e6e6f"
+      },
+      "crs": "Equirectangular Mars (IAU:49910)",
+      "vertical_datum": "MOLA Geoid Adjusted",
+      "units": "metres relative to datum",
+      "nodata_value": -32768.0,
+      "native_resolution": {
+        "pixel_size_m": 20.0,
+        "description": "20.0 m/px controlled stereo DTM"
+      },
+      "production_usage": [
+        "Regional terrain validation with MOLA bundle-adjusted residuals"
+      ]
+    },
+    {
+      "dataset_id": "hirise-dtm-controlled-esp-011635",
+      "product_id": "ESP_011635_1510_ESP_029542_1510",
+      "mission": "Mars Reconnaissance Orbiter (MRO)",
+      "instrument": "High Resolution Imaging Science Experiment (HiRISE)",
+      "provenance_status": "authoritative_original",
+      "official_archive": "USGS Astrogeology Science Center / AWS Open Data",
+      "archive_collection": "USGS Controlled HiRISE DTMs (mars/mro/hirise/controlled/dtm)",
+      "official_urls": {
+        "geotiff": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/hirise/controlled/dtm/ESP_011635_1510_ESP_029542_1510/DTEEC_011635_1510_029542_1510_A01.tif",
+        "label": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/hirise/controlled/dtm/ESP_011635_1510_ESP_029542_1510/ESP_011635_1510_RED_A_02_ORTHO.LBL",
+        "provenance": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/hirise/controlled/dtm/ESP_011635_1510_ESP_029542_1510/provenance.txt"
+      },
+      "original_filename": "DTEEC_011635_1510_029542_1510_A01.tif",
+      "local_files": {
+        "geotiff": "data/originals/hirise/DTEEC_011635_1510_029542_1510_A01.tif",
+        "label": "data/originals/hirise/ESP_011635_1510_RED_A_02_ORTHO.LBL",
+        "provenance": "data/originals/hirise/provenance.txt"
+      },
+      "local_availability": "available",
+      "published_checksum": null,
+      "sha256": {
+        "geotiff": "a3b3c22912b2b23675c1a91a6287200b2794f1f10cfb878c41aebc954ee655ad",
+        "label": "d980d74f4519e773efe80aa98415614476db7c545dcde00d04a616c015c7b677",
+        "provenance": "f64e16114ebd512e47df3323ce2c42e53edb1490fcc36097873fc944a8353051"
+      },
+      "crs": "Equirectangular Mars (IAU:49910)",
+      "vertical_datum": "MOLA Geoid Adjusted",
+      "units": "metres relative to datum",
+      "nodata_value": -32768.0,
+      "native_resolution": {
+        "pixel_size_m": 1.0,
+        "description": "1.0 m/px ultra-high-resolution controlled stereo DTM"
+      },
+      "production_usage": [
+        "Local traverse slope, micro-roughness, obstacle hazard detection"
+      ]
+    },
+    {
+      "dataset_id": "tes-thermal-inertia-putzig-2007",
+      "product_id": "TES_PUTZIG_TI_2007",
+      "mission": "Mars Global Surveyor (MGS)",
+      "instrument": "Thermal Emission Spectrometer (TES)",
+      "provenance_status": "authoritative_original",
+      "official_archive": "ASU Mars Space Flight Facility / NASA PDS Geosciences Node",
+      "archive_collection": "Putzig & Mellon (2007) Global Thermal Inertia",
+      "official_urls": {
+        "dayside": "https://www.mars.asu.edu/data/tes_ti/DBmap2007.tif",
+        "nightside": "https://www.mars.asu.edu/data/tes_ti/NBmap2007.tif"
+      },
+      "original_filename": "DBmap2007.tif / NBmap2007.tif",
+      "local_files": {
+        "dayside": "data/originals/themis/DBmap2007.tif",
+        "nightside": "data/originals/themis/NBmap2007.tif",
+        "dayside_label": "data/originals/themis/tes_putzigti_dayside2007_label.jpg",
+        "nightside_label": "data/originals/themis/tes_putzigti_nightside2007_label.jpg"
+      },
+      "local_availability": "available",
+      "published_checksum": null,
+      "sha256": {
+        "dayside": "0b2ca94b9414cd7c74e73f8df9ccb4a3c104bef24da932c4dc43fb246bc71a4b",
+        "nightside": "ea428e4424f412fc8c94c10e73ed88176f812c2a10fd2e81e9b7d37a5828802e",
+        "dayside_label": "e3e35d17bf9abf0bfe09c943ee239071e06adc4b486863281649e71c65571fb2",
+        "nightside_label": "1dc5d3c7dbe9ab31314455ab2d9eb2be1ad51d10453d516a2139e9388d83d6d9"
+      },
+      "crs": "IAU2000 Mars Equirectangular",
+      "vertical_datum": "N/A",
+      "units": "J m^-2 K^-1 s^-1/2 (Thermal Inertia)",
+      "nodata_value": 0.0,
+      "native_resolution": {
+        "pixels_per_degree": 20.0,
+        "pixel_size_km": 3.0,
+        "description": "20 ppd (~3.0 km/px) global day/night thermal inertia"
+      },
+      "production_usage": [
+        "Physical surface characterization, bedrock vs dust discrimination"
+      ]
+    },
+    {
+      "dataset_id": "usgs-geology-sim3292",
+      "product_id": "USGS_SIM_3292",
+      "mission": "USGS Astrogeology Scientific Investigations Map",
+      "instrument": "Global Geologic Map of Mars (Tanaka et al. 2014)",
+      "provenance_status": "authoritative_original",
+      "official_archive": "USGS Publications Warehouse",
+      "archive_collection": "SIM 3292",
+      "official_urls": {
+        "readme": "https://pubs.usgs.gov/sim/3292/sim3292_readme.txt",
+        "metadata_xml": "https://pubs.usgs.gov/sim/3292/sim3292_metadata.xml",
+        "pamphlet": "https://pubs.usgs.gov/sim/3292/sim3292_pamphlet.pdf"
+      },
+      "original_filename": "sim3292_*",
+      "local_files": {
+        "readme": "data/originals/geology/sim3292_readme.txt",
+        "metadata_xml": "data/originals/geology/sim3292_metadata.xml",
+        "metadata_txt": "data/originals/geology/sim3292_metadata.txt",
+        "pamphlet": "data/originals/geology/sim3292_pamphlet.pdf"
+      },
+      "local_availability": "available",
+      "published_checksum": null,
+      "sha256": {
+        "readme": "702c8d8dd705a7746dad2b47a36f85fd850cc44939388ccc5f8e636369731aeb",
+        "metadata_xml": "38806845cae2354e4ab65c55f57819d3e001b3865aceb5a24426efd5412683f8",
+        "metadata_txt": "f6124030ad026b0f0f249f9aff64b733dcfe0174c97aa8027b7af33b6f3527a6",
+        "pamphlet": "18d3f0547e2f8cd82891f5adc454a8177ab62339c0b4a7f8370d8d2ecbce16ca"
+      },
+      "crs": "Mars 2000 Sphere",
+      "vertical_datum": "N/A",
+      "units": "stratigraphic classification",
+      "nodata_value": null,
+      "native_resolution": {
+        "scale": "1:20,000,000",
+        "description": "Global chronostratigraphic and geological unit classification"
+      },
+      "production_usage": [
+        "Geological exploration and terrain unit identification"
+      ]
+    },
+    {
+      "dataset_id": "crism-targeted-rdr-frt000027b2",
+      "product_id": "FRT000027B2_01_IF156L_TRR3",
+      "mission": "Mars Reconnaissance Orbiter (MRO)",
+      "instrument": "Compact Reconnaissance Imaging Spectrometer for Mars (CRISM)",
+      "provenance_status": "authoritative_original",
+      "official_archive": "NASA Planetary Data System (PDS) Geosciences Node",
+      "archive_collection": "MRO-M-CRISM-3-RDR-TARGETED-V1.0 (mrocr_2101)",
+      "official_urls": {
+        "image": "https://pds-geosciences.wustl.edu/mro/mro-m-crism-3-rdr-targeted-v1/mrocr_2101/trdr/2006/2006_270/frt000027b2/frt000027b2_01_if156l_trr3.img",
+        "label": "https://pds-geosciences.wustl.edu/mro/mro-m-crism-3-rdr-targeted-v1/mrocr_2101/trdr/2006/2006_270/frt000027b2/frt000027b2_01_if156l_trr3.lbl"
+      },
+      "original_filename": "frt000027b2_01_if156l_trr3.img",
+      "local_files": {
+        "image": "data/originals/crism/frt000027b2_01_if156l_trr3.img",
+        "label": "data/originals/crism/frt000027b2_01_if156l_trr3.lbl",
+        "radiance_label": "data/originals/crism/frt000027b2_01_ra156l_trr3.lbl"
+      },
+      "local_availability": "available",
+      "published_checksum": {
+        "type": "MD5",
+        "value": "6935C24B14926ABD43BED6B63F750A2F",
+        "source_manifest": "mro_crism_trdr_2101.md5",
+        "verified": true
+      },
+      "sha256": {
+        "image": "8bc9dda308c3cbfb7a25c65a20d0af7310a4c21192ef8c2733b69bf0a80f5cef",
+        "label": "559e303df765174b0f5710a89718a4b7ae7f96d2c5cc528cd5d4df33b43decb7",
+        "radiance_label": "60ffe446ab0306ed1ac30759f1902301719b5d867e711fe5b25766031cb55a35"
+      },
+      "crs": "Simple Cylindrical / Planetocentric Mars",
+      "vertical_datum": "N/A",
+      "units": "I/F (Radiance Factor)",
+      "nodata_value": 65535,
+      "native_resolution": {
+        "pixel_size_m": 18.0,
+        "bands": 438,
+        "spectral_range_um": "1.0 - 3.92 um",
+        "description": "Hyperspectral I/F radiance factor targeted observation"
+      },
+      "production_usage": [
+        "Mineralogical exploration, hydrated minerals, phyllosilicate detection"
+      ]
+    },
+    {
+      "dataset_id": "meda-environmental-sol0001",
+      "product_id": "MARS2020_MEDA_DER_SOL_0001",
+      "mission": "Mars 2020 (Perseverance)",
+      "instrument": "Mars Environmental Dynamics Analyzer (MEDA)",
+      "provenance_status": "authoritative_original",
+      "official_archive": "NASA Planetary Data System (PDS) Atmospheres Node",
+      "archive_collection": "urn:nasa:pds:mars2020_meda:data_derived_env",
+      "official_urls": {
+        "pressure": "https://pds-atmospheres.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_derived_env/sol_0000_0089/sol_0001/WE__0001___________DER_PS__________________P02.CSV",
+        "humidity": "https://pds-atmospheres.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_derived_env/sol_0000_0089/sol_0001/WE__0001___________DER_RHS_________________P03.CSV",
+        "thermal_ir": "https://pds-atmospheres.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_derived_env/sol_0000_0089/sol_0001/WE__0001___________DER_TIRS________________P04.CSV"
+      },
+      "original_filename": "WE__0001___________DER_*.CSV",
+      "local_files": {
+        "pressure_csv": "data/originals/meda/WE__0001___________DER_PS__________________P02.CSV",
+        "pressure_xml": "data/originals/meda/WE__0001___________DER_PS__________________P02.xml",
+        "humidity_csv": "data/originals/meda/WE__0001___________DER_RHS_________________P03.CSV",
+        "humidity_xml": "data/originals/meda/WE__0001___________DER_RHS_________________P03.xml",
+        "tirs_csv": "data/originals/meda/WE__0001___________DER_TIRS________________P04.CSV",
+        "tirs_xml": "data/originals/meda/WE__0001___________DER_TIRS________________P04.xml"
+      },
+      "local_availability": "available",
+      "published_checksum": null,
+      "sha256": {
+        "pressure_csv": "600d8d11b26b2127ba66f90889e7ba5621a0b8b788146bf5bf72a02be2e0a16c",
+        "pressure_xml": "bf91828374f61d9267baf2f35b2784e50ffd44ea4b3559e023295ff075068c91",
+        "humidity_csv": "00271c06137f76294541e2c028c1ed76fca85a11829cf7c76c82fb2cd86e35d8",
+        "humidity_xml": "29cb6b7cfff3ca88404df1311b58a2e2931f8dfada46b253faa25dd4e7d50a84",
+        "tirs_csv": "ded7c255c90ede5fbbfbb66396c562b0ebc4d1682b71e29976e23cbc4cb47815",
+        "tirs_xml": "970c099fd89a2c01b9e442613d60104c1a76e5f71b7957867fd519c51b5d3673"
+      },
+      "crs": "Jezero Crater (Mars 2020 landing site: 18.38 N, 77.58 E)",
+      "vertical_datum": "Areoid -2,560 m",
+      "units": "Pascals, % RH, Kelvin",
+      "nodata_value": null,
+      "native_resolution": {
+        "sampling_frequency_hz": 1.0,
+        "description": "In-situ Sol 1 meteorological time series"
+      },
+      "production_usage": [
+        "Atmospheric context, diurnal pressure cycle, surface temperature modeling"
+      ]
+    },
+    {
+      "dataset_id": "rems-environmental-sol0001",
+      "product_id": "MSL_REMS_CALIBRATED_SOL_00001",
+      "mission": "Mars Science Laboratory (MSL Curiosity)",
+      "instrument": "Rover Environmental Monitoring Station (REMS)",
+      "provenance_status": "authoritative_original",
+      "official_archive": "NASA Planetary Data System (PDS) Atmospheres Node",
+      "archive_collection": "urn:nasa:pds:msl_rems_bundle:data_calibrated",
+      "official_urls": {
+        "adr_tab": "https://atmos.nmsu.edu/PDS/data/PDS4/msl_rems_bundle/data_calibrated/SOL_00001_00089/SOL00001/RME_397535244ADR00010000000_______P9.TAB",
+        "adr_xml": "https://atmos.nmsu.edu/PDS/data/PDS4/msl_rems_bundle/data_calibrated/SOL_00001_00089/SOL00001/RME_397535244ADR00010000000_______P9.xml"
+      },
+      "original_filename": "RME_397535244ADR00010000000_______P9.TAB",
+      "local_files": {
+        "adr_tab": "data/originals/rems/RME_397535244ADR00010000000_______P9.TAB",
+        "adr_xml": "data/originals/rems/RME_397535244ADR00010000000_______P9.xml",
+        "rmd_tab": "data/originals/rems/RME_397535244RMD00010000000_______PA.TAB",
+        "rmd_xml": "data/originals/rems/RME_397535244RMD00010000000_______PA.xml"
+      },
+      "local_availability": "available",
+      "published_checksum": null,
+      "sha256": {
+        "adr_tab": "d5edd3d49198992bd36244b4b151b8850befce2d91b9c774cce72a40e254d194",
+        "adr_xml": "c74c1258074918630f716a2dcadf24f272c9501a034ebb06d88d130840f86618",
+        "rmd_tab": "e38f69846b30e84c13d6bc916b04e2ff27a782172c35bc025faca65740f3669f",
+        "rmd_xml": "ce4d63f2be20f8d55d4a2ffaea8a5fedc2338f134243b96396af7af39c123af9"
+      },
+      "crs": "Gale Crater (MSL landing site: -4.59 S, 137.44 E)",
+      "vertical_datum": "Areoid -4,450 m",
+      "units": "Pa, K, m/s",
+      "nodata_value": null,
+      "native_resolution": {
+        "sampling_frequency_hz": 1.0,
+        "description": "In-situ Sol 1 meteorological time series"
+      },
+      "production_usage": [
+        "Comparative atmospheric analysis, environmental safety monitoring"
+      ]
+    },
+    {
+      "dataset_id": "nasa-3d-visualization-assets",
+      "product_id": "NASA_3D_RESOURCES_MARS_ASSETS",
+      "mission": "NASA 3D Resources / Science Mission Directorate",
+      "instrument": "Computer-Aided Design (CAD) & Textured Polygonal Meshes",
+      "provenance_status": "authoritative_original",
+      "official_archive": "NASA Official 3D Resources Repository (github.com/nasa/NASA-3D-Resources)",
+      "archive_collection": "NASA-3D-Resources / 3D Models & Images and Textures",
+      "official_urls": {
+        "perseverance_rover": "https://raw.githubusercontent.com/nasa/NASA-3D-Resources/master/3D%20Models/Mars%202020%20Perseverance%20Rover/Mars%202020%20Perseverance%20Rover.glb",
+        "ingenuity_helicopter": "https://raw.githubusercontent.com/nasa/NASA-3D-Resources/master/3D%20Models/Ingenuity%20Mars%20Helicopter/Ingenuity%20Mars%20Helicopter.glb",
+        "globe_texture": "https://raw.githubusercontent.com/nasa/NASA-3D-Resources/master/Images%20and%20Textures/Mars/Mars.jpg"
+      },
+      "original_filename": "*.glb / Mars.jpg",
+      "local_files": {
+        "perseverance_glb": "data/visualization/nasa_3d/Mars_2020_Perseverance_Rover.glb",
+        "ingenuity_glb": "data/visualization/nasa_3d/Ingenuity_Mars_Helicopter.glb",
+        "globe_texture": "data/visualization/nasa_3d/Mars_Globe_Texture.jpg"
+      },
+      "local_availability": "available",
+      "published_checksum": null,
+      "sha256": {
+        "perseverance_glb": "10db7c03a5e63a5a3b3e7baa6243aa4918ba045fa8ff0a731d0217491adc727f",
+        "ingenuity_glb": "9e5a5398ab335eae7d46335085301ce46fb7de052300b645debe8bac6d39f2b5",
+        "globe_texture": "12ec6bf02ebd42a246edc778cb2ce8c595b4d9f0892badf0bfff8abb2303c780"
+      },
+      "crs": "Model Coordinate Frame (Meters) / Spherical Texture Mapping",
+      "vertical_datum": "N/A",
+      "units": "3D polygon mesh vertices",
+      "nodata_value": null,
+      "native_resolution": {
+        "mesh_format": "glTF 2.0 Binary (.glb)",
+        "description": "Official NASA CAD and visual representation models for 3D web rendering"
+      },
+      "production_usage": [
+        "Interactive 3D mission visualization and Marswalk equipment display (NOT numerical elevation)"
+      ]
     }
   ]
 }
