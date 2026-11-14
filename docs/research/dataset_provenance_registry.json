@@ -1,0 +1,534 @@
+{
+  "registry_version": "1.0.0",
+  "last_audited_utc": "2026-11-14T13:50:00Z",
+  "policy_compliance": "POL-SCI-001",
+  "datasets": [
+    {
+      "dataset_id": "mola-megdr-4",
+      "product_id": "MEGT90N000CB",
+      "mission": "Mars Global Surveyor (MGS)",
+      "instrument": "Mars Orbiter Laser Altimeter (MOLA)",
+      "provenance_status": "authoritative_original",
+      "official_archive": "NASA Planetary Data System (PDS) Geosciences Node",
+      "archive_collection": "MGS-M-MOLA-5-MEGDR-L3-V1.0 (mgsl_300x/meg004)",
+      "official_urls": {
+        "label": "https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg004/megt90n000cb.lbl",
+        "image": "https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg004/megt90n000cb.img"
+      },
+      "original_filename": "megt90n000cb.img",
+      "local_files": {
+        "label": "data/raw/mola/megt90n000cb.lbl",
+        "image": "data/raw/mola/megt90n000cb.img"
+      },
+      "local_availability": "available",
+      "published_checksum": null,
+      "pds_record_validation": {
+        "record_bytes": 2880,
+        "file_records": 720,
+        "expected_bytes": 2073600,
+        "actual_bytes": 2073600
+      },
+      "sha256": {
+        "label": "5a3fe60256afa1c35fea5d551fe0ab0a9198fb2bcd2c2e161d078aa69627ebac",
+        "image": "25f16fb7aaf857898dcf98bc4f841341a24f8b9f7e98453ca083bc45d897ca2c"
+      },
+      "crs": "IAU:49900 (Planetocentric Simple Cylindrical Mars Sphere R=3,396.0 km)",
+      "vertical_datum": "MOLA Areoid (GMM3 mgm1025 to degree 50)",
+      "native_resolution": {
+        "pixels_per_degree": 4.0,
+        "pixel_size_deg": 0.25,
+        "equatorial_spacing_m": 14818.67,
+        "description": "0.25 deg/px (~14.8 km/px at equator)"
+      },
+      "spatial_footprint": {
+        "lat_min": -90.0,
+        "lat_max": 90.0,
+        "lon_min": 0.0,
+        "lon_max": 360.0,
+        "is_global": true
+      },
+      "raster_dimensions": {
+        "lines": 720,
+        "samples": 1440
+      },
+      "data_type": "MSB_INTEGER (16-bit signed, big-endian)",
+      "units": "metres relative to MOLA Areoid",
+      "nodata_value": -32768.0,
+      "production_usage": [
+        "Global Mars shaded-relief basemap",
+        "Global elevation lookup and elevation inspection fallback",
+        "Global Great-Circle profile transects",
+        "Global terrain slope and roughness baseline"
+      ]
+    },
+    {
+      "dataset_id": "mola-megdr-128-44n000",
+      "product_id": "MEGT44N000HB",
+      "mission": "Mars Global Surveyor (MGS)",
+      "instrument": "Mars Orbiter Laser Altimeter (MOLA)",
+      "provenance_status": "authoritative_original",
+      "official_archive": "NASA Planetary Data System (PDS) Geosciences Node",
+      "archive_collection": "MGS-M-MOLA-5-MEGDR-L3-V1.0 (mgsl_300x/meg128)",
+      "official_urls": {
+        "label": "https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg128/megt44n000hb.lbl",
+        "image": "https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg128/megt44n000hb.img"
+      },
+      "original_filename": "megt44n000hb.img",
+      "local_files": {
+        "label": "data/raw/mola/megt44n000hb.lbl",
+        "image": "data/raw/mola/megt44n000hb.img"
+      },
+      "local_availability": "available",
+      "published_checksum": null,
+      "pds_record_validation": {
+        "record_bytes": 23040,
+        "file_records": 5632,
+        "expected_bytes": 129761280,
+        "actual_bytes": 129761280
+      },
+      "sha256": {
+        "label": "bc624a238ba6d71a770a09f959ead96f1c144970fae435b8ca5e26208b42eec5",
+        "image": "14022166079edafc99650f354e5a634e6eb2c2ea544b444c01cd8ee55437df36"
+      },
+      "crs": "IAU:49900 (Planetocentric Simple Cylindrical Mars Sphere R=3,396.0 km)",
+      "vertical_datum": "MOLA Areoid (GMM3 mgm1025 to degree 50)",
+      "native_resolution": {
+        "pixels_per_degree": 128.0,
+        "pixel_size_deg": 0.0078125,
+        "equatorial_spacing_m": 463.08,
+        "description": "128 ppd (~463 m/px at equator)"
+      },
+      "spatial_footprint": {
+        "lat_min": 0.0,
+        "lat_max": 44.0,
+        "lon_min": 0.0,
+        "lon_max": 90.0,
+        "is_global": false
+      },
+      "raster_dimensions": {
+        "lines": 5632,
+        "samples": 11520
+      },
+      "data_type": "MSB_INTEGER (16-bit signed, big-endian)",
+      "units": "metres relative to MOLA Areoid",
+      "nodata_value": -32768.0,
+      "production_usage": [
+        "Regional high-resolution terrain rendering (Northern tropics 0-44N, 0-90E)",
+        "Regional elevation inspection",
+        "Seam continuity validation with 00n000"
+      ]
+    },
+    {
+      "dataset_id": "mola-megdr-128-00n000",
+      "product_id": "MEGT00N000HB",
+      "mission": "Mars Global Surveyor (MGS)",
+      "instrument": "Mars Orbiter Laser Altimeter (MOLA)",
+      "provenance_status": "authoritative_original",
+      "official_archive": "NASA Planetary Data System (PDS) Geosciences Node",
+      "archive_collection": "MGS-M-MOLA-5-MEGDR-L3-V1.0 (mgsl_300x/meg128)",
+      "official_urls": {
+        "label": "https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg128/megt00n000hb.lbl",
+        "image": "https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg128/megt00n000hb.img"
+      },
+      "original_filename": "megt00n000hb.img",
+      "local_files": {
+        "label": "data/raw/mola/megt00n000hb.lbl",
+        "image": "data/raw/mola/megt00n000hb.img"
+      },
+      "local_availability": "available",
+      "published_checksum": null,
+      "pds_record_validation": {
+        "record_bytes": 23040,
+        "file_records": 5632,
+        "expected_bytes": 129761280,
+        "actual_bytes": 129761280
+      },
+      "sha256": {
+        "label": "d27d0b5635a5024dd5d95845fd83477dc5f723976444d1e5882a675027b0da13",
+        "image": "f57274b5e459ab35a1975ca5f186f98bdb929475a4557098a7c632b9aa175c75"
+      },
+      "crs": "IAU:49900 (Planetocentric Simple Cylindrical Mars Sphere R=3,396.0 km)",
+      "vertical_datum": "MOLA Areoid (GMM3 mgm1025 to degree 50)",
+      "native_resolution": {
+        "pixels_per_degree": 128.0,
+        "pixel_size_deg": 0.0078125,
+        "equatorial_spacing_m": 463.08,
+        "description": "128 ppd (~463 m/px at equator)"
+      },
+      "spatial_footprint": {
+        "lat_min": -44.0,
+        "lat_max": 0.0,
+        "lon_min": 0.0,
+        "lon_max": 90.0,
+        "is_global": false
+      },
+      "raster_dimensions": {
+        "lines": 5632,
+        "samples": 11520
+      },
+      "data_type": "MSB_INTEGER (16-bit signed, big-endian)",
+      "units": "metres relative to MOLA Areoid",
+      "nodata_value": -32768.0,
+      "production_usage": [
+        "Regional high-resolution terrain rendering (Southern tropics -44 to 0N, 0-90E)",
+        "Sinus Meridiani benchmark elevation inspection (-2N, 5E: -909m)",
+        "Marswalk A* and Dijkstra pathfinding grid extraction",
+        "Seam continuity validation with 44n000 and 00n090"
+      ]
+    },
+    {
+      "dataset_id": "mola-megdr-128-00n090",
+      "product_id": "MEGT00N090HB",
+      "mission": "Mars Global Surveyor (MGS)",
+      "instrument": "Mars Orbiter Laser Altimeter (MOLA)",
+      "provenance_status": "authoritative_original",
+      "official_archive": "NASA Planetary Data System (PDS) Geosciences Node",
+      "archive_collection": "MGS-M-MOLA-5-MEGDR-L3-V1.0 (mgsl_300x/meg128)",
+      "official_urls": {
+        "label": "https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg128/megt00n090hb.lbl",
+        "image": "https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg128/megt00n090hb.img"
+      },
+      "original_filename": "megt00n090hb.img",
+      "local_files": {
+        "label": "data/raw/mola/megt00n090hb.lbl",
+        "image": "data/raw/mola/megt00n090hb.img"
+      },
+      "local_availability": "available",
+      "published_checksum": null,
+      "pds_record_validation": {
+        "record_bytes": 23040,
+        "file_records": 5632,
+        "expected_bytes": 129761280,
+        "actual_bytes": 129761280
+      },
+      "sha256": {
+        "label": "c85891df3c11e724c5c5d980630e56ee4f13c40d234b68e22401b9a404df3d36",
+        "image": "764946162d4c650abfb22aa284595a15374a7185f302a639c19e6602c67a1d6e"
+      },
+      "crs": "IAU:49900 (Planetocentric Simple Cylindrical Mars Sphere R=3,396.0 km)",
+      "vertical_datum": "MOLA Areoid (GMM3 mgm1025 to degree 50)",
+      "native_resolution": {
+        "pixels_per_degree": 128.0,
+        "pixel_size_deg": 0.0078125,
+        "equatorial_spacing_m": 463.08,
+        "description": "128 ppd (~463 m/px at equator)"
+      },
+      "spatial_footprint": {
+        "lat_min": -44.0,
+        "lat_max": 0.0,
+        "lon_min": 90.0,
+        "lon_max": 180.0,
+        "is_global": false
+      },
+      "raster_dimensions": {
+        "lines": 5632,
+        "samples": 11520
+      },
+      "data_type": "MSB_INTEGER (16-bit signed, big-endian)",
+      "units": "metres relative to MOLA Areoid",
+      "nodata_value": -32768.0,
+      "production_usage": [
+        "Regional high-resolution terrain rendering (Eastern quadrant -44 to 0N, 90-180E)",
+        "Seam continuity validation at 90 deg E meridian"
+      ]
+    },
+    {
+      "dataset_id": "ctx-dtm-p21-009323",
+      "product_id": "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W",
+      "mission": "Mars Reconnaissance Orbiter (MRO)",
+      "instrument": "Context Camera (CTX)",
+      "provenance_status": "authoritative_original",
+      "official_archive": "USGS Astrogeology Science Center / AWS Registry of Open Data",
+      "archive_collection": "mro_ctx_controlled_usgs_dtms",
+      "official_urls": {
+        "image": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/ctx/controlled/usgs/P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W/P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif",
+        "stac": "https://stac.astrogeology.usgs.gov/api/collections/mro_ctx_controlled_usgs_dtms/items/P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W"
+      },
+      "original_filename": "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif",
+      "local_files": {
+        "dtm": "data/raw/ctx/P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif",
+        "provenance": "data/raw/ctx/P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_provenance.json",
+        "stac": "data/raw/ctx/P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_stac.json"
+      },
+      "local_availability": "available",
+      "published_checksum": "a4edb9f414500fe44e1a3c2ba06ee39e5c060cf1483619e43f461be29d31aff2",
+      "sha256": {
+        "dtm": "a4edb9f414500fe44e1a3c2ba06ee39e5c060cf1483619e43f461be29d31aff2",
+        "provenance": "be3d7c199983005e8be6debde94d172c4d041a1e99105a0b9a0ec5c6b1bf5621",
+        "stac": "781f56e4a01999b7eeea5323e86275a4238a5e089246f83a8b0e1c56fe93cda6"
+      },
+      "crs": "IAU:49910 (Equidistant Cylindrical / Mars Sphere R=3,396,190.0 m, clat=-4.0 deg)",
+      "vertical_datum": "MOLA Areoid (tied via Ames Stereo Pipeline pc_align)",
+      "native_resolution": {
+        "pixel_spacing_x_m": 20.012803,
+        "pixel_spacing_y_m": 20.012803,
+        "description": "20.01 m/px numerical post-spacing"
+      },
+      "spatial_footprint": {
+        "lat_min": -5.187453,
+        "lat_max": -4.003197,
+        "lon_min": 66.036088,
+        "lon_max": 66.617196,
+        "is_global": false
+      },
+      "raster_dimensions": {
+        "lines": 3472,
+        "samples": 1692
+      },
+      "data_type": "Float32 (IEEE 754)",
+      "units": "metres relative to MOLA Areoid",
+      "nodata_value": -32767.0,
+      "production_usage": [
+        "Local high-resolution numerical terrain rendering (Tyrrhena Terra)",
+        "Local elevation inspection benchmark (-4.600N, 66.317E: +2189.49m)",
+        "Sub-pixel affine registration and coordinate validation",
+        "Multi-resolution zoom level elevation profile"
+      ]
+    },
+    {
+      "dataset_id": "mola-elevation-global-cog",
+      "product_id": "MOLA_MEGT90N000CB_ELEVATION_COG",
+      "mission": "Mars Global Surveyor (MGS)",
+      "instrument": "Mars Orbiter Laser Altimeter (MOLA)",
+      "provenance_status": "derived_with_lineage",
+      "source_dataset_id": "mola-megdr-4",
+      "derivation_lineage": {
+        "source_file": "data/raw/mola/megt90n000cb.img",
+        "source_sha256": "25f16fb7aaf857898dcf98bc4f841341a24f8b9f7e98453ca083bc45d897ca2c",
+        "processing_script": "backend/app/terrain/ingestion.py",
+        "converter_module": "backend/app/terrain/cog_converter.py",
+        "algorithm": "Bit-preserving GeoTIFF export (256x256 tiled, deflate compression)",
+        "parameters": {
+          "tile_size": 256,
+          "compression": "deflate",
+          "predictor": 2,
+          "nodata": -32768.0,
+          "pixel_size_deg": 0.25
+        },
+        "source_resolution_m": 14818.67,
+        "output_resolution_m": 14818.67,
+        "output_dimensions": {
+          "lines": 720,
+          "samples": 1440
+        }
+      },
+      "local_filename": "data/processed/mola/mola_megt90n000cb_elevation.tif",
+      "local_availability": "available",
+      "sha256": "e2e60b369f502d7ecd68fb1b39080717d2f908f993fb4a3952db235c1411b409",
+      "crs": "IAU:49900 (Planetocentric)",
+      "vertical_datum": "MOLA Areoid",
+      "units": "metres",
+      "nodata_value": -32768.0,
+      "production_usage": [
+        "Production COG serving /api/v1/terrain/render/window and tile basemaps"
+      ]
+    },
+    {
+      "dataset_id": "mola-slope-global-cog",
+      "product_id": "MOLA_MEGT90N000CB_SLOPE_COG",
+      "mission": "Mars Global Surveyor (MGS)",
+      "instrument": "Mars Orbiter Laser Altimeter (MOLA)",
+      "provenance_status": "derived_with_lineage",
+      "source_dataset_id": "mola-megdr-4",
+      "derivation_lineage": {
+        "source_file": "data/raw/mola/megt90n000cb.img",
+        "source_sha256": "25f16fb7aaf857898dcf98bc4f841341a24f8b9f7e98453ca083bc45d897ca2c",
+        "processing_script": "backend/app/terrain/ingestion.py",
+        "processor_module": "backend/app/terrain/processor.py",
+        "algorithm": "Horn 3x3 finite-difference slope with latitudinally adjusted metric spacing",
+        "parameters": {
+          "kernel_size": 3,
+          "algorithm": "horn",
+          "dx_dy_scaling": "latitudinally_projected_mars_sphere",
+          "nodata": -32768.0
+        },
+        "source_resolution_m": 14818.67,
+        "output_resolution_m": 14818.67,
+        "output_dimensions": {
+          "lines": 720,
+          "samples": 1440
+        }
+      },
+      "local_filename": "data/processed/mola/mola_megt90n000cb_slope.tif",
+      "local_availability": "available",
+      "sha256": "504179d40f3b53c8406ed4ae8a06266590d2192430f10119bb197b6de9c53a1a",
+      "crs": "IAU:49900 (Planetocentric)",
+      "vertical_datum": "Gradient (Horn 3x3)",
+      "units": "degrees (0.0 to 90.0)",
+      "nodata_value": -32768.0,
+      "production_usage": [
+        "Global slope visualization layer (/api/v1/terrain/layers)",
+        "Terrain hazard and traverse slope impedance modeling"
+      ]
+    },
+    {
+      "dataset_id": "mola-roughness-global-cog",
+      "product_id": "MOLA_MEGT90N000CB_ROUGHNESS_COG",
+      "mission": "Mars Global Surveyor (MGS)",
+      "instrument": "Mars Orbiter Laser Altimeter (MOLA)",
+      "provenance_status": "derived_with_lineage",
+      "source_dataset_id": "mola-megdr-4",
+      "derivation_lineage": {
+        "source_file": "data/raw/mola/megt90n000cb.img",
+        "source_sha256": "25f16fb7aaf857898dcf98bc4f841341a24f8b9f7e98453ca083bc45d897ca2c",
+        "processing_script": "backend/app/terrain/ingestion.py",
+        "processor_module": "backend/app/terrain/processor.py",
+        "algorithm": "Moving window 3x3 local standard deviation (RMS surface roughness)",
+        "parameters": {
+          "window_size": 3,
+          "metric": "local_standard_deviation",
+          "nodata": -32768.0
+        },
+        "source_resolution_m": 14818.67,
+        "output_resolution_m": 14818.67,
+        "output_dimensions": {
+          "lines": 720,
+          "samples": 1440
+        }
+      },
+      "local_filename": "data/processed/mola/mola_megt90n000cb_roughness.tif",
+      "local_availability": "available",
+      "sha256": "c4fb5ce71b6742cd0ddb5d6bca15045c0892bff35c05b476d85cb19b732e837d",
+      "crs": "IAU:49900 (Planetocentric)",
+      "vertical_datum": "Surface standard deviation",
+      "units": "metres",
+      "nodata_value": -32768.0,
+      "production_usage": [
+        "Global surface roughness visualization layer (/api/v1/terrain/layers)",
+        "Landing site and rover obstacle roughness assessment"
+      ]
+    },
+    {
+      "dataset_id": "hirise-dtm-schiaparelli",
+      "product_id": "DTEEC_017118_1790_016406_1790_A01",
+      "mission": "Mars Reconnaissance Orbiter (MRO)",
+      "instrument": "HiRISE (High Resolution Imaging Science Experiment)",
+      "provenance_status": "catalogued_unavailable",
+      "official_archive": "University of Arizona HiRISE DTM Archive / NASA PDS",
+      "official_urls": {
+        "image": "https://www.uahirise.org/PDS/DTM/ESP/ORB_017100_017199/ESP_017118_1790_ESP_016406_1790/DTEEC_017118_1790_016406_1790_A01.IMG"
+      },
+      "original_filename": "DTEEC_017118_1790_016406_1790_A01.IMG",
+      "local_files": {},
+      "local_availability": "unavailable",
+      "published_checksum": null,
+      "sha256": null,
+      "crs": "Equirectangular Mars Sphere (clat=0.0 deg, clon=13.86 deg E)",
+      "vertical_datum": "MOLA Areoid (tied)",
+      "native_resolution": {
+        "pixel_spacing_m": 1.01,
+        "description": "1.01 m/px meter-scale microtopography"
+      },
+      "spatial_footprint": {
+        "lat_min": -1.11146,
+        "lat_max": -0.76865,
+        "lon_min": 13.80057,
+        "lon_max": 13.92341,
+        "is_global": false
+      },
+      "units": "metres",
+      "nodata_value": -3.4028235e+38,
+      "production_usage": [],
+      "status_note": "Product catalogued; file not downloaded to local workspace. Analysis disabled."
+    },
+    {
+      "dataset_id": "hrsc-dtm-mc11",
+      "product_id": "HRSC_DTM_MC11_OXIA",
+      "mission": "Mars Express (MEX)",
+      "instrument": "HRSC (High Resolution Stereo Camera)",
+      "provenance_status": "catalogued_unavailable",
+      "official_archive": "ESA Planetary Science Archive (PSA) / DLR",
+      "official_urls": {
+        "archive": "https://pds-geosciences.wustl.edu/missions/mars_express/hrsc.htm"
+      },
+      "original_filename": "h0000_0000_dt4.img",
+      "local_files": {},
+      "local_availability": "unavailable",
+      "published_checksum": null,
+      "sha256": null,
+      "crs": "IAU:49900 (Planetocentric)",
+      "vertical_datum": "MOLA Areoid",
+      "native_resolution": {
+        "pixel_spacing_m": 50.0,
+        "description": "50 m/px regional stereophotogrammetric DTM"
+      },
+      "spatial_footprint": {
+        "lat_min": 0.0,
+        "lat_max": 30.0,
+        "lon_min": 315.0,
+        "lon_max": 360.0,
+        "is_global": false
+      },
+      "units": "metres",
+      "nodata_value": -32768.0,
+      "production_usage": [],
+      "status_note": "Product catalogued; file not downloaded to local workspace. Analysis disabled."
+    },
+    {
+      "dataset_id": "ctx-dtm-jezero",
+      "product_id": "CTX_DTM_JEZERO_DELTA",
+      "mission": "Mars Reconnaissance Orbiter (MRO)",
+      "instrument": "Context Camera (CTX)",
+      "provenance_status": "catalogued_unavailable",
+      "official_archive": "USGS Astrogeology / NASA Ames Stereo Pipeline",
+      "official_urls": {
+        "archive": "https://astrogeology.usgs.gov/search/map/Mars/MarsReconnaissanceOrbiter/CTX/"
+      },
+      "original_filename": "ctx_dtm_jezero.tif",
+      "local_files": {},
+      "local_availability": "unavailable",
+      "published_checksum": null,
+      "sha256": null,
+      "crs": "Equirectangular Mars (clat=18.0 deg N)",
+      "vertical_datum": "MOLA Areoid (ICP adjusted)",
+      "native_resolution": {
+        "pixel_spacing_m": 20.0,
+        "description": "20 m/px post-spacing"
+      },
+      "spatial_footprint": {
+        "lat_min": 17.0,
+        "lat_max": 20.0,
+        "lon_min": 76.0,
+        "lon_max": 79.5,
+        "is_global": false
+      },
+      "units": "metres",
+      "nodata_value": -32768.0,
+      "production_usage": [],
+      "status_note": "Product catalogued; file not downloaded to local workspace. Analysis disabled."
+    },
+    {
+      "dataset_id": "hirise-dtm-jezero",
+      "product_id": "DTEEC_042858_1985_042924_1985_A01",
+      "mission": "Mars Reconnaissance Orbiter (MRO)",
+      "instrument": "HiRISE (High Resolution Imaging Science Experiment)",
+      "provenance_status": "catalogued_unavailable",
+      "official_archive": "University of Arizona HiRISE DTM Archive / NASA PDS",
+      "official_urls": {
+        "archive": "https://www.uahirise.org/dtm/dtm.php?ID=ESP_042858_1985"
+      },
+      "original_filename": "DTEEC_042858_1985_042924_1985_A01.IMG",
+      "local_files": {},
+      "local_availability": "unavailable",
+      "published_checksum": null,
+      "sha256": null,
+      "crs": "Equirectangular Mars (clat=18.5 deg N, clon=77.5 deg E)",
+      "vertical_datum": "MOLA Areoid (tied)",
+      "native_resolution": {
+        "pixel_spacing_m": 1.0,
+        "description": "1.0 m/px post-spacing"
+      },
+      "spatial_footprint": {
+        "lat_min": 18.3,
+        "lat_max": 18.55,
+        "lon_min": 77.35,
+        "lon_max": 77.6,
+        "is_global": false
+      },
+      "units": "metres",
+      "nodata_value": -3.4028235e+38,
+      "production_usage": [],
+      "status_note": "Product catalogued; file not downloaded to local workspace. Analysis disabled."
+    }
+  ]
+}
