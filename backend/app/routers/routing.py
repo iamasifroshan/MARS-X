@@ -112,6 +112,32 @@ async def check_route_data_availability(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/terrain-source")
+async def get_corridor_terrain_source(
+    start_lat: float = Query(..., ge=-90.0, le=90.0, description="Start latitude in degrees"),
+    start_lon: float = Query(..., ge=0.0, le=360.0, description="Start longitude in degrees"),
+    dest_lat: float = Query(..., ge=-90.0, le=90.0, description="Destination latitude in degrees"),
+    dest_lon: float = Query(..., ge=0.0, le=360.0, description="Destination longitude in degrees"),
+    target_scale_m: Optional[float] = Query(default=None, ge=1.0, description="Optional target analysis scale in metres"),
+) -> Dict[str, Any]:
+    """Identify the terrain dataset supporting a proposed route corridor."""
+    if route_service is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Mars route service is unavailable. Required MOLA 128 raster file not found.",
+        )
+    try:
+        return route_service.evaluate_corridor_terrain_source(
+            start_lat=start_lat,
+            start_lon=start_lon,
+            dest_lat=dest_lat,
+            dest_lon=dest_lon,
+            target_scale_m=target_scale_m,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 # Also expose under /api/v1/routing for routing-convention consistency
 routing_alias_router = APIRouter(prefix=f"{API_V1_PREFIX}/routing", tags=["routing"])
 
@@ -124,4 +150,17 @@ async def check_routing_data_availability_alias(
 ) -> Dict[str, Any]:
     """Alias for /api/v1/routes/data-availability."""
     return await check_route_data_availability(min_lat, min_lon, max_lat, max_lon)
+
+
+@routing_alias_router.get("/terrain-source")
+async def get_routing_terrain_source_alias(
+    start_lat: float = Query(..., ge=-90.0, le=90.0),
+    start_lon: float = Query(..., ge=0.0, le=360.0),
+    dest_lat: float = Query(..., ge=-90.0, le=90.0),
+    dest_lon: float = Query(..., ge=0.0, le=360.0),
+    target_scale_m: Optional[float] = Query(default=None, ge=1.0),
+) -> Dict[str, Any]:
+    """Alias for /api/v1/routes/terrain-source."""
+    return await get_corridor_terrain_source(start_lat, start_lon, dest_lat, dest_lon, target_scale_m)
+
 

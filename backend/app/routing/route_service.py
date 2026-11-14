@@ -30,6 +30,13 @@ from app.routing.route_validator import RouteValidator
 from app.routing.route_metrics import RouteMetricsCalculator
 from app.terrain.multi_resolution import MultiResolutionTerrainCatalog
 from app.terrain.inventory import Mola128InventoryService
+from app.terrain.resolution_selector import (
+    ResolutionSelector,
+    ResolutionSelectionRequest,
+    AnalysisType,
+)
+from app.geospatial import haversine_distance
+
 
 
 class MarsRouteService:
@@ -314,4 +321,89 @@ class MarsRouteService:
             "supported_algorithms": ["astar", "dijkstra"] if routing_eligible else [],
             "scientific_notes": notes,
         }
+
+    def evaluate_corridor_terrain_source(
+        self,
+        start_lat: float,
+        start_lon: float,
+        dest_lat: float,
+        dest_lon: float,
+        target_scale_m: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Evaluate and select the scientifically appropriate terrain source supporting a proposed route corridor."""
+        min_lat = min(start_lat, dest_lat) - 0.05
+        max_lat = max(start_lat, dest_lat) + 0.05
+        min_lon = min(start_lon, dest_lon) - 0.05
+        max_lon = max(start_lon, dest_lon) + 0.05
+
+        dist_m = haversine_distance(start_lat, start_lon, dest_lat, dest_lon)
+        dist_km = round(dist_m / 1000.0, 2)
+
+        selector = ResolutionSelector()
+        sel_req = ResolutionSelectionRequest(
+            min_lat=min_lat,
+            min_lon=min_lon,
+            max_lat=max_lat,
+            max_lon=max_lon,
+            analysis_type=AnalysisType.TRAVERSE_PLANNING,
+            target_scale_m=target_scale_m or 463.08,
+            require_local_raster=True,
+        )
+        sel_res = selector.select_resolution(sel_req)
+
+        # Check start & dest in active planning footprint
+        start_in_fp = self.builder.is_coordinate_in_footprint(start_lat, start_lon)
+        dest_in_fp = self.builder.is_coordinate_in_footprint(dest_lat, dest_lon)
+
+        unsupported_segments = []
+        if not start_in_fp:
+            unsupported_segments.append(
+                f"Start coordinate ({start_lat:.4f}°N, {start_lon:.4f}°E) lies outside active MOLA 128 planning footprint."
+            )
+        if not dest_in_fp:
+            unsupported_segments.append(
+                f"Destination coordinate ({dest_lat:.4f}°N, {dest_lon:.4f}°E) lies outside active MOLA 128 planning footprint."
+            )
+
+        routing_eligible = start_in_fp and dest_in_fp and (sel_res.coverage_percentage >= 95.0)
+
+        # Inspect candidate profile
+        selected_prod = sel_res.selected_product
+        crs = selected_prod.crs if selected_prod else "IAU:49900"
+        vert_datum = selected_prod.vertical_datum if selected_prod else "MOLA Areoid"
+
+        rationale = (
+            f"Corridor spans {dist_km:.1f} km. Primary terrain source: '{sel_res.selected_product_id}' "
+            f"({sel_res.native_resolution_m:.1f} m/px). Routing eligibility: {routing_eligible}. "
+            f"Valid data coverage across corridor envelope: {sel_res.coverage_percentage:.1f}%."
+        )
+
+        limitations = [
+            "Pathfinding cost graph operates at the native resolution of the active MOLA 128 baseline (463.08 m/px).",
+            "Multi-resolution traversal across different sensor baselines is restricted to avoid false edge discontinuities.",
+            "Traverse planning is an algorithmic demonstration and does not imply rover or astronaut operational navigation clearance."
+        ]
+
+        return {
+            "start_coord": (start_lat, start_lon),
+            "dest_coord": (dest_lat, dest_lon),
+            "corridor_bounds": {
+                "min_lat": round(min_lat, 4),
+                "max_lat": round(max_lat, 4),
+                "min_lon": round(min_lon, 4),
+                "max_lon": round(max_lon, 4),
+            },
+            "corridor_length_km": dist_km,
+            "primary_terrain_product": sel_res.selected_product_id or "none",
+            "primary_resolution_m": sel_res.native_resolution_m or 0.0,
+            "routing_eligible": routing_eligible,
+            "valid_data_coverage_pct": sel_res.coverage_percentage,
+            "unsupported_segments": unsupported_segments,
+            "horizontal_crs": crs,
+            "vertical_datum": vert_datum,
+            "datum_compatibility": "compatible" if routing_eligible else "incompatible_or_unsupported",
+            "selection_rationale": rationale,
+            "scientific_limitations": limitations,
+        }
+
 

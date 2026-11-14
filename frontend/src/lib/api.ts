@@ -19,7 +19,14 @@ import {
   RasterElevationComparisonResult,
   RegionCoverageResult,
   RoutingDataAvailability,
+  ResolutionSelectionResult,
+  MultiScaleAnalysisResult,
+  ResolutionTransitionEvaluation,
+  RegionTerrainAssessment,
+  RegionComparisonResponse,
+  RouteTerrainSourceResponse,
 } from "./types";
+
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -358,3 +365,153 @@ export async function fetchRoutingDataAvailability(
   return res.json();
 }
 
+
+// ── Phase 8: Resolution-Aware Terrain Intelligence Endpoints ───────────────────
+
+export async function fetchResolutionSelection(
+  minLat: number,
+  minLon: number,
+  maxLat: number,
+  maxLon: number,
+  analysisType: string = "traverse_planning",
+  targetScaleM?: number
+): Promise<ResolutionSelectionResult> {
+  const url = new URL(`${API_BASE}/api/v1/science/resolution-selection`);
+  url.searchParams.set("min_lat", minLat.toString());
+  url.searchParams.set("min_lon", minLon.toString());
+  url.searchParams.set("max_lat", maxLat.toString());
+  url.searchParams.set("max_lon", maxLon.toString());
+  url.searchParams.set("analysis_type", analysisType);
+  if (targetScaleM) {
+    url.searchParams.set("target_scale_m", targetScaleM.toString());
+  }
+
+  const res = await fetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Resolution selection failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchTerrainProfile(
+  minLat: number,
+  minLon: number,
+  maxLat: number,
+  maxLon: number,
+  datasetId?: string,
+  windowsM: string = "100,500,1000,2000"
+): Promise<MultiScaleAnalysisResult> {
+  const url = new URL(`${API_BASE}/api/v1/science/terrain-profile`);
+  url.searchParams.set("min_lat", minLat.toString());
+  url.searchParams.set("min_lon", minLon.toString());
+  url.searchParams.set("max_lat", maxLat.toString());
+  url.searchParams.set("max_lon", maxLon.toString());
+  if (datasetId) {
+    url.searchParams.set("dataset_id", datasetId);
+  }
+  url.searchParams.set("windows_m", windowsM);
+
+  const res = await fetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Terrain profile analysis failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchTransitionCompatibility(
+  productA: string,
+  productB: string
+): Promise<ResolutionTransitionEvaluation> {
+  const url = new URL(`${API_BASE}/api/v1/science/transition-compatibility`);
+  url.searchParams.set("product_a", productA);
+  url.searchParams.set("product_b", productB);
+
+  const res = await fetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Transition compatibility check failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchRegionAssessment(
+  minLat: number,
+  minLon: number,
+  maxLat: number,
+  maxLon: number,
+  name: string = "Target Region",
+  targetScaleM: number = 500.0
+): Promise<RegionTerrainAssessment> {
+  const url = new URL(`${API_BASE}/api/v1/science/region-assessment`);
+  url.searchParams.set("min_lat", minLat.toString());
+  url.searchParams.set("min_lon", minLon.toString());
+  url.searchParams.set("max_lat", maxLat.toString());
+  url.searchParams.set("max_lon", maxLon.toString());
+  url.searchParams.set("name", name);
+  url.searchParams.set("target_scale_m", targetScaleM.toString());
+
+  const res = await fetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Region assessment failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchPresetRegionComparison(
+  targetScaleM: number = 500.0
+): Promise<RegionComparisonResponse> {
+  const url = new URL(`${API_BASE}/api/v1/science/region-comparison`);
+  url.searchParams.set("target_scale_m", targetScaleM.toString());
+
+  const res = await fetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Region comparison failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchRouteTerrainSource(
+  startLat: number,
+  startLon: number,
+  destLat: number,
+  destLon: number,
+  targetScaleM?: number
+): Promise<RouteTerrainSourceResponse> {
+  const url = new URL(`${API_BASE}/api/v1/routing/terrain-source`);
+  url.searchParams.set("start_lat", startLat.toString());
+  url.searchParams.set("start_lon", startLon.toString());
+  url.searchParams.set("dest_lat", destLat.toString());
+  url.searchParams.set("dest_lon", destLon.toString());
+  if (targetScaleM) {
+    url.searchParams.set("target_scale_m", targetScaleM.toString());
+  }
+
+  const res = await fetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Route terrain source evaluation failed with status: ${res.status}`);
+  }
+  return res.json();
+}

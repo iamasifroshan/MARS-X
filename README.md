@@ -109,6 +109,13 @@ The UI will be available at `http://localhost:3000`.
 | `GET` | `/health` | Health check |
 | `GET` | `/api/v1/status` | Detailed status (version, uptime, services) |
 | `GET` | `/api/v1/datasets` | Dataset catalogue (supports `?mission=` filter) |
+| `GET` | `/api/v1/science/resolution-selection` | Resolution-aware dataset selector based on scale & availability |
+| `GET` | `/api/v1/science/terrain-profile` | Scale-aware topographic profiler (slope, roughness, relief) |
+| `GET` | `/api/v1/science/transition-compatibility` | Cross-resolution boundary compatibility & spatial partitioning |
+| `GET` | `/api/v1/science/region-assessment` | Single-region terrain intelligence with data confidence scoring |
+| `GET` | `/api/v1/science/region-comparison` | Multi-region comparative geomorphological contrast at equal scales |
+| `GET` | `/api/v1/routing/terrain-source` | Route corridor elevation source & gap identification |
+
 
 Full API documentation: [docs/api/endpoints.md](docs/api/endpoints.md)
 
@@ -147,7 +154,7 @@ NASA Mars Trek WMTS tile services use EPSG:104905 (areocentric coordinates on a 
 
 ## 📊 Current Status
 
-**Phase: Phase 7.1 (Independent Scientific Data Audit & Cross-Resolution Validation)** 🧭🔴
+**Phase: Phase 8 (Resolution-Aware Terrain Intelligence & Adaptive Mission Planning)** 🧭🔴
 
 - [x] Project scaffolding and directory structure
 - [x] Backend API with FastAPI (health, status, dataset catalogue)
@@ -168,9 +175,15 @@ NASA Mars Trek WMTS tile services use EPSG:104905 (areocentric coordinates on a 
 - [x] Formal geodetic sign convention ($\Delta z = z_{\text{CTX}} - z_{\text{MOLA}} = -57.57\text{ m}$)
 - [x] Dual-support sampling audit: Point sampling ($N = 184$) and MOLA cell aggregation ($N = 1,877$)
 - [x] Zero-median boundary continuity verified across MOLA tile seams (0.0 m median)
-- [x] Resolution-aware routing data availability service and anti-upsampling guarantees
-- [x] Next.js multi-resolution terrain intelligence dashboard with 4-tier hierarchy inspector
-- [x] 134 comprehensive backend tests passed with zero regressions
+- [x] Resolution-Aware Data Selection Engine (`resolution_selector.py`) with zero-fabrication lifecycle guards
+- [x] Multi-Scale Topographic Profiler (`multiscale_analysis.py`) converting physical windows (metres) to odd pixel kernels
+- [x] O(1) Integral-image uniform box filtering for local roughness and relief
+- [x] Multi-Resolution Transition Intelligence & Hierarchical Spatial Partitioning (`resolution_transition.py`)
+- [x] Planetary Terrain Intelligence & Region Comparison Engine (`terrain_intelligence.py`) with explainable confidence scoring
+- [x] Adaptive Route Corridor Source Selection & Gap Detection in `route_service.py`
+- [x] Next.js Mission Control Terrain Intelligence Panel with 5 interactive analysis views
+- [x] 152 comprehensive backend tests passed with zero regressions
+
 
 ---
 

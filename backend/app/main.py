@@ -10,6 +10,8 @@ from app.routers import health as health_router
 from app.routers import datasets as datasets_router
 from app.routers import terrain as terrain_router
 from app.routers import routing as routing_router
+from app.routers import science as science_router
+
 
 # ── Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -45,6 +47,8 @@ app.include_router(datasets_router.router)
 app.include_router(terrain_router.router)
 app.include_router(routing_router.router)
 app.include_router(routing_router.routing_alias_router)
+app.include_router(science_router.router)
+
 
 
 # ── Root ───────────────────────────────────────────────────────────────────

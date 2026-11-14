@@ -440,3 +440,175 @@ export interface RoutingDataAvailability {
   scientific_notes: string[];
 }
 
+
+// ── Phase 8: Resolution-Aware Terrain Intelligence Types ───────────────────────
+
+export interface CandidateEvaluation {
+  product_id: string;
+  instrument: string;
+  tier: string;
+  native_resolution_m: number;
+  is_locally_available: boolean;
+  local_file_path?: string | null;
+  lifecycle_status: string;
+  coverage_area_km2: number;
+  coverage_percentage: number;
+  horizontal_crs: string;
+  vertical_datum: string;
+  vertical_datum_compatibility: string;
+  scale_suitability_score: number;
+  is_eligible: boolean;
+  disqualification_reason?: string | null;
+}
+
+export interface SelectionRejectionReason {
+  product_id: string;
+  stage: string;
+  reason: string;
+}
+
+export interface ResolutionSelectionResult {
+  status: "selected" | "partial_coverage" | "insufficient_data" | "no_coverage";
+  selected_product_id?: string | null;
+  selected_product?: DTMProductProfile | null;
+  fallback_product_id?: string | null;
+  native_resolution_m?: number | null;
+  coverage_percentage: number;
+  covered_area_km2: number;
+  requested_area_km2: number;
+  selection_rationale: string;
+  rejected_products: SelectionRejectionReason[];
+  evaluated_candidates: CandidateEvaluation[];
+  uncertainty_notes: string[];
+  scientific_limitations: string[];
+}
+
+export interface ScaleMetrics {
+  window_m: number;
+  neighborhood_pixels: number;
+  source_product: string;
+  native_resolution_m: number;
+  crs: string;
+  vertical_datum: string;
+  valid_data_pct: number;
+  mean_elevation_m: number;
+  min_elevation_m: number;
+  max_elevation_m: number;
+  elevation_std_m: number;
+  elevation_iqr_m: number;
+  mean_slope_deg: number;
+  max_slope_deg: number;
+  p50_slope_deg: number;
+  p90_slope_deg: number;
+  p95_slope_deg: number;
+  mean_local_relief_m: number;
+  max_local_relief_m: number;
+  mean_roughness_m: number;
+  max_roughness_m: number;
+  complexity_class: "low_complexity" | "moderate_complexity" | "high_complexity" | "insufficient_data";
+  complexity_rationale: string;
+}
+
+export interface MultiScaleAnalysisResult {
+  region_bounds: { min_lat: number; min_lon: number; max_lat: number; max_lon: number };
+  selected_product_id: string;
+  native_resolution_m: number;
+  crs: string;
+  vertical_datum: string;
+  scales: ScaleMetrics[];
+  cross_scale_summary: string;
+  scientific_limitations: string[];
+}
+
+export interface ResolutionTransitionEvaluation {
+  product_a: string;
+  product_b: string;
+  transition_status: "compatible" | "compatible_with_documented_transformation" | "incompatible" | "insufficient_overlap" | "unknown";
+  has_overlap: boolean;
+  overlap_area_km2: number;
+  overlap_bounds?: { min_lat: number; max_lat: number; min_lon: number; max_lon: number } | null;
+  resolution_a_m: number;
+  resolution_b_m: number;
+  resolution_ratio: number;
+  horizontal_crs_status: string;
+  horizontal_scale_drift_ppm: number;
+  vertical_datum_status: string;
+  vertical_datum_notes: string;
+  pixel_registration_match: boolean;
+  permitted_operations: string[];
+  forbidden_operations: string[];
+  partition_strategy?: {
+    strategy: string;
+    high_resolution_infill: string;
+    regional_context_surround: string;
+    boundary_buffer_m: number;
+    recommendation: string;
+  } | null;
+  scientific_justification: string;
+  anti_upsampling_safeguards: string[];
+}
+
+export interface RegionTerrainAssessment {
+  region_id: string;
+  name: string;
+  bounds: { min_lat: number; min_lon: number; max_lat: number; max_lon: number };
+  area_km2: number;
+  selected_dataset_id: string;
+  native_resolution_m: number;
+  data_availability: "local_verified" | "local_partial" | "remote_only";
+  valid_data_coverage_pct: number;
+  analysis_scale_m: number;
+  mean_slope_deg: number;
+  max_slope_deg: number;
+  p50_slope_deg: number;
+  p90_slope_deg: number;
+  mean_local_relief_m: number;
+  max_local_relief_m: number;
+  mean_roughness_m: number;
+  max_roughness_m: number;
+  elevation_min_m: number;
+  elevation_max_m: number;
+  elevation_mean_m: number;
+  elevation_std_m: number;
+  terrain_complexity_class: string;
+  complexity_rationale: string;
+  data_confidence_score: number;
+  confidence_breakdown: Record<string, number>;
+  scientific_summary: string;
+  limitations: string[];
+}
+
+export interface RegionPairComparison {
+  region_a_id: string;
+  region_b_id: string;
+  slope_contrast: string;
+  roughness_contrast: string;
+  coverage_contrast: string;
+  resolution_contrast: string;
+  comparative_summary: string;
+}
+
+export interface RegionComparisonResponse {
+  comparison_scale_m: number;
+  regions_evaluated: RegionTerrainAssessment[];
+  pairwise_comparisons: RegionPairComparison[];
+  methodological_notes: string[];
+  scientific_disclaimer: string;
+}
+
+export interface RouteTerrainSourceResponse {
+  start_coord: [number, number];
+  dest_coord: [number, number];
+  corridor_bounds: { min_lat: number; max_lat: number; min_lon: number; max_lon: number };
+  corridor_length_km: number;
+  primary_terrain_product: string;
+  primary_resolution_m: number;
+  routing_eligible: boolean;
+  valid_data_coverage_pct: number;
+  unsupported_segments: string[];
+  horizontal_crs: string;
+  vertical_datum: string;
+  datum_compatibility: string;
+  selection_rationale: string;
+  scientific_limitations: string[];
+}

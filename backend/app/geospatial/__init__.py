@@ -134,3 +134,24 @@ def compute_mars_ground_resolution(lat_deg: float, dlon_deg: float, dlat_deg: fl
     # Parallel circumference (east-west), shrinking with cos(lat)
     dx = (math.pi * MARS_EQUATORIAL_RADIUS_M / 180.0) * math.cos(lat_rad) * dlon_deg
     return abs(dx), abs(dy)
+
+
+def haversine_distance(
+    lat1_deg: float,
+    lon1_deg: float,
+    lat2_deg: float,
+    lon2_deg: float,
+    radius_m: float = MARS_EQUATORIAL_RADIUS_M,
+) -> float:
+    """Calculate great-circle spherical distance in metres between two points on Mars."""
+    phi1 = math.radians(lat1_deg)
+    phi2 = math.radians(lat2_deg)
+    dphi = math.radians(lat2_deg - lat1_deg)
+    dlambda = math.radians(lon2_deg - lon1_deg)
+    a = (
+        math.sin(dphi * 0.5) ** 2
+        + math.cos(phi1) * math.cos(phi2) * (math.sin(dlambda * 0.5) ** 2)
+    )
+    c = 2.0 * math.atan2(math.sqrt(max(0.0, a)), math.sqrt(max(0.0, 1.0 - a)))
+    return radius_m * c
+

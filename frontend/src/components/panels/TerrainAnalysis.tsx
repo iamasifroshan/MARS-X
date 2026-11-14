@@ -22,6 +22,8 @@ import {
   HazardEngineMetadata,
 } from "@/lib/types";
 import { MultiResolutionTerrain } from "./MultiResolutionTerrain";
+import { TerrainIntelligencePanel } from "./TerrainIntelligencePanel";
+
 
 interface TerrainAnalysisProps {
   currentCoordinates?: { lat: number; lon: number } | null;
@@ -37,7 +39,8 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
   const [hazards, setHazards] = useState<TerrainHazardPointMetrics | null>(null);
   const [hazardMeta, setHazardMeta] = useState<HazardEngineMetadata | null>(null);
   
-  const [selectedTab, setSelectedTab] = useState<"multires" | "hazards" | "validation" | "inventory" | "compatibility" | "layers">("multires");
+  const [selectedTab, setSelectedTab] = useState<"intelligence" | "multires" | "hazards" | "validation" | "inventory" | "compatibility" | "layers">("intelligence");
+
   const [compatPair, setCompatPair] = useState<{ a: string; b: string }>({
     a: "mola-megdr-4",
     b: "hirise-dtm-jezero",
@@ -105,15 +108,24 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-lg border border-slate-800 text-xs font-mono">
+        <div className="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-lg border border-slate-800 text-xs font-mono overflow-x-auto">
+          <button
+            onClick={() => setSelectedTab("intelligence")}
+            className={`px-2.5 py-1 rounded transition-colors whitespace-nowrap ${
+              selectedTab === "intelligence" ? "bg-orange-950/80 text-orange-400 border border-orange-500/60 font-bold" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            Terrain Intelligence (P8)
+          </button>
           <button
             onClick={() => setSelectedTab("multires")}
-            className={`px-2.5 py-1 rounded transition-colors ${
+            className={`px-2.5 py-1 rounded transition-colors whitespace-nowrap ${
               selectedTab === "multires" ? "bg-cyan-950/80 text-cyan-300 border border-cyan-800/60" : "text-slate-400 hover:text-white"
             }`}
           >
             Multi-Res (4 Tiers)
           </button>
+
           <button
             onClick={() => setSelectedTab("hazards")}
             className={`px-2.5 py-1 rounded transition-colors ${
@@ -169,10 +181,16 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
         </div>
       )}
 
-      {/* 0. MULTI-RESOLUTION TERRAIN INTELLIGENCE */}
+      {/* 0. RESOLUTION-AWARE TERRAIN INTELLIGENCE (PHASE 8) */}
+      {selectedTab === "intelligence" && (
+        <TerrainIntelligencePanel currentCoordinates={currentCoordinates} />
+      )}
+
+      {/* 1. MULTI-RESOLUTION TERRAIN INTELLIGENCE */}
       {selectedTab === "multires" && (
         <MultiResolutionTerrain currentCoordinates={currentCoordinates} />
       )}
+
 
       {/* 1. TERRAIN COMPLEXITY & HAZARD INDICATORS */}
       {selectedTab === "hazards" && (
