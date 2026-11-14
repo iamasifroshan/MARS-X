@@ -711,7 +711,18 @@ export interface ScienceDiscovery {
   category: string;
   latitude: number;
   longitude: number;
+  coordinate_display?: string;
   primary_feature: string;
+  primary_evidence_class?: string;
+  primary_source?: {
+    feature_or_product: string;
+    source_type: string;
+    native_scale_or_spacing: string;
+    positional_precision?: string;
+    vertical_datum?: string;
+    vertical_datum_type?: string;
+    coverage_limitations?: string;
+  };
   scientific_significance: string;
   geological_context: {
     unit_symbol?: string;
@@ -737,8 +748,10 @@ export interface ScienceDiscovery {
   };
   supporting_datasets: string[];
   evidence_classes: {
-    measured_observations: string[];
+    direct_sensor_observations?: string[];
+    measured_observations?: string[];
     derived_measurements: string[];
+    mapped_geological_interpretations?: string[];
     indicative_proxies: string[];
     potential_investigations: string[];
   };

@@ -717,7 +717,10 @@ function normalizeDiscovery(d: any): ScienceDiscovery {
     category: d.category,
     latitude: d.latitude,
     longitude: d.longitude,
+    coordinate_display: d.coordinate_display,
     primary_feature: d.primary_feature || d.target_site || d.title || "",
+    primary_evidence_class: d.primary_evidence_class,
+    primary_source: d.primary_source,
     scientific_significance: d.scientific_significance || "",
     geological_context: d.geological_context || {
       unit_symbol: d.live_measurements?.geology_unit_code,

@@ -46,7 +46,10 @@ def test_coordinate_notation_no_double_negatives():
 
 def test_epistemological_evidence_classes_all_candidates():
     """Verify every candidate discovery has a valid primary_evidence_class and 4-class matrix."""
-    valid_classes = {"measured_observation", "derived_measurement", "indicative_proxy", "composite_evidence"}
+    valid_classes = {
+        "measured_observation", "derived_measurement", "indicative_proxy", "composite_evidence",
+        "mapped_geological_interpretation", "composite_interpretation", "direct_sensor_observation"
+    }
 
     for d in CANDIDATE_DISCOVERIES:
         disc_id = d["id"]

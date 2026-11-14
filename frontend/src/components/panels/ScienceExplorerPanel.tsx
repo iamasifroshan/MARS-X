@@ -305,8 +305,13 @@ export const ScienceExplorerPanel: React.FC<ScienceExplorerPanelProps> = ({
                         {disc.category.replace(/_/g, " ")}
                       </span>
                       <span className="text-[10px] text-gray-400">
-                        {disc.latitude.toFixed(2)}°, {disc.longitude.toFixed(2)}°E
+                        {disc.coordinate_display || `${disc.latitude.toFixed(2)}°, ${disc.longitude.toFixed(2)}°E`}
                       </span>
+                      {disc.primary_source?.native_scale_or_spacing && (
+                        <span className="text-[9px] text-cyan-400 border border-cyan-800/40 bg-cyan-950/20 px-1 rounded ml-auto">
+                          {disc.primary_source.source_type === "cartographic_map" ? "1:20M Scale" : disc.primary_source.native_scale_or_spacing.split(" ")[0]}
+                        </span>
+                      )}
                     </div>
 
                     <p className="text-[10px] text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">
@@ -412,7 +417,7 @@ export const ScienceExplorerPanel: React.FC<ScienceExplorerPanelProps> = ({
                     </span>
                   </div>
                   <div className="bg-[#14182e] p-2 rounded border border-[#232a45]">
-                    <span className="text-gray-400 text-[10px] block">MOLA 128 ELEVATION</span>
+                    <span className="text-gray-400 text-[10px] block">MOLA ELEVATION (AREOID)</span>
                     <span className="font-bold text-emerald-400">
                       {selectedDiscovery.terrain_context?.mola_elevation_m !== undefined
                         ? `${selectedDiscovery.terrain_context.mola_elevation_m.toFixed(1)} m`
@@ -420,11 +425,12 @@ export const ScienceExplorerPanel: React.FC<ScienceExplorerPanelProps> = ({
                     </span>
                   </div>
                   <div className="bg-[#14182e] p-2 rounded border border-[#232a45]">
-                    <span className="text-gray-400 text-[10px] block">HIGHEST RESOLUTION</span>
+                    <span className="text-gray-400 text-[10px] block">PRIMARY SOURCE SCALE / RES</span>
                     <span className="font-bold text-cyan-400">
-                      {selectedDiscovery.terrain_context?.highest_resolution_tier
-                        ? `${selectedDiscovery.terrain_context.highest_resolution_tier.toUpperCase()} (${selectedDiscovery.terrain_context.finest_ground_spacing_m}m)`
-                        : "Regional MOLA"}
+                      {selectedDiscovery.primary_source?.native_scale_or_spacing ||
+                        (selectedDiscovery.terrain_context?.highest_resolution_tier
+                          ? `${selectedDiscovery.terrain_context.highest_resolution_tier.toUpperCase()} (${selectedDiscovery.terrain_context.finest_ground_spacing_m}m)`
+                          : "Regional MOLA")}
                     </span>
                   </div>
                 </div>
@@ -453,21 +459,21 @@ export const ScienceExplorerPanel: React.FC<ScienceExplorerPanelProps> = ({
                   </span>
                 </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                  {/* Measured Observations */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                  {/* Direct Sensor Observations */}
                   <div className="bg-[#12162a] border border-emerald-900/40 rounded-lg p-3">
                     <div className="flex items-center space-x-1.5 text-emerald-400 font-bold mb-1.5">
                       <span>🟢</span>
-                      <span>Measured Observations</span>
+                      <span>Direct Sensor Observations</span>
                     </div>
                     <ul className="space-y-1 text-gray-300 text-[11px] list-disc list-inside">
-                      {selectedDiscovery.evidence_classes?.measured_observations?.map((item, idx) => (
+                      {(selectedDiscovery.evidence_classes?.direct_sensor_observations || selectedDiscovery.evidence_classes?.measured_observations)?.map((item, idx) => (
                         <li key={idx} className="leading-relaxed">{item}</li>
-                      )) || <li>Instrument radiance observations</li>}
+                      )) || <li>Raw telemetry in external NASA PDS archives</li>}
                     </ul>
                   </div>
 
-                  {/* Derived Measurements */}
+                  {/* Derived Physical Measurements */}
                   <div className="bg-[#12162a] border border-blue-900/40 rounded-lg p-3">
                     <div className="flex items-center space-x-1.5 text-blue-400 font-bold mb-1.5">
                       <span>🔵</span>
@@ -480,9 +486,24 @@ export const ScienceExplorerPanel: React.FC<ScienceExplorerPanelProps> = ({
                     </ul>
                   </div>
 
-                  {/* Indicative Proxies */}
+                  {/* Mapped Geological Interpretations */}
                   <div className="bg-[#12162a] border border-amber-900/40 rounded-lg p-3">
-                    <div className="flex items-center space-x-1.5 text-amber-400 font-bold mb-1.5">
+                    <div className="flex items-center space-x-1.5 text-amber-300 font-bold mb-1.5">
+                      <span>🗺️</span>
+                      <span>Mapped Geological Interpretations</span>
+                    </div>
+                    <ul className="space-y-1 text-gray-300 text-[11px] list-disc list-inside">
+                      {(selectedDiscovery.evidence_classes?.mapped_geological_interpretations || [
+                        "USGS SIM 3292 1:20M cartographic unit boundaries & contacts",
+                      ]).map((item, idx) => (
+                        <li key={idx} className="leading-relaxed">{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Indicative Proxies */}
+                  <div className="bg-[#12162a] border border-yellow-900/40 rounded-lg p-3">
+                    <div className="flex items-center space-x-1.5 text-yellow-400 font-bold mb-1.5">
                       <span>🟡</span>
                       <span>Indicative Proxies</span>
                     </div>
@@ -494,10 +515,10 @@ export const ScienceExplorerPanel: React.FC<ScienceExplorerPanelProps> = ({
                   </div>
 
                   {/* Potential Investigations */}
-                  <div className="bg-[#12162a] border border-purple-900/40 rounded-lg p-3">
+                  <div className="bg-[#12162a] border border-purple-900/40 rounded-lg p-3 md:col-span-2">
                     <div className="flex items-center space-x-1.5 text-purple-400 font-bold mb-1.5">
                       <span>🟣</span>
-                      <span>Potential Investigations</span>
+                      <span>Potential Investigations (Hypotheses)</span>
                     </div>
                     <ul className="space-y-1 text-gray-300 text-[11px] list-disc list-inside">
                       {selectedDiscovery.evidence_classes?.potential_investigations?.map((item, idx) => (
