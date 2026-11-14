@@ -28,13 +28,34 @@ import {
 } from "./types";
 
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
+async function apiFetch(urlStr: string, options: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(urlStr, {
+      ...options,
+      signal: controller.signal,
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        ...(options.headers || {}),
+      },
+    });
+    return res;
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error(`Request to ${urlStr} timed out after 8000ms. Check backend on port 8000.`);
+    }
+    throw new Error(`MARS-X Backend unreachable at ${API_BASE}. Ensure FastAPI server is running on port 8000.`);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 export async function fetchHealth(): Promise<HealthResponse> {
-  const res = await fetch(`${API_BASE}/health`, {
-    cache: "no-store",
-    headers: { Accept: "application/json" },
-  });
+  const res = await apiFetch(`${API_BASE}/health`);
   if (!res.ok) {
     throw new Error(`Health check failed with status: ${res.status}`);
   }
@@ -42,10 +63,7 @@ export async function fetchHealth(): Promise<HealthResponse> {
 }
 
 export async function fetchStatus(): Promise<StatusResponse> {
-  const res = await fetch(`${API_BASE}/api/v1/status`, {
-    cache: "no-store",
-    headers: { Accept: "application/json" },
-  });
+  const res = await apiFetch(`${API_BASE}/api/v1/status`);
   if (!res.ok) {
     throw new Error(`Status check failed with status: ${res.status}`);
   }
@@ -58,10 +76,7 @@ export async function fetchDatasets(mission?: string): Promise<DatasetMetadata[]
     url.searchParams.set("mission", mission);
   }
 
-  const res = await fetch(url.toString(), {
-    cache: "no-store",
-    headers: { Accept: "application/json" },
-  });
+  const res = await apiFetch(url.toString());
   if (!res.ok) {
     throw new Error(`Datasets fetch failed with status: ${res.status}`);
   }
@@ -69,7 +84,7 @@ export async function fetchDatasets(mission?: string): Promise<DatasetMetadata[]
 }
 
 export async function fetchTerrainLayers(): Promise<TerrainLayerItem[]> {
-  const res = await fetch(`${API_BASE}/api/v1/terrain/layers`, {
+  const res = await apiFetch(`${API_BASE}/api/v1/terrain/layers`, {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -86,7 +101,7 @@ export async function fetchTerrainCoverage(lat?: number, lon?: number): Promise<
     url.searchParams.set("lon", lon.toString());
   }
 
-  const res = await fetch(url.toString(), {
+  const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -97,7 +112,7 @@ export async function fetchTerrainCoverage(lat?: number, lon?: number): Promise<
 }
 
 export async function fetchElevationStats(): Promise<ElevationStats> {
-  const res = await fetch(`${API_BASE}/api/v1/terrain/metadata?dataset_id=mola-megdr`, {
+  const res = await apiFetch(`${API_BASE}/api/v1/terrain/metadata?dataset_id=mola-megdr`, {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -128,7 +143,7 @@ export async function compareTerrainResolutions(
   url.searchParams.set("product_a", productA);
   url.searchParams.set("product_b", productB);
 
-  const res = await fetch(url.toString(), {
+  const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -139,7 +154,7 @@ export async function compareTerrainResolutions(
 }
 
 export async function fetchValidationReports(): Promise<ProductValidationReport[]> {
-  const res = await fetch(`${API_BASE}/api/v1/terrain/validation`, {
+  const res = await apiFetch(`${API_BASE}/api/v1/terrain/validation`, {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -150,7 +165,7 @@ export async function fetchValidationReports(): Promise<ProductValidationReport[
 }
 
 export async function fetchMolaInventory(): Promise<Mola128InventoryReport> {
-  const res = await fetch(`${API_BASE}/api/v1/terrain/inventory`, {
+  const res = await apiFetch(`${API_BASE}/api/v1/terrain/inventory`, {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -168,7 +183,7 @@ export async function fetchCompatibilityAssessment(
   url.searchParams.set("product_a", productA);
   url.searchParams.set("product_b", productB);
 
-  const res = await fetch(url.toString(), {
+  const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -188,7 +203,7 @@ export async function fetchTerrainHazards(
   url.searchParams.set("lon", lon.toString());
   url.searchParams.set("dataset_id", datasetId);
 
-  const res = await fetch(url.toString(), {
+  const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -199,7 +214,7 @@ export async function fetchTerrainHazards(
 }
 
 export async function fetchHazardMetadata(): Promise<HazardEngineMetadata> {
-  const res = await fetch(`${API_BASE}/api/v1/terrain/hazards/metadata`, {
+  const res = await apiFetch(`${API_BASE}/api/v1/terrain/hazards/metadata`, {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -212,7 +227,7 @@ export async function fetchHazardMetadata(): Promise<HazardEngineMetadata> {
 // ── Phase 6 Routing API Clients ──────────────────────────────────────────────
 
 export async function planMarsRoute(request: RoutePlanRequest): Promise<RoutePlanResponse> {
-  const res = await fetch(`${API_BASE}/api/v1/routes/plan`, {
+  const res = await apiFetch(`${API_BASE}/api/v1/routes/plan`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -230,7 +245,7 @@ export async function planMarsRoute(request: RoutePlanRequest): Promise<RoutePla
 export async function compareMarsRouteAlgorithms(
   request: RoutePlanRequest
 ): Promise<RouteComparisonResponse> {
-  const res = await fetch(`${API_BASE}/api/v1/routes/compare`, {
+  const res = await apiFetch(`${API_BASE}/api/v1/routes/compare`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -248,7 +263,7 @@ export async function compareMarsRouteAlgorithms(
 // ── Phase 7 Multi-Resolution API Clients ─────────────────────────────────────
 
 export async function fetchTerrainProducts(): Promise<DTMProductProfile[]> {
-  const res = await fetch(`${API_BASE}/api/v1/terrain/products`, {
+  const res = await apiFetch(`${API_BASE}/api/v1/terrain/products`, {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -270,7 +285,7 @@ export async function fetchCoverageRegion(
   url.searchParams.set("max_lat", maxLat.toString());
   url.searchParams.set("max_lon", maxLon.toString());
 
-  const res = await fetch(url.toString(), {
+  const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -293,7 +308,7 @@ export async function fetchResolutionStack(
   url.searchParams.set("lat", lat.toString());
   url.searchParams.set("lon", lon.toString());
 
-  const res = await fetch(url.toString(), {
+  const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -311,7 +326,7 @@ export async function fetchProductOverlap(
   url.searchParams.set("product_a", productA);
   url.searchParams.set("product_b", productB);
 
-  const res = await fetch(url.toString(), {
+  const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -331,7 +346,7 @@ export async function compareProductsElevation(
   url.searchParams.set("product_b", productB);
   url.searchParams.set("sample_points", samplePoints.toString());
 
-  const res = await fetch(url.toString(), {
+  const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -354,7 +369,7 @@ export async function fetchRoutingDataAvailability(
   url.searchParams.set("max_lat", maxLat.toString());
   url.searchParams.set("max_lon", maxLon.toString());
 
-  const res = await fetch(url.toString(), {
+  const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -386,7 +401,7 @@ export async function fetchResolutionSelection(
     url.searchParams.set("target_scale_m", targetScaleM.toString());
   }
 
-  const res = await fetch(url.toString(), {
+  const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -415,7 +430,7 @@ export async function fetchTerrainProfile(
   }
   url.searchParams.set("windows_m", windowsM);
 
-  const res = await fetch(url.toString(), {
+  const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -434,7 +449,7 @@ export async function fetchTransitionCompatibility(
   url.searchParams.set("product_a", productA);
   url.searchParams.set("product_b", productB);
 
-  const res = await fetch(url.toString(), {
+  const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -461,7 +476,7 @@ export async function fetchRegionAssessment(
   url.searchParams.set("name", name);
   url.searchParams.set("target_scale_m", targetScaleM.toString());
 
-  const res = await fetch(url.toString(), {
+  const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -478,7 +493,7 @@ export async function fetchPresetRegionComparison(
   const url = new URL(`${API_BASE}/api/v1/science/region-comparison`);
   url.searchParams.set("target_scale_m", targetScaleM.toString());
 
-  const res = await fetch(url.toString(), {
+  const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -505,7 +520,7 @@ export async function fetchRouteTerrainSource(
     url.searchParams.set("target_scale_m", targetScaleM.toString());
   }
 
-  const res = await fetch(url.toString(), {
+  const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });

@@ -327,7 +327,7 @@ class ResolutionSelector:
                 selection_rationale=(
                     f"No local terrain dataset satisfies the requested criteria for analysis '{request.analysis_type.value}' "
                     f"at target scale {target_scale:.1f}m. HiRISE products remain discovered (not locally acquired); "
-                    "CTX DTM is confined to the Melas Chasma corridor [-5.19°N to -4.00°N, 66.04°E to 66.62°E]."
+                    "CTX DTM is confined to the Tyrrhena Terra DTM swath [-5.19°N to -4.00°N, 66.04°E to 66.62°E]."
                 ),
                 requested_area_km2=round(requested_area, 2),
                 covered_area_km2=0.0,

@@ -54,6 +54,10 @@ class RegionTerrainAssessment(BaseModel):
     data_availability: str  # 'local_verified', 'local_partial', 'remote_only'
     valid_data_coverage_pct: float
     analysis_scale_m: float
+    effective_analysis_scale_x_m: float = Field(default=0.0, description="Effective physical footprint in x/lon direction")
+    effective_analysis_scale_y_m: float = Field(default=0.0, description="Effective physical footprint in y/lat direction")
+    effective_analysis_area_km2: float = Field(default=0.0, description="Physical kernel ground area")
+    scale_suitability: str = Field(default="optimal", description="'optimal', 'sub_pixel_extrapolation_warning', or 'heavily_coarse'")
     mean_slope_deg: float
     max_slope_deg: float
     p50_slope_deg: float
@@ -68,7 +72,14 @@ class RegionTerrainAssessment(BaseModel):
     elevation_std_m: float
     terrain_complexity_class: str
     complexity_rationale: str
-    data_confidence_score: float  # 0.0 to 100.0, documented weighted formula
+    terrain_data_quality_index: float = Field(
+        default=0.0,
+        description="Heuristic Data Quality Index (0-100) reflecting coverage, resolution matching, and datum; NOT a probability of safety."
+    )
+    data_confidence_score: float = Field(
+        default=0.0,
+        description="Backward-compatible alias for terrain_data_quality_index"
+    )
     confidence_breakdown: Dict[str, float]
     scientific_summary: str
     limitations: List[str]
@@ -89,6 +100,7 @@ class RegionPairComparison(BaseModel):
     roughness_contrast: str
     coverage_contrast: str
     resolution_contrast: str
+    scale_compatibility: str = Field(default="equivalent_scale", description="'equivalent_scale', 'approximately_equivalent', 'non_equivalent'")
     comparative_summary: str
 
 
@@ -104,13 +116,22 @@ class RegionComparisonResponse(BaseModel):
 # Standard candidate region presets across Mars
 PRESET_CANDIDATE_REGIONS = [
     RegionDefinition(
-        region_id="melas-chasma-active",
-        name="Melas Chasma Canyon Floor",
+        region_id="tyrrhena-terra-active",
+        name="Tyrrhena Terra (CTX DTM Swath)",
         min_lat=-5.10,
         min_lon=66.10,
         max_lat=-4.50,
         max_lon=66.50,
-        geological_context="Deep canyon floor within Valles Marineris with authentic 20m CTX DTM coverage.",
+        geological_context="Inter-crater highland plains and dissecting valley networks in Tyrrhena Terra near Hesperia Planum margin, covered by authentic 20m USGS CTX DTM (P21_009323_1754).",
+    ),
+    RegionDefinition(
+        region_id="melas-chasma-valles-marineris",
+        name="Melas Chasma Canyon Floor",
+        min_lat=-10.50,
+        min_lon=282.50,
+        max_lat=-9.00,
+        max_lon=285.00,
+        geological_context="Central deep canyon floor of Valles Marineris (~9.8°S, 283.6°E / 76.4°W), covered by authentic MOLA regional elevation baseline.",
     ),
     RegionDefinition(
         region_id="schiaparelli-impact-basin",
@@ -214,6 +235,10 @@ class TerrainIntelligenceService:
                 data_availability="remote_only",
                 valid_data_coverage_pct=0.0,
                 analysis_scale_m=target_scale_m,
+                effective_analysis_scale_x_m=0.0,
+                effective_analysis_scale_y_m=0.0,
+                effective_analysis_area_km2=0.0,
+                scale_suitability="insufficient_data",
                 mean_slope_deg=0.0,
                 max_slope_deg=0.0,
                 p50_slope_deg=0.0,
@@ -228,6 +253,7 @@ class TerrainIntelligenceService:
                 elevation_std_m=0.0,
                 terrain_complexity_class="insufficient_data",
                 complexity_rationale=sel_res.selection_rationale,
+                terrain_data_quality_index=0.0,
                 data_confidence_score=0.0,
                 confidence_breakdown={"coverage": 0.0, "scale_suitability": 0.0, "datum_quality": 0.0},
                 scientific_summary=f"Region '{region.name}' lacks authentic local elevation raster coverage.",
@@ -261,7 +287,7 @@ class TerrainIntelligenceService:
             f"Region '{region.name}' evaluated at {target_scale_m:.0f}m physical scale using '{metrics.source_product}' "
             f"({metrics.native_resolution_m:.1f}m/px). Mean slope is {metrics.mean_slope_deg:.1f}° (max {metrics.max_slope_deg:.1f}°). "
             f"Mean roughness is {metrics.mean_roughness_m:.1f}m. Classified as '{metrics.complexity_class}'. "
-            f"Data confidence score: {score:.1f}/100."
+            f"Heuristic Data Quality Index: {score:.1f}/100."
         )
 
         return RegionTerrainAssessment(
@@ -274,6 +300,10 @@ class TerrainIntelligenceService:
             data_availability="local_verified" if metrics.valid_data_pct >= 90.0 else "local_partial",
             valid_data_coverage_pct=metrics.valid_data_pct,
             analysis_scale_m=target_scale_m,
+            effective_analysis_scale_x_m=metrics.effective_analysis_scale_x_m,
+            effective_analysis_scale_y_m=metrics.effective_analysis_scale_y_m,
+            effective_analysis_area_km2=metrics.effective_analysis_area_km2,
+            scale_suitability=metrics.scale_suitability,
             mean_slope_deg=metrics.mean_slope_deg,
             max_slope_deg=metrics.max_slope_deg,
             p50_slope_deg=metrics.p50_slope_deg,
@@ -288,12 +318,14 @@ class TerrainIntelligenceService:
             elevation_std_m=metrics.elevation_std_m,
             terrain_complexity_class=metrics.complexity_class,
             complexity_rationale=metrics.complexity_rationale,
+            terrain_data_quality_index=score,
             data_confidence_score=score,
             confidence_breakdown=breakdown,
             scientific_summary=summary,
             limitations=[
-                f"Metrics evaluated at {target_scale_m:.0f}m window using native resolution {metrics.native_resolution_m:.1f}m/px.",
+                f"Metrics evaluated at {target_scale_m:.0f}m window (effective: {metrics.effective_analysis_scale_x_m:.0f}m x {metrics.effective_analysis_scale_y_m:.0f}m) using native resolution {metrics.native_resolution_m:.1f}m/px.",
                 "Sub-pixel morphologic features cannot be detected.",
+                "Heuristic Data Quality Index reflects data completeness and resolution matching, NOT statistical mission success.",
                 "Topographic complexity does not imply astronaut or rover operational safety."
             ],
         )
@@ -336,9 +368,22 @@ class TerrainIntelligenceService:
                 cov_c = f"Valid coverage: '{ra.name}'={ra.valid_data_coverage_pct:.1f}% vs '{rb.name}'={rb.valid_data_coverage_pct:.1f}%"
                 res_c = f"Native resolution: '{ra.selected_dataset_id}' ({ra.native_resolution_m:.1f}m) vs '{rb.selected_dataset_id}' ({rb.native_resolution_m:.1f}m)"
 
+                # Scale compatibility evaluation
+                eff_a = max(ra.effective_analysis_scale_x_m, 1e-3)
+                eff_b = max(rb.effective_analysis_scale_x_m, 1e-3)
+                scale_diff_pct = abs(eff_a - eff_b) / max(eff_a, eff_b) * 100.0
+
+                if scale_diff_pct <= 15.0:
+                    compat_str = "equivalent_scale"
+                elif scale_diff_pct <= 35.0:
+                    compat_str = "approximately_equivalent"
+                else:
+                    compat_str = "non_equivalent"
+
                 pair_summary = (
                     f"At {request.target_scale_m:.0f}m scale, {slope_c}. {rough_c}. "
-                    f"Confidence score: {ra.name}={ra.data_confidence_score:.1f}/100 vs {rb.name}={rb.data_confidence_score:.1f}/100."
+                    f"Heuristic Quality Index: {ra.name}={ra.terrain_data_quality_index:.1f}/100 vs {rb.name}={rb.terrain_data_quality_index:.1f}/100. "
+                    f"Scale compatibility: {compat_str} (effective footprint Δ={scale_diff_pct:.1f}%)."
                 )
 
                 pair_comparisons.append(RegionPairComparison(
@@ -348,6 +393,7 @@ class TerrainIntelligenceService:
                     roughness_contrast=rough_c,
                     coverage_contrast=cov_c,
                     resolution_contrast=res_c,
+                    scale_compatibility=compat_str,
                     comparative_summary=pair_summary,
                 ))
 

@@ -1,8 +1,13 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Map, NavigationControl, Marker } from "maplibre-gl";
+import { Map, NavigationControl, Marker, setWorkerUrl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+
+// Configure MapLibre worker to local public bundle to prevent worker load failure
+if (typeof window !== "undefined") {
+  setWorkerUrl("/maplibre-gl-worker.mjs");
+}
 
 interface MapContainerProps {
   onCoordinateChange?: (coords: { lat: number; lon: number } | null) => void;
@@ -45,8 +50,133 @@ const FAMOUS_MARS_SITES: MarsFeature[] = [
     lon: 283.6,
     type: "Tectonic Rift System",
     description: "Grand canyon of Mars spanning over 4,000 km, canyon depth reaches 7 km."
+  },
+  {
+    name: "Tyrrhena Terra (CTX DTM Swath)",
+    lat: -4.6,
+    lon: 66.3,
+    type: "High-Resolution Numerical DTM",
+    description: "Authentic USGS 20m CTX stereo numerical elevation model coverage (P21_009323_1754)."
   }
 ];
+
+// Generate GeoJSON graticule lines (30 deg parallels and meridians)
+function generateMarsGraticule(): GeoJSON.FeatureCollection {
+  const features: GeoJSON.Feature[] = [];
+
+  // Parallels (-60 to +60 in steps of 30)
+  for (let lat = -60; lat <= 60; lat += 30) {
+    const coords: [number, number][] = [];
+    for (let lon = -180; lon <= 180; lon += 5) {
+      coords.push([lon, lat]);
+    }
+    features.push({
+      type: "Feature",
+      geometry: { type: "LineString", coordinates: coords },
+      properties: { label: `${lat >= 0 ? lat + "°N" : Math.abs(lat) + "°S"}` }
+    });
+  }
+
+  // Meridians (-180 to 180 in steps of 30)
+  for (let lon = -180; lon <= 180; lon += 30) {
+    const coords: [number, number][] = [];
+    for (let lat = -80; lat <= 80; lat += 5) {
+      coords.push([lon, lat]);
+    }
+    features.push({
+      type: "Feature",
+      geometry: { type: "LineString", coordinates: coords },
+      properties: { label: `${lon >= 0 ? lon + "°E" : lon + 360 + "°E"}` }
+    });
+  }
+
+  return { type: "FeatureCollection", features };
+}
+
+// Generate Footprint Polygons for acquired DTMs in Web Map coordinates [-180, 180]
+function generateAcquiredFootprints(): GeoJSON.FeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        properties: {
+          id: "megt00n000hb",
+          title: "MOLA 128 ppd: megt00n000hb",
+          resolution: "463 m/px",
+          type: "MOLA MEGDR"
+        },
+        geometry: {
+          type: "Polygon",
+          coordinates: [[
+            [0, -44],
+            [90, -44],
+            [90, 0],
+            [0, 0],
+            [0, -44]
+          ]]
+        }
+      },
+      {
+        type: "Feature",
+        properties: {
+          id: "megt44n000hb",
+          title: "MOLA 128 ppd: megt44n000hb",
+          resolution: "463 m/px",
+          type: "MOLA MEGDR"
+        },
+        geometry: {
+          type: "Polygon",
+          coordinates: [[
+            [0, 0],
+            [90, 0],
+            [90, 44],
+            [0, 44],
+            [0, 0]
+          ]]
+        }
+      },
+      {
+        type: "Feature",
+        properties: {
+          id: "megt00n090hb",
+          title: "MOLA 128 ppd: megt00n090hb",
+          resolution: "463 m/px",
+          type: "MOLA MEGDR"
+        },
+        geometry: {
+          type: "Polygon",
+          coordinates: [[
+            [90, -44],
+            [180, -44],
+            [180, 0],
+            [90, 0],
+            [90, -44]
+          ]]
+        }
+      },
+      {
+        type: "Feature",
+        properties: {
+          id: "ctx_p21_009323",
+          title: "USGS CTX DTM: Tyrrhena Terra",
+          resolution: "20.0 m/px",
+          type: "CTX Numerical DTM"
+        },
+        geometry: {
+          type: "Polygon",
+          coordinates: [[
+            [66.036, -5.187],
+            [66.617, -5.187],
+            [66.617, -4.003],
+            [66.036, -4.003],
+            [66.036, -5.187]
+          ]]
+        }
+      }
+    ]
+  };
+}
 
 export const MapContainer: React.FC<MapContainerProps> = ({
   onCoordinateChange,
@@ -58,24 +188,24 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    // Dark Mars coordinate canvas (pure vector background, avoiding EPSG:3857 tile distortion)
+    // Dark Mars coordinate canvas (vector space avoiding web mercator tile distortion)
     const map = new Map({
       container: mapContainerRef.current,
       style: {
         version: 8,
-        name: "Mars-Dark-Coordinate-Space",
+        name: "Mars-Planetary-Coordinate-Space",
         sources: {},
         layers: [
           {
             id: "background",
             type: "background",
             paint: {
-              "background-color": "#0d0e17"
+              "background-color": "#090a10"
             }
           }
         ]
       },
-      center: [0, 0],
+      center: [45, 0],
       zoom: 1.5,
       minZoom: 1,
       maxZoom: 14,
@@ -88,6 +218,71 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     map.on("load", () => {
       // Add navigation controls
       map.addControl(new NavigationControl({ showCompass: true, visualizePitch: true }), "top-right");
+
+      // Add Graticule Source and Layer
+      map.addSource("mars-graticule", {
+        type: "geojson",
+        data: generateMarsGraticule()
+      });
+
+      map.addLayer({
+        id: "mars-graticule-lines",
+        type: "line",
+        source: "mars-graticule",
+        paint: {
+          "line-color": "#2a3656",
+          "line-width": 1,
+          "line-dasharray": [2, 3],
+          "line-opacity": 0.6
+        }
+      });
+
+      // Add Acquired Footprints
+      map.addSource("mars-footprints", {
+        type: "geojson",
+        data: generateAcquiredFootprints()
+      });
+
+      map.addLayer({
+        id: "mars-footprints-fill",
+        type: "fill",
+        source: "mars-footprints",
+        paint: {
+          "fill-color": [
+            "match",
+            ["get", "type"],
+            "CTX Numerical DTM", "#10b981",
+            "#f97316"
+          ],
+          "fill-opacity": [
+            "match",
+            ["get", "type"],
+            "CTX Numerical DTM", 0.35,
+            0.12
+          ]
+        }
+      });
+
+      map.addLayer({
+        id: "mars-footprints-border",
+        type: "line",
+        source: "mars-footprints",
+        paint: {
+          "line-color": [
+            "match",
+            ["get", "type"],
+            "CTX Numerical DTM", "#34d399",
+            "#fb923c"
+          ],
+          "line-width": [
+            "match",
+            ["get", "type"],
+            "CTX Numerical DTM", 2.5,
+            1.5
+          ],
+          "line-opacity": 0.85
+        }
+      });
 
       // Add Mars feature markers
       FAMOUS_MARS_SITES.forEach((site) => {
@@ -137,13 +332,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       {/* MapLibre DOM viewport */}
       <div ref={mapContainerRef} className="w-full h-full cursor-crosshair" />
 
-      {/* Grid overlay lines to evoke coordinate space */}
-      <div className="absolute inset-0 pointer-events-none border border-[#1d2235]/40 grid grid-cols-6 grid-rows-4 opacity-15">
-        {Array.from({ length: 24 }).map((_, i) => (
-          <div key={i} className="border border-orange-500/10" />
-        ))}
-      </div>
-
       {/* Projection Disclaimer & Scientific Integrity Warning */}
       <div className="absolute top-3 left-3 max-w-md bg-[#0d0f1c]/90 border border-amber-500/40 rounded-lg p-3 backdrop-blur-md shadow-2xl text-xs font-mono pointer-events-auto">
         <div className="flex items-center space-x-2 text-amber-400 font-bold mb-1">
@@ -152,11 +340,28 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         </div>
         <p className="text-gray-300 text-[11px] leading-relaxed">
           NASA Mars Trek MOLA WMTS uses Mars-specific coordinate system <span className="text-amber-300 font-bold">EPSG:104905</span>.
-          Standard Web Mercator (<span className="text-red-400 font-bold">EPSG:3857</span>) tile streaming is strictly paused until server-side or client Proj4 projection transforms are validated.
+          Active vector canvas renders authentic MOLA 128 ppd and CTX footprint envelopes directly in Mars coordinate space.
         </p>
         <div className="mt-2 pt-1.5 border-t border-[#22283e] flex items-center justify-between text-[10px] text-gray-400">
           <span>Target Datum: Mars 2000 Sphere</span>
           <span className="text-emerald-400 font-medium">Coordinate Mesh Active</span>
+        </div>
+      </div>
+
+      {/* Footprint Legend */}
+      <div className="absolute bottom-3 right-3 bg-[#0d0f1c]/90 border border-[#2b3350] rounded-lg p-2.5 backdrop-blur-md shadow-xl text-[10px] font-mono pointer-events-auto flex flex-col gap-1.5">
+        <div className="text-gray-400 uppercase tracking-wider font-semibold border-b border-[#1f263d] pb-1">Verified Elevation Footprints</div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-2 rounded bg-orange-500/40 border border-orange-400 inline-block"></span>
+          <span className="text-gray-200">MOLA 128 ppd (~463 m/px)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-2 rounded bg-emerald-500/50 border border-emerald-400 inline-block"></span>
+          <span className="text-gray-200">USGS CTX DTM (20.0 m/px)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-0.5 border-b border-dashed border-[#475569] inline-block"></span>
+          <span className="text-gray-400">Mars Graticule (30° mesh)</span>
         </div>
       </div>
 

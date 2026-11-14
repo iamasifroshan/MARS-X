@@ -406,9 +406,19 @@ export function TerrainIntelligencePanel({ currentCoordinates }: TerrainIntellig
                       <div>Max Roughness: <strong className="text-white">{s.max_roughness_m}m</strong></div>
                       <div>Local Relief: <strong className="text-white">{s.mean_local_relief_m}m</strong></div>
                       <div>Elev Span: <strong className="text-white">[{s.min_elevation_m}m, {s.max_elevation_m}m]</strong></div>
+                      {s.effective_analysis_scale_x_m && (
+                        <div className="col-span-2 text-cyan-300">
+                          Effective Footprint: <strong>{s.effective_analysis_scale_x_m.toFixed(0)}m × {s.effective_analysis_scale_y_m?.toFixed(0)}m</strong> ({s.effective_analysis_area_km2?.toFixed(2)} km²)
+                        </div>
+                      )}
                     </div>
 
                     <div className="pt-2 border-t border-slate-800/80 text-[10px] text-slate-400">
+                      {s.scale_limitation && (
+                        <div className="text-amber-400/90 mb-1">
+                          ⚠️ {s.scale_limitation}
+                        </div>
+                      )}
                       {s.complexity_rationale}
                     </div>
                   </div>
@@ -448,7 +458,12 @@ export function TerrainIntelligencePanel({ currentCoordinates }: TerrainIntellig
                       <div>Mean Roughness: <strong className="text-white">{r.mean_roughness_m}m</strong></div>
                       <div>Local Relief: <strong className="text-white">{r.mean_local_relief_m}m</strong></div>
                       <div>Valid Coverage: <strong className="text-emerald-400">{r.valid_data_coverage_pct}%</strong></div>
-                      <div>Confidence Score: <strong className="text-orange-400">{r.data_confidence_score}/100</strong></div>
+                      <div>Heuristic Quality Index: <strong className="text-orange-400">{r.terrain_data_quality_index ?? r.data_confidence_score}/100</strong></div>
+                      {r.effective_analysis_scale_x_m && (
+                        <div className="text-[10px] text-cyan-300">
+                          Effective Scale: {r.effective_analysis_scale_x_m.toFixed(0)}m × {r.effective_analysis_scale_y_m?.toFixed(0)}m
+                        </div>
+                      )}
                     </div>
                     <div className="pt-2 border-t border-slate-800/80 text-[10px] text-slate-400">
                       {r.scientific_summary}
@@ -467,6 +482,9 @@ export function TerrainIntelligencePanel({ currentCoordinates }: TerrainIntellig
                       <span>{p.slope_contrast}</span>
                       <span>{p.roughness_contrast}</span>
                       <span>{p.resolution_contrast}</span>
+                      {p.scale_compatibility && (
+                        <span className="text-amber-400">Scale: {p.scale_compatibility.replace(/_/g, " ")}</span>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -581,8 +599,15 @@ export function TerrainIntelligencePanel({ currentCoordinates }: TerrainIntellig
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
                 <div>Primary Terrain Source: <strong className="text-orange-400">{routeSourceResult.primary_terrain_product}</strong></div>
                 <div>Source Resolution: <strong className="text-white">{routeSourceResult.primary_resolution_m} m/px</strong></div>
-                <div>Coverage Envelope: <strong className="text-emerald-400">{routeSourceResult.valid_data_coverage_pct}%</strong></div>
+                <div>Centerline Coverage: <strong className="text-emerald-400">{routeSourceResult.centerline_valid_coverage_pct ?? routeSourceResult.valid_data_coverage_pct}%</strong></div>
+                <div>Corridor Envelope: <strong className="text-emerald-400">{routeSourceResult.corridor_envelope_valid_coverage_pct ?? routeSourceResult.valid_data_coverage_pct}%</strong></div>
                 <div>Horizontal CRS: <strong className="text-white">{routeSourceResult.horizontal_crs}</strong></div>
+                <div>Vertical Datum: <strong className="text-white">{routeSourceResult.vertical_datum}</strong></div>
+                {routeSourceResult.nodata_intersections !== undefined && (
+                  <div className="col-span-2 text-slate-400">
+                    NoData Trajectory Gaps: <strong className={routeSourceResult.nodata_intersections > 0 ? "text-red-400" : "text-emerald-400"}>{routeSourceResult.nodata_intersections} points</strong>
+                  </div>
+                )}
               </div>
 
               <p className="text-[11px] text-slate-300 pt-1 border-t border-slate-800 leading-relaxed">

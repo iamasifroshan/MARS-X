@@ -486,6 +486,14 @@ export interface ResolutionSelectionResult {
 export interface ScaleMetrics {
   window_m: number;
   neighborhood_pixels: number;
+  requested_analysis_scale_m?: number;
+  kernel_size_pixels?: number;
+  effective_analysis_scale_x_m?: number;
+  effective_analysis_scale_y_m?: number;
+  effective_analysis_area_km2?: number;
+  scale_resolution_ratio?: number;
+  scale_suitability?: string;
+  scale_limitation?: string;
   source_product: string;
   native_resolution_m: number;
   crs: string;
@@ -507,6 +515,7 @@ export interface ScaleMetrics {
   max_roughness_m: number;
   complexity_class: "low_complexity" | "moderate_complexity" | "high_complexity" | "insufficient_data";
   complexity_rationale: string;
+  algorithm_details?: Record<string, any>;
 }
 
 export interface MultiScaleAnalysisResult {
@@ -558,6 +567,10 @@ export interface RegionTerrainAssessment {
   data_availability: "local_verified" | "local_partial" | "remote_only";
   valid_data_coverage_pct: number;
   analysis_scale_m: number;
+  effective_analysis_scale_x_m?: number;
+  effective_analysis_scale_y_m?: number;
+  effective_analysis_area_km2?: number;
+  scale_suitability?: string;
   mean_slope_deg: number;
   max_slope_deg: number;
   p50_slope_deg: number;
@@ -572,6 +585,7 @@ export interface RegionTerrainAssessment {
   elevation_std_m: number;
   terrain_complexity_class: string;
   complexity_rationale: string;
+  terrain_data_quality_index?: number;
   data_confidence_score: number;
   confidence_breakdown: Record<string, number>;
   scientific_summary: string;
@@ -585,6 +599,7 @@ export interface RegionPairComparison {
   roughness_contrast: string;
   coverage_contrast: string;
   resolution_contrast: string;
+  scale_compatibility?: string;
   comparative_summary: string;
 }
 
@@ -601,6 +616,12 @@ export interface RouteTerrainSourceResponse {
   dest_coord: [number, number];
   corridor_bounds: { min_lat: number; max_lat: number; min_lon: number; max_lon: number };
   corridor_length_km: number;
+  corridor_buffer_m?: number;
+  centerline_valid_coverage_pct?: number;
+  corridor_envelope_valid_coverage_pct?: number;
+  bounding_box_valid_coverage_pct?: number;
+  nodata_intersections?: number;
+  continuous_traversable_graph_supported?: boolean;
   primary_terrain_product: string;
   primary_resolution_m: number;
   routing_eligible: boolean;

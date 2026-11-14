@@ -61,6 +61,14 @@ class ScaleMetrics(BaseModel):
     """Terrain indicators calculated at a specific physical window scale."""
     window_m: float = Field(..., description="Target physical analysis window diameter in metres")
     neighborhood_pixels: int = Field(..., description="Kernel neighborhood dimension in pixels (k x k)")
+    requested_analysis_scale_m: float = Field(default=0.0, description="Requested target analysis scale in metres")
+    kernel_size_pixels: int = Field(default=3, description="Discrete odd kernel dimension k")
+    effective_analysis_scale_x_m: float = Field(default=0.0, description="Effective physical footprint in x/lon direction (k * dx)")
+    effective_analysis_scale_y_m: float = Field(default=0.0, description="Effective physical footprint in y/lat direction (k * dy)")
+    effective_analysis_area_km2: float = Field(default=0.0, description="Physical kernel ground area in square kilometres")
+    scale_resolution_ratio: float = Field(default=1.0, description="Ratio of effective window to native pixel ground resolution")
+    scale_suitability: str = Field(default="optimal", description="'optimal', 'sub_pixel_extrapolation_warning', or 'heavily_coarse'")
+    scale_limitation: Optional[str] = Field(default=None, description="Explicit scientific caveat regarding physical vs requested scale")
     source_product: str
     native_resolution_m: float
     crs: str
@@ -316,11 +324,46 @@ class MultiScaleAnalyzer:
             k = max(3, raw_k if raw_k % 2 == 1 else raw_k + 1)
             actual_w_m = k * res_m
 
+            # Calculate precise physical dimensions and ground footprint
+            effective_x_m = float(k * dx_m)
+            effective_y_m = float(k * dy_m)
+            effective_area_km2 = float((effective_x_m * effective_y_m) / 1e6)
+            scale_ratio = float(actual_w_m / max(res_m, 1e-4))
+
+            # Scale suitability evaluation
+            if target_w_m < res_m:
+                suitability = "sub_pixel_extrapolation_warning"
+                limitation = (
+                    f"Requested scale ({target_w_m:.0f}m) is finer than native raster resolution ({res_m:.1f}m/px). "
+                    f"Kernel clamped to minimum 3x3 pixels ({effective_x_m:.0f}m x {effective_y_m:.0f}m). "
+                    "Cannot resolve sub-pixel morphologic features."
+                )
+            elif scale_ratio > 100.0:
+                suitability = "heavily_coarse"
+                limitation = (
+                    f"Effective analysis window ({actual_w_m:.0f}m) spans over 100 native pixels. "
+                    "Features are heavily generalized by large spatial aggregation."
+                )
+            else:
+                suitability = "optimal"
+                limitation = (
+                    f"Effective analysis footprint: {effective_x_m:.0f}m (lon) x {effective_y_m:.0f}m (lat), "
+                    f"covering {effective_area_km2:.2f} km² per kernel."
+                )
+
             if valid_count < 10:
                 c_class, c_rat = "insufficient_data", "Fewer than 10 valid elevation pixels in window."
                 scale_results.append(ScaleMetrics(
                     window_m=target_w_m,
                     neighborhood_pixels=k,
+                    requested_analysis_scale_m=round(target_w_m, 1),
+                    kernel_size_pixels=k,
+                    effective_analysis_scale_x_m=round(effective_x_m, 1),
+                    effective_analysis_scale_y_m=round(effective_y_m, 1),
+                    effective_analysis_area_km2=round(effective_area_km2, 4),
+                    scale_resolution_ratio=round(scale_ratio, 2),
+                    scale_suitability=suitability,
+                    scale_limitation=limitation,
                     source_product=profile.product_id,
                     native_resolution_m=round(res_m, 2),
                     crs=profile.crs,
@@ -358,7 +401,6 @@ class MultiScaleAnalyzer:
             local_var = np.maximum(0.0, local_sq_mean - (local_mean ** 2))
             local_roughness = np.sqrt(local_var)
 
-            
             # Mask out boundaries and invalid pixels
             valid_roughness = local_roughness[valid_mask]
             
@@ -386,6 +428,14 @@ class MultiScaleAnalyzer:
             scale_results.append(ScaleMetrics(
                 window_m=target_w_m,
                 neighborhood_pixels=k,
+                requested_analysis_scale_m=round(target_w_m, 1),
+                kernel_size_pixels=k,
+                effective_analysis_scale_x_m=round(effective_x_m, 1),
+                effective_analysis_scale_y_m=round(effective_y_m, 1),
+                effective_analysis_area_km2=round(effective_area_km2, 4),
+                scale_resolution_ratio=round(scale_ratio, 2),
+                scale_suitability=suitability,
+                scale_limitation=limitation,
                 source_product=profile.product_id,
                 native_resolution_m=round(res_m, 2),
                 crs=profile.crs,
@@ -411,6 +461,8 @@ class MultiScaleAnalyzer:
                     "kernel_size": k,
                     "target_window_m": target_w_m,
                     "actual_window_m": round(actual_w_m, 1),
+                    "effective_footprint_m": f"{effective_x_m:.1f}m x {effective_y_m:.1f}m",
+                    "effective_area_km2": round(effective_area_km2, 4),
                     "slope_algorithm": "Horn 3x3 with latitudinal metric spacing",
                     "roughness_algorithm": "Moving standard deviation over k x k window",
                 }

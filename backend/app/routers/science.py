@@ -156,6 +156,7 @@ async def get_region_assessment(
     max_lat: float = Query(..., ge=-90.0, le=90.0),
     max_lon: float = Query(..., ge=0.0, le=360.0),
     name: str = Query(default="Custom Candidate Region"),
+    region_id: Optional[str] = Query(default=None),
     target_scale_m: float = Query(default=500.0, ge=1.0, le=20000.0),
 ) -> RegionTerrainAssessment:
     """Return comprehensive terrain intelligence assessment for a candidate Mars exploration region."""
@@ -165,7 +166,7 @@ async def get_region_assessment(
         raise HTTPException(status_code=400, detail="min_lon cannot exceed max_lon")
 
     reg = RegionDefinition(
-        region_id="custom-region",
+        region_id=region_id or "custom-region",
         name=name,
         min_lat=min_lat,
         min_lon=min_lon,

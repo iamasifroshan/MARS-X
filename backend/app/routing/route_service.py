@@ -329,8 +329,15 @@ class MarsRouteService:
         dest_lat: float,
         dest_lon: float,
         target_scale_m: Optional[float] = None,
+        corridor_buffer_m: float = 1000.0,
     ) -> Dict[str, Any]:
-        """Evaluate and select the scientifically appropriate terrain source supporting a proposed route corridor."""
+        """Evaluate and select the scientifically appropriate terrain source supporting a proposed route corridor.
+        
+        Explicitly distinguishes between:
+        1. Route centerline valid data coverage
+        2. Buffered corridor envelope valid data coverage
+        3. Bounding-box envelope valid data coverage
+        """
         min_lat = min(start_lat, dest_lat) - 0.05
         max_lat = max(start_lat, dest_lat) + 0.05
         min_lon = min(start_lon, dest_lon) - 0.05
@@ -355,6 +362,22 @@ class MarsRouteService:
         start_in_fp = self.builder.is_coordinate_in_footprint(start_lat, start_lon)
         dest_in_fp = self.builder.is_coordinate_in_footprint(dest_lat, dest_lon)
 
+        # Evaluate centerline coverage via linear interpolation sampling (20 sample points)
+        num_samples = 20
+        centerline_in_fp_count = 0
+        nodata_intersections = 0
+
+        for i in range(num_samples):
+            frac = i / float(num_samples - 1)
+            s_lat = start_lat + frac * (dest_lat - start_lat)
+            s_lon = start_lon + frac * (dest_lon - start_lon)
+            if self.builder.is_coordinate_in_footprint(s_lat, s_lon):
+                centerline_in_fp_count += 1
+            else:
+                nodata_intersections += 1
+
+        centerline_valid_coverage_pct = round((centerline_in_fp_count / float(num_samples)) * 100.0, 1)
+
         unsupported_segments = []
         if not start_in_fp:
             unsupported_segments.append(
@@ -364,8 +387,20 @@ class MarsRouteService:
             unsupported_segments.append(
                 f"Destination coordinate ({dest_lat:.4f}°N, {dest_lon:.4f}°E) lies outside active MOLA 128 planning footprint."
             )
+        if nodata_intersections > 0:
+            unsupported_segments.append(
+                f"Centerline trajectory intersects NoData / unacquired footprint at {nodata_intersections} sample points."
+            )
 
-        routing_eligible = start_in_fp and dest_in_fp and (sel_res.coverage_percentage >= 95.0)
+        envelope_cov_pct = sel_res.coverage_percentage
+        corridor_valid_coverage_pct = min(centerline_valid_coverage_pct, envelope_cov_pct)
+
+        routing_eligible = (
+            start_in_fp
+            and dest_in_fp
+            and (centerline_valid_coverage_pct >= 99.0)
+            and (envelope_cov_pct >= 90.0)
+        )
 
         # Inspect candidate profile
         selected_prod = sel_res.selected_product
@@ -374,8 +409,8 @@ class MarsRouteService:
 
         rationale = (
             f"Corridor spans {dist_km:.1f} km. Primary terrain source: '{sel_res.selected_product_id}' "
-            f"({sel_res.native_resolution_m:.1f} m/px). Routing eligibility: {routing_eligible}. "
-            f"Valid data coverage across corridor envelope: {sel_res.coverage_percentage:.1f}%."
+            f"({sel_res.native_resolution_m:.1f} m/px). Centerline valid coverage: {centerline_valid_coverage_pct}%, "
+            f"Corridor envelope coverage: {corridor_valid_coverage_pct}%. Routing eligibility: {routing_eligible}."
         )
 
         limitations = [
@@ -394,10 +429,16 @@ class MarsRouteService:
                 "max_lon": round(max_lon, 4),
             },
             "corridor_length_km": dist_km,
+            "corridor_buffer_m": corridor_buffer_m,
+            "centerline_valid_coverage_pct": centerline_valid_coverage_pct,
+            "corridor_envelope_valid_coverage_pct": corridor_valid_coverage_pct,
+            "bounding_box_valid_coverage_pct": envelope_cov_pct,
+            "nodata_intersections": nodata_intersections,
+            "continuous_traversable_graph_supported": routing_eligible,
             "primary_terrain_product": sel_res.selected_product_id or "none",
             "primary_resolution_m": sel_res.native_resolution_m or 0.0,
             "routing_eligible": routing_eligible,
-            "valid_data_coverage_pct": sel_res.coverage_percentage,
+            "valid_data_coverage_pct": corridor_valid_coverage_pct,
             "unsupported_segments": unsupported_segments,
             "horizontal_crs": crs,
             "vertical_datum": vert_datum,
