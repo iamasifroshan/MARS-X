@@ -16,6 +16,7 @@ from app.routers import thermal as thermal_router
 from app.routers import themis as themis_router
 from app.routers import discovery as discovery_router
 from app.routers import traversability as traversability_router
+from app.routers import marswalk as marswalk_router
 
 
 # ── Logging ────────────────────────────────────────────────────────────────
@@ -58,6 +59,7 @@ app.include_router(thermal_router.router)
 app.include_router(themis_router.router)
 app.include_router(discovery_router.router)
 app.include_router(traversability_router.router)
+app.include_router(marswalk_router.router)
 
 
 

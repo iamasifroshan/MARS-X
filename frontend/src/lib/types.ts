@@ -915,5 +915,92 @@ export interface TraversabilityLegendEntry {
   description: string;
 }
 
+// ---------------------------------------------------------------------------
+// Marswalk Route Planning — Phase 8.8.2
+// ---------------------------------------------------------------------------
+
+export interface MarswalkRouteRequest {
+  start_lat: number;
+  start_lon: number;
+  dest_lat: number;
+  dest_lon: number;
+  preferred_source?: string;
+  slope_penalty_factor?: number;
+  max_slope_deg?: number;
+  max_search_nodes?: number;
+  route_name?: string;
+}
+
+export interface MarswalkRoutePoint {
+  index: number;
+  lat: number;
+  lon: number;
+  elevation_m: number;
+  slope_deg: number;
+  slope_category: string;
+  cumulative_distance_m: number;
+}
+
+export interface MarswalkRouteResponse {
+  route_id: string;
+  status: string;
+  route_name?: string;
+  start_coord: [number, number];
+  dest_coord: [number, number];
+  snapped_start_coord: [number, number];
+  snapped_dest_coord: [number, number];
+  source_dataset: string;
+  instrument: string;
+  tier: string;
+  native_resolution_m: number;
+  native_resolution_desc: string;
+  vertical_datum: string;
+  vertical_datum_type: string;
+  total_surface_distance_m: number;
+  total_horizontal_distance_m: number;
+  cumulative_elevation_gain_m: number;
+  cumulative_elevation_loss_m: number;
+  min_elevation_m: number;
+  max_elevation_m: number;
+  max_route_slope_deg: number;
+  mean_route_slope_deg: number;
+  slope_band_exposure_pct: Record<string, number>;
+  unknown_data_exposure_pct: number;
+  geometry: {
+    type: "LineString";
+    coordinates: Array<[number, number]>;
+  };
+  path_points: MarswalkRoutePoint[];
+  cost_function_parameters: Record<string, any>;
+  search_metrics: Record<string, any>;
+  coverage_limitations: string;
+  safety_disclaimer: string;
+}
+
+export interface ValidatedCorridorPreset {
+  corridor_id: string;
+  name: string;
+  region: string;
+  source_dataset: string;
+  start_lat: number;
+  start_lon: number;
+  dest_lat: number;
+  dest_lon: number;
+  description: string;
+  target_geology: string;
+}
+
+export interface MarswalkMetadataResponse {
+  supported_datasets: Array<Record<string, any>>;
+  resolution_tiers: Array<Record<string, any>>;
+  slope_thresholds_deg: Record<string, [number, number]>;
+  default_parameters: Record<string, any>;
+  cost_function_definition: string;
+  heuristic_definition: string;
+  safety_disclaimer: string;
+  validated_corridors: ValidatedCorridorPreset[];
+}
+
+
 
 

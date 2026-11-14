@@ -9,6 +9,7 @@ import {
   PathfindingAlgorithm,
   NeighborConnectivity,
 } from "@/lib/types";
+import { MarswalkRoutePlanner } from "./MarswalkRoutePlanner";
 
 // Geologically validated mission targets inside MOLA 128 tile megt00n000hb:
 // Tile footprint: Lat [-44.0°, 0.0°], Lon [0.0°, 90.0°E]
@@ -34,6 +35,7 @@ const PRESET_TARGETS = [
 ];
 
 export const RoutePlanning: React.FC = () => {
+  const [routingMode, setRoutingMode] = useState<"marswalk" | "mola128">("marswalk");
   const [startLat, setStartLat] = useState<number>(-2.00);
   const [startLon, setStartLon] = useState<number>(5.00);
   const [destLat, setDestLat] = useState<number>(-2.15);
@@ -98,23 +100,55 @@ export const RoutePlanning: React.FC = () => {
 
   return (
     <div className="space-y-4 text-xs font-mono text-slate-300">
-      {/* Header and Scope Definition */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-[#23293f] pb-2 gap-2">
-        <div>
-          <div className="flex items-center space-x-2">
-            <span className="text-base">🥾</span>
-            <span className="font-bold text-white uppercase tracking-wider text-sm">
-              Terrain-Constrained Marswalk Routing (A* & Dijkstra)
+      {/* Engine Mode Tabs */}
+      <div className="flex items-center space-x-2 border-b border-[#23293f] pb-3">
+        <button
+          type="button"
+          onClick={() => setRoutingMode("marswalk")}
+          className={`px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all ${
+            routingMode === "marswalk"
+              ? "bg-orange-500 text-black shadow-md shadow-orange-500/20"
+              : "bg-[#101426] text-slate-400 hover:text-white border border-[#23293f]"
+          }`}
+        >
+          <span>🥾</span>
+          <span>Marswalk Engine (Multi-Tier Terrain — Phase 8.8.2)</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setRoutingMode("mola128")}
+          className={`px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all ${
+            routingMode === "mola128"
+              ? "bg-orange-500 text-black shadow-md shadow-orange-500/20"
+              : "bg-[#101426] text-slate-400 hover:text-white border border-[#23293f]"
+          }`}
+        >
+          <span>🛰️</span>
+          <span>Regional MOLA 128 Engine (Comparative A* / Dijkstra)</span>
+        </button>
+      </div>
+
+      {routingMode === "marswalk" ? (
+        <MarswalkRoutePlanner />
+      ) : (
+        <>
+          {/* Header and Scope Definition */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-[#23293f] pb-2 gap-2">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-base">🛰️</span>
+                <span className="font-bold text-white uppercase tracking-wider text-sm">
+                  Terrain-Constrained Marswalk Routing (A* & Dijkstra)
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Phase 6 Research Prototype: Geodesic Graph Traversal on Validated MOLA 128 ppd Tile (EPSG:104905)
+              </p>
+            </div>
+            <span className="px-2 py-0.5 bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 rounded text-[10px]">
+              Footprint: Lat [-44°, 0°], Lon [0°, 90°E]
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5">
-            Phase 6 Research Prototype: Geodesic Graph Traversal on Validated MOLA 128 ppd Tile (EPSG:104905)
-          </p>
-        </div>
-        <span className="px-2 py-0.5 bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 rounded text-[10px]">
-          Footprint: Lat [-44°, 0°], Lon [0°, 90°E]
-        </span>
-      </div>
 
       {/* Preset Geological Targets */}
       <div className="space-y-1.5 bg-slate-950/50 p-2.5 rounded border border-slate-800">
@@ -378,10 +412,12 @@ export const RoutePlanning: React.FC = () => {
         </div>
       )}
 
-      {/* Prominent Scientific Disclaimer */}
-      <div className="p-2.5 bg-slate-950/90 border border-amber-800/60 rounded text-[11px] text-amber-300/90 italic">
-        <strong>Scientific Limitation &amp; Safety Disclaimer:</strong> MARS-X route planning is an experimental terrain-cost simulation based on the selected digital terrain model. It does NOT establish astronaut safety, EVA feasibility, obstacle clearance, or operational navigability. Results are limited by source resolution (463 m/px), coverage, and data uncertainty.
-      </div>
+          {/* Prominent Scientific Disclaimer */}
+          <div className="p-2.5 bg-slate-950/90 border border-amber-800/60 rounded text-[11px] text-amber-300/90 italic">
+            <strong>Scientific Limitation &amp; Safety Disclaimer:</strong> MARS-X route planning is an experimental terrain-cost simulation based on the selected digital terrain model. It does NOT establish astronaut safety, EVA feasibility, obstacle clearance, or operational navigability. Results are limited by source resolution (463 m/px), coverage, and data uncertainty.
+          </div>
+        </>
+      )}
     </div>
   );
 };

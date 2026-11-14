@@ -54,6 +54,35 @@ async function capture() {
     await page.screenshot({ path: path3, fullPage: false });
     console.log(`Saved screenshot 3 to: ${path3}`);
 
+    // 4. Capture Marswalk Route Planning Panel
+    console.log("Navigating to Marswalk Route Planning panel...");
+    await page.goto("http://localhost:3005/?tab=route", {
+      waitUntil: "domcontentloaded",
+      timeout: 30000,
+    });
+    await new Promise((r) => setTimeout(r, 4000));
+
+    // Click "Generate Marswalk Route" button
+    try {
+      const buttonSelector = "button";
+      const buttons = await page.$$(buttonSelector);
+      for (const btn of buttons) {
+        const text = await page.evaluate((el) => el.innerText, btn);
+        if (text && text.includes("Generate Marswalk Route")) {
+          console.log("Clicking Generate Marswalk Route button...");
+          await btn.click();
+          await new Promise((r) => setTimeout(r, 3000));
+          break;
+        }
+      }
+    } catch (e) {
+      console.warn("Could not trigger route button click:", e.message);
+    }
+
+    const path4 = path.resolve(__dirname, "../docs/research/screenshots/11_marswalk_route_planner.png");
+    await page.screenshot({ path: path4, fullPage: false });
+    console.log(`Saved screenshot 4 to: ${path4}`);
+
     console.log("All screenshots captured successfully!");
   } finally {
     await browser.close();

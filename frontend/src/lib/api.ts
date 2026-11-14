@@ -37,6 +37,9 @@ import {
   TraversabilityWindowResult,
   TraversabilityCoverageEntry,
   TraversabilityLegendEntry,
+  MarswalkRouteRequest,
+  MarswalkRouteResponse,
+  MarswalkMetadataResponse,
 } from "./types";
 
 
@@ -909,6 +912,44 @@ export async function fetchTraversabilityLegend(): Promise<TraversabilityLegendE
   }
   return res.json();
 }
+
+// ---------------------------------------------------------------------------
+// Marswalk Route Planning API — Phase 8.8.2
+// ---------------------------------------------------------------------------
+
+export async function fetchMarswalkMetadata(): Promise<MarswalkMetadataResponse> {
+  const res = await apiFetch(`${API_BASE}/api/v1/marswalk/metadata`);
+  if (!res.ok) {
+    throw new Error(`Marswalk metadata fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function planMarswalkRoute(
+  request: MarswalkRouteRequest
+): Promise<MarswalkRouteResponse> {
+  const res = await apiFetch(`${API_BASE}/api/v1/marswalk/route`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.detail || `Marswalk route planning failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchMarswalkRoute(
+  routeId: string
+): Promise<MarswalkRouteResponse> {
+  const res = await apiFetch(`${API_BASE}/api/v1/marswalk/route/${encodeURIComponent(routeId)}`);
+  if (!res.ok) {
+    throw new Error(`Marswalk route fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
 
 
 
