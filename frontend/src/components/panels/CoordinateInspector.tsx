@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { fetchPointElevation } from "../../lib/api";
+import { fetchPointElevation, fetchGeologyPoint, fetchThermalPoint } from "../../lib/api";
 import { PointElevationDetail } from "../../lib/types";
 
 interface CoordinateInspectorProps {
@@ -19,6 +19,8 @@ export const CoordinateInspector: React.FC<CoordinateInspectorProps> = ({
   const [inputLon, setInputLon] = useState<string>("66.317");
 
   const [pointData, setPointData] = useState<PointElevationDetail | null>(null);
+  const [geologyData, setGeologyData] = useState<any | null>(null);
+  const [thermalData, setThermalData] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,8 +28,14 @@ export const CoordinateInspector: React.FC<CoordinateInspectorProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchPointElevation(lat, lon);
-      setPointData(data);
+      const [elev, geo, therm] = await Promise.allSettled([
+        fetchPointElevation(lat, lon),
+        fetchGeologyPoint(lat, lon),
+        fetchThermalPoint(lat, lon, "dayside"),
+      ]);
+      if (elev.status === "fulfilled") setPointData(elev.value);
+      if (geo.status === "fulfilled") setGeologyData(geo.value);
+      if (therm.status === "fulfilled") setThermalData(therm.value);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Elevation query failed");
       setPointData(null);
@@ -192,6 +200,50 @@ export const CoordinateInspector: React.FC<CoordinateInspectorProps> = ({
               SHA-256: <span className="font-mono text-gray-400">{pointData.source_checksum.slice(0, 20)}...</span>
             </div>
           )}
+        </div>
+      )}
+
+      {/* USGS SIM 3292 Geological Unit */}
+      {geologyData && (
+        <div className="bg-[#0c0e1a] p-2.5 rounded-lg border border-[#1b2034] text-[10px] space-y-1.5">
+          <div className="flex items-center justify-between border-b border-[#181d30] pb-1">
+            <span className="font-bold text-amber-400 uppercase tracking-wider text-[10px]">
+              Geology (USGS SIM 3292)
+            </span>
+            <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-800/40">
+              {geologyData.unit}
+            </span>
+          </div>
+          <div className="text-gray-200 text-[10px] leading-tight">
+            {geologyData.unit_name || "Unclassified or outside mapped domain"}
+          </div>
+          <div className="flex justify-between text-[9px] text-gray-400 border-t border-[#181d30] pt-1">
+            <span>Period: <span className="text-gray-300 font-semibold">{geologyData.chronostratigraphic_period}</span></span>
+            {geologyData.spherical_area_sq_km && (
+              <span>Area: <span className="text-gray-300">{Math.round(geologyData.spherical_area_sq_km).toLocaleString()} km²</span></span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MGS TES Thermal Inertia */}
+      {thermalData && (
+        <div className="bg-[#0c0e1a] p-2.5 rounded-lg border border-[#1b2034] text-[10px] space-y-1.5">
+          <div className="flex items-center justify-between border-b border-[#181d30] pb-1">
+            <span className="font-bold text-cyan-400 uppercase tracking-wider text-[10px]">
+              Thermal Inertia (TES)
+            </span>
+            <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/40 font-mono">
+              {thermalData.thermal_inertia_tiu !== null ? `${thermalData.thermal_inertia_tiu} tiu` : "NoData"}
+            </span>
+          </div>
+          <div className="text-gray-300 text-[9px] leading-tight">
+            <span className="text-gray-500 font-semibold block mb-0.5">Physical Interpretation:</span>
+            {thermalData.physical_interpretation}
+          </div>
+          <div className="text-[8px] text-cyan-300/80 bg-cyan-950/30 p-1.5 rounded border border-cyan-900/30 leading-snug">
+            ⚠️ <span className="font-bold">Not Temperature:</span> Represents regolith thermal resistance (J m⁻² K⁻¹ s⁻¹/²). High values = bedrock/lag; low values = fine dust.
+          </div>
         </div>
       )}
 

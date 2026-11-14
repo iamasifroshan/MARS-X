@@ -208,3 +208,75 @@ async def post_custom_region_comparison(
     except Exception as e:
         logger.error("Custom region comparison failed: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/provenance")
+async def get_scientific_provenance_registry(
+    filter_status: Optional[str] = Query(default=None, description="Optional filter by production_status or provenance_status"),
+) -> Dict[str, Any]:
+    """Retrieve the authoritative MARS-X Scientific Dataset Provenance Registry."""
+    import os
+    import json
+
+    registry_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "research", "dataset_provenance_registry.json")
+    )
+    if not os.path.exists(registry_path):
+        raise HTTPException(status_code=404, detail="Provenance registry file not found.")
+
+    try:
+        with open(registry_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        datasets = data.get("datasets", [])
+        if filter_status:
+            filtered = [
+                d for d in datasets
+                if d.get("production_status") == filter_status or d.get("provenance_status") == filter_status
+            ]
+            return {
+                "registry_version": data.get("registry_version"),
+                "last_audited_utc": data.get("last_audited_utc"),
+                "policy_compliance": data.get("policy_compliance"),
+                "total_count": len(datasets),
+                "filtered_count": len(filtered),
+                "filter": filter_status,
+                "datasets": filtered,
+            }
+
+        return data
+    except Exception as e:
+        logger.error("Failed to read provenance registry: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/provenance/{dataset_id}")
+async def get_dataset_provenance_by_id(
+    dataset_id: str,
+) -> Dict[str, Any]:
+    """Retrieve detailed scientific provenance, checksums, CRS, and URLs for a specific dataset ID."""
+    import os
+    import json
+
+    registry_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "research", "dataset_provenance_registry.json")
+    )
+    if not os.path.exists(registry_path):
+        raise HTTPException(status_code=404, detail="Provenance registry file not found.")
+
+    try:
+        with open(registry_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        datasets = data.get("datasets", [])
+        for d in datasets:
+            if d.get("dataset_id") == dataset_id:
+                return d
+
+        raise HTTPException(status_code=404, detail=f"Dataset ID '{dataset_id}' not found in provenance registry.")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to query dataset provenance: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+

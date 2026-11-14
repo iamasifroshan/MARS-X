@@ -60,7 +60,10 @@
         "Global Great-Circle profile transects",
         "Global terrain slope and roughness baseline"
       ],
-      "production_status": "downloaded_verified"
+      "production_status": "downloaded_verified",
+      "application_integration_status": "integrated_backend_api_and_frontend_ui",
+      "backend_routes": [],
+      "frontend_layers": []
     },
     {
       "dataset_id": "mola-megdr-128-44n000",
@@ -288,7 +291,10 @@
         "Sub-pixel affine registration and coordinate validation",
         "Multi-resolution zoom level elevation profile"
       ],
-      "production_status": "downloaded_verified"
+      "production_status": "downloaded_verified",
+      "application_integration_status": "integrated_backend_api_and_frontend_ui",
+      "backend_routes": [],
+      "frontend_layers": []
     },
     {
       "dataset_id": "mola-elevation-global-cog",
@@ -618,7 +624,10 @@
       },
       "production_usage": [
         "Regional terrain validation with MOLA bundle-adjusted residuals"
-      ]
+      ],
+      "application_integration_status": "integrated_backend_api_and_frontend_ui",
+      "backend_routes": [],
+      "frontend_layers": []
     },
     {
       "dataset_id": "hirise-dtm-controlled-esp-011635",
@@ -657,7 +666,10 @@
       },
       "production_usage": [
         "Local traverse slope, micro-roughness, obstacle hazard detection"
-      ]
+      ],
+      "application_integration_status": "integrated_backend_api_and_frontend_ui",
+      "backend_routes": [],
+      "frontend_layers": []
     },
     {
       "dataset_id": "tes-thermal-inertia-putzig-2007",
@@ -698,7 +710,10 @@
       },
       "production_usage": [
         "Physical thermophysical surface property characterization (bedrock vs dust/sand)"
-      ]
+      ],
+      "application_integration_status": "integrated_backend_api_and_frontend_ui",
+      "backend_routes": [],
+      "frontend_layers": []
     },
     {
       "dataset_id": "themis-ir-mosaics-regional",
@@ -746,7 +761,10 @@
       },
       "production_usage": [
         "Visual thermal contrast, relative nighttime warmth / bedrock exposure, regional geomorphological context"
-      ]
+      ],
+      "application_integration_status": "integrated_backend_api_and_frontend_ui",
+      "backend_routes": [],
+      "frontend_layers": []
     },
     {
       "dataset_id": "usgs-geology-sim3292",
@@ -805,7 +823,8 @@
       },
       "production_usage": [
         "Geological exploration, chronostratigraphic unit boundary and contact analysis (offline GIS dataset)"
-      ]
+      ],
+      "application_integration_status": "integrated_backend_api_and_frontend_ui"
     },
     {
       "dataset_id": "crism-targeted-rdr-frt000027b2",

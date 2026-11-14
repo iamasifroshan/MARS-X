@@ -38,6 +38,30 @@ const FAMOUS_MARS_SITES: MarsFeature[] = [
     description: "Authentic USGS 20m CTX stereo numerical elevation model coverage (P21_009323_1754)."
   },
   {
+    name: "USGS HiRISE 1m DTM (Holden Crater)",
+    lat: -28.500,
+    lon: 309.020,
+    zoom: 11.0,
+    type: "Ultra-High-Resolution HiRISE DTM",
+    description: "Authentic USGS 1.01m controlled HiRISE numerical elevation model (ESP_011635_1510)."
+  },
+  {
+    name: "USGS CTX Controlled DTM (Apollinaris Sulci)",
+    lat: 4.700,
+    lon: 168.250,
+    zoom: 9.0,
+    type: "Controlled CTX Numerical DTM",
+    description: "Authentic USGS 20m controlled CTX numerical elevation model (T01_000893_1847)."
+  },
+  {
+    name: "Sinus Meridiani (THEMIS 100m IR / Opportunity)",
+    lat: -2.000,
+    lon: 5.000,
+    zoom: 6.0,
+    type: "Regional Visual IR / Hematite Plains",
+    description: "Authentic 256 ppd THEMIS 100m Band 9 visual display mosaic and high thermal inertia plains."
+  },
+  {
     name: "MOLA 128 Base Tile (00n000)",
     lat: -22.0,
     lon: 45.0,
@@ -192,6 +216,63 @@ function generateAcquiredFootprints(): GeoJSON.FeatureCollection {
             [66.03181, -5.18565]
           ]]
         }
+      },
+      {
+        type: "Feature",
+        properties: {
+          id: "ctx_t01_000893",
+          title: "USGS CTX Controlled DTM: Apollinaris Sulci",
+          resolution: "20.0 m/px",
+          type: "CTX Numerical DTM"
+        },
+        geometry: {
+          type: "Polygon",
+          coordinates: [[
+            [168.086, 4.454],
+            [168.492, 4.454],
+            [168.492, 4.983],
+            [168.086, 4.983],
+            [168.086, 4.454]
+          ]]
+        }
+      },
+      {
+        type: "Feature",
+        properties: {
+          id: "hirise_esp_011635",
+          title: "USGS HiRISE Controlled DTM: Holden Crater",
+          resolution: "1.01 m/px",
+          type: "HiRISE Ultra-Res DTM"
+        },
+        geometry: {
+          type: "Polygon",
+          coordinates: [[
+            [-51.013, -28.650],
+            [-50.950, -28.650],
+            [-50.950, -28.382],
+            [-51.013, -28.382],
+            [-51.013, -28.650]
+          ]]
+        }
+      },
+      {
+        type: "Feature",
+        properties: {
+          id: "themis_ir_n30_000",
+          title: "THEMIS 100m Regional IR Mosaic (N-30_000)",
+          resolution: "231.5 m/px",
+          type: "THEMIS IR Visual Mosaic"
+        },
+        geometry: {
+          type: "Polygon",
+          coordinates: [[
+            [0, -30],
+            [30, -30],
+            [30, 0],
+            [0, 0],
+            [0, -30]
+          ]]
+        }
       }
     ]
   };
@@ -243,6 +324,11 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     const globalMola = layers.find((l) => l.id === "mola-elevation-global");
     const molaTiles = layers.find((l) => l.id === "mola-128-tiles");
     const ctxDtm = layers.find((l) => l.id === "ctx-dtm-p21-009323");
+    const ctxT01 = layers.find((l) => l.id === "ctx-controlled-t01");
+    const hiriseEsp = layers.find((l) => l.id === "hirise-controlled-esp");
+    const tesThermal = layers.find((l) => l.id === "tes-thermal-inertia");
+    const themisIr = layers.find((l) => l.id === "themis-ir-regional");
+    const sim3292 = layers.find((l) => l.id === "sim3292-geology");
     const graticule = layers.find((l) => l.id === "mars-graticule-grid");
     const footprints = layers.find((l) => l.id === "dataset-footprints");
 
@@ -257,6 +343,22 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     }
     if (ctxDtm) {
       setVisibility("layer-ctx-dtm", ctxDtm.enabled);
+    }
+    if (ctxT01) {
+      setVisibility("layer-ctx-t01", ctxT01.enabled);
+    }
+    if (hiriseEsp) {
+      setVisibility("layer-hirise-esp", hiriseEsp.enabled);
+    }
+    if (tesThermal) {
+      setVisibility("layer-tes-thermal", tesThermal.enabled);
+    }
+    if (themisIr) {
+      setVisibility("layer-themis-ir", themisIr.enabled);
+    }
+    if (sim3292) {
+      setVisibility("layer-sim3292-geology-fill", sim3292.enabled);
+      setVisibility("layer-sim3292-geology-line", sim3292.enabled);
     }
     if (graticule) {
       setVisibility("mars-graticule-lines", graticule.enabled);
@@ -465,6 +567,109 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         type: "raster",
         source: "src-ctx-dtm",
         paint: { "raster-opacity": 0.95 }
+      });
+
+      // 3B. USGS CONTROLLED CTX DTM: Apollinaris Sulci (20m/px)
+      map.addSource("src-ctx-t01", {
+        type: "image",
+        url: `${API_BASE}/api/v1/terrain/render/window?min_lon=168.086&min_lat=4.454&max_lon=168.492&max_lat=4.983&preferred_tier=ctx&width=512&height=512`,
+        coordinates: [
+          [168.086, 4.983],
+          [168.492, 4.983],
+          [168.492, 4.454],
+          [168.086, 4.454]
+        ]
+      });
+      map.addLayer({
+        id: "layer-ctx-t01",
+        type: "raster",
+        source: "src-ctx-t01",
+        layout: { visibility: "visible" },
+        paint: { "raster-opacity": 0.95 }
+      });
+
+      // 3C. USGS CONTROLLED HiRISE DTM: Holden Crater (1.01m/px)
+      map.addSource("src-hirise-esp", {
+        type: "image",
+        url: `${API_BASE}/api/v1/terrain/render/window?min_lon=308.987&min_lat=-28.650&max_lon=309.050&max_lat=-28.382&preferred_tier=hirise&width=512&height=512`,
+        coordinates: [
+          [-51.013, -28.382],
+          [-50.950, -28.382],
+          [-50.950, -28.650],
+          [-51.013, -28.650]
+        ]
+      });
+      map.addLayer({
+        id: "layer-hirise-esp",
+        type: "raster",
+        source: "src-hirise-esp",
+        layout: { visibility: "visible" },
+        paint: { "raster-opacity": 0.98 }
+      });
+
+      // 3D. 2001 MARS ODYSSEY THEMIS 100m IR REGIONAL MOSAIC
+      map.addSource("src-themis-ir", {
+        type: "image",
+        url: `${API_BASE}/api/v1/themis/render/window?min_lon=0&min_lat=-30&max_lon=30&max_lat=0&mode=day&width=512&height=512`,
+        coordinates: [
+          [0, 0],
+          [30, 0],
+          [30, -30],
+          [0, -30]
+        ]
+      });
+      map.addLayer({
+        id: "layer-themis-ir",
+        type: "raster",
+        source: "src-themis-ir",
+        layout: { visibility: "none" },
+        paint: { "raster-opacity": 0.85 }
+      });
+
+      // 3E. MGS TES GLOBAL THERMAL INERTIA (Putzig & Mellon 2007)
+      map.addSource("src-tes-thermal", {
+        type: "image",
+        url: `${API_BASE}/api/v1/thermal/render/window?min_lon=-180&min_lat=-90&max_lon=180&max_lat=90&product=dayside&width=1024&height=512`,
+        coordinates: [
+          [-180, 90],
+          [180, 90],
+          [180, -90],
+          [-180, -90]
+        ]
+      });
+      map.addLayer({
+        id: "layer-tes-thermal",
+        type: "raster",
+        source: "src-tes-thermal",
+        layout: { visibility: "none" },
+        paint: { "raster-opacity": 0.70 }
+      });
+
+      // 3F. USGS SIM 3292 GLOBAL GEOLOGIC MAP
+      map.addSource("src-sim3292-geology", {
+        type: "geojson",
+        data: `${API_BASE}/api/v1/geology/viewport?min_lon=-180&min_lat=-90&max_lon=180&max_lat=90&layer=geology&limit=1000`
+      });
+      map.addLayer({
+        id: "layer-sim3292-geology-fill",
+        type: "fill",
+        source: "src-sim3292-geology",
+        layout: { visibility: "none" },
+        paint: {
+          "fill-color": "#e0a96d",
+          "fill-opacity": 0.25
+        }
+      });
+      map.addLayer({
+        id: "layer-sim3292-geology-line",
+        type: "line",
+        source: "src-sim3292-geology",
+        layout: { visibility: "none" },
+        paint: {
+          "line-color": "#ffedd5",
+          "line-width": 1,
+          "line-opacity": 0.6
+        }
       });
 
       // ==========================================

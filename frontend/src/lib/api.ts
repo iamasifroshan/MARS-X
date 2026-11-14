@@ -602,3 +602,69 @@ export async function fetchWindowRenderMetadata(
   return res.json();
 }
 
+export async function fetchGeologyPoint(lat: number, lon: number): Promise<any> {
+  const url = new URL(`${API_BASE}/api/v1/geology/point`);
+  url.searchParams.set("lat", lat.toString());
+  url.searchParams.set("lon", lon.toString());
+
+  const res = await apiFetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Geology point query failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchGeologyMetadata(): Promise<any> {
+  const res = await apiFetch(`${API_BASE}/api/v1/geology/metadata`);
+  if (!res.ok) {
+    throw new Error(`Geology metadata query failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchThermalPoint(lat: number, lon: number, product: string = "dayside"): Promise<any> {
+  const url = new URL(`${API_BASE}/api/v1/thermal/point`);
+  url.searchParams.set("lat", lat.toString());
+  url.searchParams.set("lon", lon.toString());
+  url.searchParams.set("product", product);
+
+  const res = await apiFetch(url.toString(), {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Thermal point query failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchThermalMetadata(): Promise<any> {
+  const res = await apiFetch(`${API_BASE}/api/v1/thermal/metadata`);
+  if (!res.ok) {
+    throw new Error(`Thermal metadata query failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchThemisMetadata(): Promise<any> {
+  const res = await apiFetch(`${API_BASE}/api/v1/themis/metadata`);
+  if (!res.ok) {
+    throw new Error(`THEMIS metadata query failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchScientificProvenance(): Promise<any> {
+  const res = await apiFetch(`${API_BASE}/api/v1/science/provenance`);
+  if (!res.ok) {
+    throw new Error(`Scientific provenance query failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+

@@ -683,8 +683,8 @@ def _get_mola128_mm(tile_id: str) -> Optional[np.memmap]:
     return mm
 
 
-def _sample_point_elevation(lat: float, lon: float) -> PointElevationDetailResult:
-    """Sample elevation from highest available resolution covering the given coordinates."""
+def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[str] = None) -> PointElevationDetailResult:
+    """Sample elevation from highest available resolution covering the given coordinates across authentic datasets."""
     norm_lon = lon % 360.0
     if norm_lon < 0.0:
         norm_lon += 360.0
@@ -710,54 +710,153 @@ def _sample_point_elevation(lat: float, lon: float) -> PointElevationDetailResul
             source_checksum="",
         )
 
-    # 2. Priority 1: CTX Numerical DTM (20.0128 m/px, IAU:49910)
-    ctx_path = os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__),
-            "..",
-            "..",
-            "..",
-            "data",
-            "raw",
-            "ctx",
-            "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif",
+    R_IAU = 3396190.0
+    norm_lon_180 = norm_lon - 360.0 if norm_lon > 180.0 else norm_lon
+
+    # 2. Priority 0: HiRISE Controlled DTM (1.01 m/px, Holden Crater, IAU:49910)
+    if preferred_source in [None, "auto", "hirise", "hirise-dtm-controlled-esp-011635"]:
+        hirise_path = os.path.abspath(
+            os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "..",
+                "..",
+                "data",
+                "originals",
+                "hirise",
+                "DTEEC_011635_1510_029542_1510_A01.tif",
+            )
         )
-    )
-    if os.path.exists(ctx_path):
-        with rasterio.open(ctx_path) as ctx_src:
-            # Check projected coordinates in IAU:49910 (radius 3,396,190 m)
-            R_IAU = 3396190.0
-            x_ctx = math.radians(norm_lon) * R_IAU
-            y_ctx = math.radians(lat) * R_IAU
-            if (ctx_src.bounds.left <= x_ctx <= ctx_src.bounds.right) and (
-                ctx_src.bounds.bottom <= y_ctx <= ctx_src.bounds.top
-            ):
-                r_ctx, c_ctx = ctx_src.index(x_ctx, y_ctx)
-                if 0 <= r_ctx < ctx_src.height and 0 <= c_ctx < ctx_src.width:
-                    val = float(ctx_src.read(1, window=((r_ctx, r_ctx + 1), (c_ctx, c_ctx + 1)))[0, 0])
-                    is_nodata = (val == ctx_src.nodata) or (val < -30000.0) or not math.isfinite(val)
-                    return PointElevationDetailResult(
-                        latitude=lat,
-                        longitude=norm_lon,
-                        elevation_m=None if is_nodata else round(val, 2),
-                        dataset_id="ctx-dtm-p21-009323",
-                        instrument="CTX (Context Camera)",
-                        tier="local_high_resolution",
-                        native_resolution_m=20.0128,
-                        native_resolution_desc="20.01 m/px stereo numerical DTM",
-                        display_resolution_m=80.05,
-                        crs="IAU:49910 (Equirectangular Mars Sphere, R=3396190 m)",
-                        vertical_reference="MOLA Areoid (ASP pc_align tied)",
-                        is_nodata=is_nodata,
-                        is_valid=not is_nodata,
-                        query_status="nodata_void" if is_nodata else "success_high_resolution_ctx",
-                        status_note=(
-                            "Unmeasured stereo correlation void"
-                            if is_nodata
-                            else "Sampled from authentic USGS 20m numerical CTX DTM."
-                        ),
-                        source_checksum="a4edb9f414500fe44e1a3c2ba06ee39e5c060cf1483619e43f461be29d31aff2",
-                    )
+        if os.path.exists(hirise_path):
+            with rasterio.open(hirise_path) as hi_src:
+                x_hi = math.radians(norm_lon_180) * R_IAU
+                y_hi = math.radians(lat) * R_IAU
+                if (hi_src.bounds.left <= x_hi <= hi_src.bounds.right) and (
+                    hi_src.bounds.bottom <= y_hi <= hi_src.bounds.top
+                ):
+                    r_hi, c_hi = hi_src.index(x_hi, y_hi)
+                    if 0 <= r_hi < hi_src.height and 0 <= c_hi < hi_src.width:
+                        val = float(hi_src.read(1, window=((r_hi, r_hi + 1), (c_hi, c_hi + 1)))[0, 0])
+                        is_nodata = (val < -30000.0) or not math.isfinite(val)
+                        return PointElevationDetailResult(
+                            latitude=lat,
+                            longitude=norm_lon,
+                            elevation_m=None if is_nodata else round(val, 2),
+                            dataset_id="hirise-dtm-controlled-esp-011635",
+                            instrument="HiRISE (High Resolution Imaging Science Experiment)",
+                            tier="ultra_high_resolution",
+                            native_resolution_m=1.01,
+                            native_resolution_desc="1.01 m/px controlled stereo DTM (Holden Crater)",
+                            display_resolution_m=4.04,
+                            crs="IAU:49910 (Equirectangular Mars Sphere, R=3396190 m)",
+                            vertical_reference="MOLA Geoid Adjusted",
+                            is_nodata=is_nodata,
+                            is_valid=not is_nodata,
+                            query_status="nodata_void" if is_nodata else "success_ultra_resolution_hirise",
+                            status_note=(
+                                "Unmeasured stereo correlation void"
+                                if is_nodata
+                                else "Sampled from authentic USGS 1m controlled HiRISE DTM."
+                            ),
+                            source_checksum="a3b3c22912b2b23675c1a91a6287200b2794f1f10cfb878c41aebc954ee655ad",
+                        )
+
+    # 3. Priority 1A: Controlled CTX Numerical DTM (20.0 m/px, Apollinaris Sulci, IAU:49910)
+    if preferred_source in [None, "auto", "ctx", "ctx-dtm-controlled-t01-000893"]:
+        t01_path = os.path.abspath(
+            os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "..",
+                "..",
+                "data",
+                "originals",
+                "ctx",
+                "T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif",
+            )
+        )
+        if os.path.exists(t01_path):
+            with rasterio.open(t01_path) as t01_src:
+                x_t01 = math.radians(norm_lon) * R_IAU
+                y_t01 = math.radians(lat) * R_IAU
+                if (t01_src.bounds.left <= x_t01 <= t01_src.bounds.right) and (
+                    t01_src.bounds.bottom <= y_t01 <= t01_src.bounds.top
+                ):
+                    r_t01, c_t01 = t01_src.index(x_t01, y_t01)
+                    if 0 <= r_t01 < t01_src.height and 0 <= c_t01 < t01_src.width:
+                        val = float(t01_src.read(1, window=((r_t01, r_t01 + 1), (c_t01, c_t01 + 1)))[0, 0])
+                        is_nodata = (val == t01_src.nodata) or (val < -30000.0) or not math.isfinite(val)
+                        return PointElevationDetailResult(
+                            latitude=lat,
+                            longitude=norm_lon,
+                            elevation_m=None if is_nodata else round(val, 2),
+                            dataset_id="ctx-dtm-controlled-t01-000893",
+                            instrument="CTX (Context Camera)",
+                            tier="local_high_resolution",
+                            native_resolution_m=20.0,
+                            native_resolution_desc="20.0 m/px controlled stereo numerical DTM (Apollinaris Sulci)",
+                            display_resolution_m=80.0,
+                            crs="IAU:49910 (Equirectangular Mars Sphere, R=3396190 m)",
+                            vertical_reference="MOLA Geoid Adjusted",
+                            is_nodata=is_nodata,
+                            is_valid=not is_nodata,
+                            query_status="nodata_void" if is_nodata else "success_high_resolution_ctx",
+                            status_note=(
+                                "Unmeasured stereo correlation void"
+                                if is_nodata
+                                else "Sampled from authentic USGS 20m controlled CTX DTM."
+                            ),
+                            source_checksum="4888a180ba6e868cb4fc0f33478723587499cf40e780af15983b615ce62f3c51",
+                        )
+
+    # 4. Priority 1B: Tyrrhena CTX Numerical DTM (20.0128 m/px, IAU:49910)
+    if preferred_source in [None, "auto", "ctx", "ctx-dtm-p21-009323"]:
+        ctx_path = os.path.abspath(
+            os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "..",
+                "..",
+                "data",
+                "raw",
+                "ctx",
+                "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif",
+            )
+        )
+        if os.path.exists(ctx_path):
+            with rasterio.open(ctx_path) as ctx_src:
+                x_ctx = math.radians(norm_lon) * R_IAU
+                y_ctx = math.radians(lat) * R_IAU
+                if (ctx_src.bounds.left <= x_ctx <= ctx_src.bounds.right) and (
+                    ctx_src.bounds.bottom <= y_ctx <= ctx_src.bounds.top
+                ):
+                    r_ctx, c_ctx = ctx_src.index(x_ctx, y_ctx)
+                    if 0 <= r_ctx < ctx_src.height and 0 <= c_ctx < ctx_src.width:
+                        val = float(ctx_src.read(1, window=((r_ctx, r_ctx + 1), (c_ctx, c_ctx + 1)))[0, 0])
+                        is_nodata = (val == ctx_src.nodata) or (val < -30000.0) or not math.isfinite(val)
+                        return PointElevationDetailResult(
+                            latitude=lat,
+                            longitude=norm_lon,
+                            elevation_m=None if is_nodata else round(val, 2),
+                            dataset_id="ctx-dtm-p21-009323",
+                            instrument="CTX (Context Camera)",
+                            tier="local_high_resolution",
+                            native_resolution_m=20.0128,
+                            native_resolution_desc="20.01 m/px stereo numerical DTM",
+                            display_resolution_m=80.05,
+                            crs="IAU:49910 (Equirectangular Mars Sphere, R=3396190 m)",
+                            vertical_reference="MOLA Areoid (ASP pc_align tied)",
+                            is_nodata=is_nodata,
+                            is_valid=not is_nodata,
+                            query_status="nodata_void" if is_nodata else "success_high_resolution_ctx",
+                            status_note=(
+                                "Unmeasured stereo correlation void"
+                                if is_nodata
+                                else "Sampled from authentic USGS 20m numerical CTX DTM."
+                            ),
+                            source_checksum="a4edb9f414500fe44e1a3c2ba06ee39e5c060cf1483619e43f461be29d31aff2",
+                        )
+
 
     # 3. Priority 2: Regional MOLA 128 ppd Tile (~463.08 m/px, IAU:49900)
     tile_info = None
@@ -915,9 +1014,10 @@ def _slerp_great_circle(lat1: float, lon1: float, lat2: float, lon2: float, f: f
 async def get_point_elevation(
     lat: float = Query(..., ge=-90.0, le=90.0, description="Planetocentric latitude in degrees"),
     lon: float = Query(..., description="East longitude in degrees (0 to 360 or -180 to 180)"),
+    preferred_source: Optional[str] = Query(default=None, description="Optional preferred product or tier ('auto', 'hirise', 'ctx', 'mola')"),
 ):
     """Query authentic numerical elevation at a single Martian coordinate across multi-resolution hierarchy."""
-    return _sample_point_elevation(lat, lon)
+    return _sample_point_elevation(lat, lon, preferred_source=preferred_source)
 
 
 @router.get("/elevation/profile", response_model=ElevationProfileResult)
@@ -1018,7 +1118,130 @@ async def render_terrain_window(
     if lon_max_norm < lon_min_norm:
         lon_max_norm += 360.0
 
-    # 1. Check if window intersects CTX DTM
+    # 0. Check HiRISE Controlled DTM (Holden Crater, ~1.01 m/px)
+    hirise_path = os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "..",
+            "data",
+            "originals",
+            "hirise",
+            "DTEEC_011635_1510_029542_1510_A01.tif",
+        )
+    )
+    lon_180_min = lon_min_norm - 360.0 if lon_min_norm > 180.0 else lon_min_norm
+    lon_180_max = lon_max_norm - 360.0 if lon_max_norm > 180.0 else lon_max_norm
+    if lon_180_min > lon_180_max:
+        lon_180_min, lon_180_max = lon_180_max, lon_180_min
+
+    has_hirise_overlap = (
+        not (max_lat < -28.66 or min_lat > -28.37 or lon_180_max < -51.03 or lon_180_min > -50.94)
+        and (max_lat - min_lat <= 1.0)
+    )
+    if has_hirise_overlap and preferred_tier in ["auto", "hirise"] and os.path.exists(hirise_path):
+        with rasterio.open(hirise_path) as hi_src:
+            R_IAU = 3396190.0
+            x_min = math.radians(lon_180_min) * R_IAU
+            x_max = math.radians(lon_180_max) * R_IAU
+            y_min = math.radians(min_lat) * R_IAU
+            y_max = math.radians(max_lat) * R_IAU
+
+            from rasterio.windows import from_bounds
+            win = from_bounds(x_min, y_min, x_max, y_max, hi_src.transform)
+            arr = hi_src.read(
+                1,
+                window=win,
+                out_shape=(height, width),
+                resampling=Resampling.bilinear,
+                boundless=True,
+                fill_value=-3.40282e+38,
+            )
+            nodata_mask = (arr < -30000.0) | ~np.isfinite(arr)
+            png_bytes = _render_turbo_rgba(arr, nodata_mask, vmin=-2400.0, vmax=-700.0, alpha_val=245)
+
+            disp_res = (x_max - x_min) / float(width)
+            src_res = 1.01
+            ratio = disp_res / src_res
+            regime = "oversampled_resampled_visualization" if ratio < 0.95 else ("undersampled_decimated_overview" if ratio > 1.05 else "native_matched")
+
+            headers = {
+                "X-Source-Dataset": "hirise-dtm-controlled-esp-011635",
+                "X-Source-Resolution": "1.01 m/px",
+                "X-Display-Resolution": f"{disp_res:.2f} m/px",
+                "X-Sampling-Regime": regime,
+                "X-Sampling-Ratio": f"{ratio:.4f}",
+                "X-Output-Dimensions": f"{width}x{height}",
+                "X-Resampling-Method": "bilinear",
+                "X-Source-Checksum": "a3b3c22912b2b23675c1a91a6287200b2794f1f10cfb878c41aebc954ee655ad",
+                "X-Geographic-Bounds": f"[{min_lon:.4f}, {min_lat:.4f}, {max_lon:.4f}, {max_lat:.4f}]",
+                "X-Cache-Status": "MISS",
+            }
+            if len(_WINDOW_CACHE) < _MAX_WINDOW_CACHE:
+                _WINDOW_CACHE[cache_key] = (png_bytes, headers)
+            return Response(content=png_bytes, media_type="image/png", headers=headers)
+
+    # 0B. Check Apollinaris Sulci Controlled CTX DTM (20.0 m/px)
+    t01_path = os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "..",
+            "data",
+            "originals",
+            "ctx",
+            "T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif",
+        )
+    )
+    has_t01_overlap = (
+        not (max_lat < 4.44 or min_lat > 4.99 or lon_max_norm < 168.07 or lon_min_norm > 168.50)
+        and (max_lat - min_lat <= 2.5)
+    )
+    if has_t01_overlap and preferred_tier in ["auto", "ctx"] and os.path.exists(t01_path):
+        with rasterio.open(t01_path) as t01_src:
+            R_IAU = 3396190.0
+            x_min = math.radians(lon_min_norm) * R_IAU
+            x_max = math.radians(lon_max_norm) * R_IAU
+            y_min = math.radians(min_lat) * R_IAU
+            y_max = math.radians(max_lat) * R_IAU
+
+            from rasterio.windows import from_bounds
+            win = from_bounds(x_min, y_min, x_max, y_max, t01_src.transform)
+            arr = t01_src.read(
+                1,
+                window=win,
+                out_shape=(height, width),
+                resampling=Resampling.bilinear,
+                boundless=True,
+                fill_value=-32767.0,
+            )
+            nodata_mask = (arr == -32767.0) | (arr < -30000.0) | ~np.isfinite(arr)
+            png_bytes = _render_turbo_rgba(arr, nodata_mask, vmin=-3500.0, vmax=-2200.0, alpha_val=245)
+
+            disp_res = (x_max - x_min) / float(width)
+            src_res = 20.0
+            ratio = disp_res / src_res
+            regime = "oversampled_resampled_visualization" if ratio < 0.95 else ("undersampled_decimated_overview" if ratio > 1.05 else "native_matched")
+
+            headers = {
+                "X-Source-Dataset": "ctx-dtm-controlled-t01-000893",
+                "X-Source-Resolution": "20.0 m/px",
+                "X-Display-Resolution": f"{disp_res:.2f} m/px",
+                "X-Sampling-Regime": regime,
+                "X-Sampling-Ratio": f"{ratio:.4f}",
+                "X-Output-Dimensions": f"{width}x{height}",
+                "X-Resampling-Method": "bilinear",
+                "X-Source-Checksum": "4888a180ba6e868cb4fc0f33478723587499cf40e780af15983b615ce62f3c51",
+                "X-Geographic-Bounds": f"[{min_lon:.4f}, {min_lat:.4f}, {max_lon:.4f}, {max_lat:.4f}]",
+                "X-Cache-Status": "MISS",
+            }
+            if len(_WINDOW_CACHE) < _MAX_WINDOW_CACHE:
+                _WINDOW_CACHE[cache_key] = (png_bytes, headers)
+            return Response(content=png_bytes, media_type="image/png", headers=headers)
+
+    # 1. Check Tyrrhena CTX DTM (20.0128 m/px)
     ctx_path = os.path.abspath(
         os.path.join(
             os.path.dirname(__file__),
@@ -1032,6 +1255,63 @@ async def render_terrain_window(
         )
     )
     # CTX extent: Lat [-5.19, -4.01], Lon [66.03, 66.60]
+    R_IAU = 3396190.0
+
+    # 0. Check HiRISE Holden Crater overlap
+    lon_180_min = lon_min_norm - 360.0 if lon_min_norm > 180.0 else lon_min_norm
+    lon_180_max = lon_max_norm - 360.0 if lon_max_norm > 180.0 else lon_max_norm
+    if lon_180_min > lon_180_max:
+        lon_180_min, lon_180_max = lon_180_max, lon_180_min
+
+    has_hirise_overlap = (
+        not (max_lat < -28.66 or min_lat > -28.37 or lon_180_max < -51.03 or lon_180_min > -50.94)
+        and (max_lat - min_lat <= 1.0)
+    )
+    if has_hirise_overlap:
+        x_min = math.radians(lon_180_min) * R_IAU
+        x_max = math.radians(lon_180_max) * R_IAU
+        disp_res = (x_max - x_min) / float(width)
+        src_res = 1.01
+        ratio = disp_res / src_res
+        regime = "oversampled_resampled_visualization" if ratio < 0.95 else ("undersampled_decimated_overview" if ratio > 1.05 else "native_matched")
+        return WindowRenderMetadata(
+            bbox=[min_lon, min_lat, max_lon, max_lat],
+            width=width,
+            height=height,
+            dataset_id="hirise-dtm-controlled-esp-011635",
+            source_resolution_m=1.01,
+            display_resolution_m=round(disp_res, 2),
+            sampling_regime=regime,
+            sampling_ratio=round(ratio, 4),
+            resampling_method="bilinear",
+            source_checksum="a3b3c22912b2b23675c1a91a6287200b2794f1f10cfb878c41aebc954ee655ad",
+        )
+
+    # 0B. Check Apollinaris Sulci CTX overlap
+    has_t01_overlap = (
+        not (max_lat < 4.44 or min_lat > 4.99 or lon_max_norm < 168.07 or lon_min_norm > 168.50)
+        and (max_lat - min_lat <= 2.5)
+    )
+    if has_t01_overlap:
+        x_min = math.radians(lon_min_norm) * R_IAU
+        x_max = math.radians(lon_max_norm) * R_IAU
+        disp_res = (x_max - x_min) / float(width)
+        src_res = 20.0
+        ratio = disp_res / src_res
+        regime = "oversampled_resampled_visualization" if ratio < 0.95 else ("undersampled_decimated_overview" if ratio > 1.05 else "native_matched")
+        return WindowRenderMetadata(
+            bbox=[min_lon, min_lat, max_lon, max_lat],
+            width=width,
+            height=height,
+            dataset_id="ctx-dtm-controlled-t01-000893",
+            source_resolution_m=20.0,
+            display_resolution_m=round(disp_res, 2),
+            sampling_regime=regime,
+            sampling_ratio=round(ratio, 4),
+            resampling_method="bilinear",
+            source_checksum="4888a180ba6e868cb4fc0f33478723587499cf40e780af15983b615ce62f3c51",
+        )
+
     has_ctx_overlap = (
         not (max_lat < -5.19 or min_lat > -4.01 or lon_max_norm < 66.03 or lon_min_norm > 66.61)
         and (max_lat - min_lat <= 2.5)
@@ -1233,6 +1513,63 @@ async def get_window_render_metadata(
     lon_max_norm = max_lon % 360.0
     if lon_max_norm < lon_min_norm:
         lon_max_norm += 360.0
+
+    R_IAU = 3396190.0
+
+    # 0. Check HiRISE Holden Crater overlap
+    lon_180_min = lon_min_norm - 360.0 if lon_min_norm > 180.0 else lon_min_norm
+    lon_180_max = lon_max_norm - 360.0 if lon_max_norm > 180.0 else lon_max_norm
+    if lon_180_min > lon_180_max:
+        lon_180_min, lon_180_max = lon_180_max, lon_180_min
+
+    has_hirise_overlap = (
+        not (max_lat < -28.66 or min_lat > -28.37 or lon_180_max < -51.03 or lon_180_min > -50.94)
+        and (max_lat - min_lat <= 1.0)
+    )
+    if has_hirise_overlap:
+        x_min = math.radians(lon_180_min) * R_IAU
+        x_max = math.radians(lon_180_max) * R_IAU
+        disp_res = (x_max - x_min) / float(width)
+        src_res = 1.01
+        ratio = disp_res / src_res
+        regime = "oversampled_resampled_visualization" if ratio < 0.95 else ("undersampled_decimated_overview" if ratio > 1.05 else "native_matched")
+        return WindowRenderMetadata(
+            bbox=[min_lon, min_lat, max_lon, max_lat],
+            width=width,
+            height=height,
+            dataset_id="hirise-dtm-controlled-esp-011635",
+            source_resolution_m=1.01,
+            display_resolution_m=round(disp_res, 2),
+            sampling_regime=regime,
+            sampling_ratio=round(ratio, 4),
+            resampling_method="bilinear",
+            source_checksum="a3b3c22912b2b23675c1a91a6287200b2794f1f10cfb878c41aebc954ee655ad",
+        )
+
+    # 0B. Check Apollinaris Sulci CTX overlap
+    has_t01_overlap = (
+        not (max_lat < 4.44 or min_lat > 4.99 or lon_max_norm < 168.07 or lon_min_norm > 168.50)
+        and (max_lat - min_lat <= 2.5)
+    )
+    if has_t01_overlap:
+        x_min = math.radians(lon_min_norm) * R_IAU
+        x_max = math.radians(lon_max_norm) * R_IAU
+        disp_res = (x_max - x_min) / float(width)
+        src_res = 20.0
+        ratio = disp_res / src_res
+        regime = "oversampled_resampled_visualization" if ratio < 0.95 else ("undersampled_decimated_overview" if ratio > 1.05 else "native_matched")
+        return WindowRenderMetadata(
+            bbox=[min_lon, min_lat, max_lon, max_lat],
+            width=width,
+            height=height,
+            dataset_id="ctx-dtm-controlled-t01-000893",
+            source_resolution_m=20.0,
+            display_resolution_m=round(disp_res, 2),
+            sampling_regime=regime,
+            sampling_ratio=round(ratio, 4),
+            resampling_method="bilinear",
+            source_checksum="4888a180ba6e868cb4fc0f33478723587499cf40e780af15983b615ce62f3c51",
+        )
 
     has_ctx_overlap = (
         not (max_lat < -5.19 or min_lat > -4.01 or lon_max_norm < 66.03 or lon_min_norm > 66.61)

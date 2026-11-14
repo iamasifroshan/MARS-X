@@ -11,6 +11,9 @@ from app.routers import datasets as datasets_router
 from app.routers import terrain as terrain_router
 from app.routers import routing as routing_router
 from app.routers import science as science_router
+from app.routers import geology as geology_router
+from app.routers import thermal as thermal_router
+from app.routers import themis as themis_router
 
 
 # ── Logging ────────────────────────────────────────────────────────────────
@@ -48,6 +51,9 @@ app.include_router(terrain_router.router)
 app.include_router(routing_router.router)
 app.include_router(routing_router.routing_alias_router)
 app.include_router(science_router.router)
+app.include_router(geology_router.router)
+app.include_router(thermal_router.router)
+app.include_router(themis_router.router)
 
 
 
