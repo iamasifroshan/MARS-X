@@ -71,3 +71,4 @@ All surface distance, speed, and slope calculations in MARS-X use the IAU 2000 M
 The distance along the spherical surface between two points is:
 $$D = R_{\text{Mars}} \cdot \arccos\left(\sin\phi_1\sin\phi_2 + \cos\phi_1\cos\phi_2\cos(\lambda_2 - \lambda_1)\right)$$
 Implemented using the numerically stable Haversine formula for small angular separations.
+

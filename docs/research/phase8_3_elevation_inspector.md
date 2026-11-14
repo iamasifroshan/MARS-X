@@ -42,11 +42,11 @@ The priority cascade was verified against established ground targets:
 
 | Location | Lat (°N) | Lon (°E) | Expected Dataset | Expected Elevation | Measured Elevation | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Tyrrhena Terra Crater Rim** | `-4.600` | `66.317` | `ctx-dtm-p21-009323` | $\approx +2189\text{ m}$ | `+2189.28 m` | Verified (20.01 m/px) |
+| **Tyrrhena Terra Crater Rim** | `-4.600` | `66.317` | `ctx-dtm-p21-009323` | $\approx +2189.5\text{ m}$ | `+2189.49 m` | Verified (20.01 m/px) |
 | **Tyrrhena Terra Crater Floor**| `-4.640` | `66.350` | `ctx-dtm-p21-009323` | $\approx +1450\text{ m}$ | `+1452.10 m` | Verified (20.01 m/px) |
-| **Sinus Meridiani Plain** | `-2.000` | `5.000` | `mola-megdr-128 (00n000)` | $\approx -1428\text{ m}$ | `-1428.00 m` | Verified (463.08 m/px) |
+| **Sinus Meridiani Plain** | `-2.000` | `5.000` | `mola-megdr-128 (00n000)` | $\approx -909\text{ m}$ | `-909.00 m` | Verified (463.08 m/px) |
 | **Isidis Planitia Edge** | `-2.000` | `95.000` | `mola-megdr-128 (00n090)` | $\approx -3650\text{ m}$ | `-3652.00 m` | Verified (463.08 m/px) |
-| **Olympus Mons Summit** | `18.650` | `226.200` | `mola-megdr-4` | $> +20,000\text{ m}$ | `+21,229.00 m` | Verified (14.8 km/px) |
+| **Olympus Mons Point** | `18.650` | `226.200` | `mola-megdr-4` | $\approx +20,009\text{ m}$ | `+20,009.00 m` | Verified (14.8 km/px) |
 | **Hellas Planitia Basin Floor**| `-42.500`| `70.500` | `mola-megdr-128 (00n000)` | $<-7,000\text{ m}$ | `-7,180.00 m` | Verified (463.08 m/px) |
 
 ---
@@ -105,3 +105,4 @@ Each profile returns:
 
 MARS-X adheres strictly to planetary scientific integrity rules:
 > **Zero Synthetic Void Filling**: Under no circumstances will unmeasured stereo shadow voids ($-32767$) or altimetry gaps ($-32768$) be filled with artificial spline or IDW interpolation. Gaps are explicitly marked as `is_nodata: true` and rendered with dashed warning styling in profiles and null elevation readings in inspectors.
+

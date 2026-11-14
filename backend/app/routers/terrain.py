@@ -1061,10 +1061,22 @@ async def render_terrain_window(
             png_bytes = _render_turbo_rgba(arr, nodata_mask, vmin=800.0, vmax=2520.0, alpha_val=245)
 
             disp_res = (x_max - x_min) / float(width)
+            src_res = 20.0128
+            sampling_ratio = disp_res / src_res
+            if sampling_ratio < 0.95:
+                sampling_regime = "oversampled_resampled_visualization"
+            elif sampling_ratio > 1.05:
+                sampling_regime = "undersampled_decimated_overview"
+            else:
+                sampling_regime = "native_matched"
+
             headers = {
                 "X-Source-Dataset": "ctx-dtm-p21-009323",
                 "X-Source-Resolution": "20.0128 m/px",
                 "X-Display-Resolution": f"{disp_res:.2f} m/px",
+                "X-Sampling-Regime": sampling_regime,
+                "X-Sampling-Ratio": f"{sampling_ratio:.4f}",
+                "X-Output-Dimensions": f"{width}x{height}",
                 "X-Resampling-Method": "bilinear",
                 "X-Source-Checksum": "a4edb9f414500fe44e1a3c2ba06ee39e5c060cf1483619e43f461be29d31aff2",
                 "X-Geographic-Bounds": f"[{min_lon:.4f}, {min_lat:.4f}, {max_lon:.4f}, {max_lat:.4f}]",
@@ -1074,21 +1086,48 @@ async def render_terrain_window(
                 _WINDOW_CACHE[cache_key] = (png_bytes, headers)
             return Response(content=png_bytes, media_type="image/png", headers=headers)
 
-    # 2. Check if window intersects MOLA 128 Tile 00n000
-    if not (
-        max_lat < -44.0 or min_lat > 0.0 or lon_max_norm < 0.0 or lon_min_norm > 90.0
-    ) and preferred_tier in ["auto", "mola_128"]:
-        mm = _get_mola128_mm("00n000")
-        if mm is not None:
-            clamped_min_lat = max(min_lat, -44.0)
-            clamped_max_lat = min(max_lat, 0.0)
-            clamped_min_lon = max(lon_min_norm, 0.0)
-            clamped_max_lon = min(lon_max_norm, 90.0)
+    # 2. Check if window intersects any regional MOLA 128 ppd Tile
+    mola128_tiles = [
+        ("00n000", "megt00n000hb", -44.0, 0.0, 0.0, 90.0, "f57274b5e459ab35a1975ca5f186f98bdb929475a4557098a7c632b9aa175c75"),
+        ("44n000", "megt44n000hb", 0.0, 44.0, 0.0, 90.0, "14022166079edafc99650f354e5a634e6eb2c2ea544b444c01cd8ee55437df36"),
+        ("00n090", "megt00n090hb", -44.0, 0.0, 90.0, 180.0, "764946162d4c650abfb22aa284595a15374a7185f302a639c19e6602c67a1d6e"),
+    ]
 
-            r_start = min(max(int(round(-clamped_max_lat * 128.0)), 0), 5631)
-            r_end = min(max(int(round(-clamped_min_lat * 128.0)), 0), 5632)
-            c_start = min(max(int(round(clamped_min_lon * 128.0)), 0), 11519)
-            c_end = min(max(int(round(clamped_max_lon * 128.0)), 0), 11520)
+    best_tile = None
+    best_overlap_area = 0.0
+
+    if preferred_tier in ["auto", "mola_128"]:
+        for t_key, t_id, t_min_lat, t_max_lat, t_min_lon, t_max_lon, t_sha in mola128_tiles:
+            overlap_lat_min = max(min_lat, t_min_lat)
+            overlap_lat_max = min(max_lat, t_max_lat)
+            overlap_lon_min = max(lon_min_norm, t_min_lon)
+            overlap_lon_max = min(lon_max_norm, t_max_lon)
+            if overlap_lat_max > overlap_lat_min and overlap_lon_max > overlap_lon_min:
+                area = (overlap_lat_max - overlap_lat_min) * (overlap_lon_max - overlap_lon_min)
+                if area > best_overlap_area:
+                    best_overlap_area = area
+                    best_tile = (t_key, t_id, t_min_lat, t_max_lat, t_min_lon, t_max_lon, t_sha,
+                                 overlap_lat_min, overlap_lat_max, overlap_lon_min, overlap_lon_max)
+
+    if best_tile is not None:
+        t_key, t_id, t_min_lat, t_max_lat, t_min_lon, t_max_lon, t_sha, o_lat_min, o_lat_max, o_lon_min, o_lon_max = best_tile
+        mm = _get_mola128_mm(t_key)
+        if mm is not None:
+            if t_key == "00n000":
+                r_start = min(max(int(round(-o_lat_max * 128.0)), 0), 5631)
+                r_end = min(max(int(round(-o_lat_min * 128.0)), 0), 5632)
+                c_start = min(max(int(round(o_lon_min * 128.0)), 0), 11519)
+                c_end = min(max(int(round(o_lon_max * 128.0)), 0), 11520)
+            elif t_key == "44n000":
+                r_start = min(max(int(round((44.0 - o_lat_max) * 128.0)), 0), 5631)
+                r_end = min(max(int(round((44.0 - o_lat_min) * 128.0)), 0), 5632)
+                c_start = min(max(int(round(o_lon_min * 128.0)), 0), 11519)
+                c_end = min(max(int(round(o_lon_max * 128.0)), 0), 11520)
+            else:  # 00n090
+                r_start = min(max(int(round(-o_lat_max * 128.0)), 0), 5631)
+                r_end = min(max(int(round(-o_lat_min * 128.0)), 0), 5632)
+                c_start = min(max(int(round((o_lon_min - 90.0) * 128.0)), 0), 11519)
+                c_end = min(max(int(round((o_lon_max - 90.0) * 128.0)), 0), 11520)
 
             if r_end > r_start and c_end > c_start:
                 sub = mm[r_start:r_end, c_start:c_end]
@@ -1100,12 +1139,24 @@ async def render_terrain_window(
                 png_bytes = _render_turbo_rgba(arr, nodata_mask, vmin=-6000.0, vmax=4000.0, alpha_val=240)
 
                 disp_res = ((lon_max_norm - lon_min_norm) * (3396190.0 * math.pi / 180.0)) / float(width)
+                src_res = 463.08
+                sampling_ratio = disp_res / src_res
+                if sampling_ratio < 0.95:
+                    sampling_regime = "oversampled_resampled_visualization"
+                elif sampling_ratio > 1.05:
+                    sampling_regime = "undersampled_decimated_overview"
+                else:
+                    sampling_regime = "native_matched"
+
                 headers = {
-                    "X-Source-Dataset": "mola-megdr-128",
+                    "X-Source-Dataset": f"mola-megdr-128",
                     "X-Source-Resolution": "463.08 m/px",
                     "X-Display-Resolution": f"{disp_res:.2f} m/px",
+                    "X-Sampling-Regime": sampling_regime,
+                    "X-Sampling-Ratio": f"{sampling_ratio:.4f}",
+                    "X-Output-Dimensions": f"{width}x{height}",
                     "X-Resampling-Method": "stride_subsample",
-                    "X-Source-Checksum": "f57274b5e459ab35a1975ca5f186f98bdb929475a4557098a7c632b9aa175c75",
+                    "X-Source-Checksum": t_sha,
                     "X-Geographic-Bounds": f"[{min_lon:.4f}, {min_lat:.4f}, {max_lon:.4f}, {max_lat:.4f}]",
                     "X-Cache-Status": "MISS",
                 }
@@ -1142,10 +1193,22 @@ async def render_terrain_window(
         png_bytes = _render_turbo_rgba(arr, nodata_mask, vmin=-8200.0, vmax=21200.0, alpha_val=230)
 
         disp_res = ((lon_max_norm - lon_min_norm) * (3396190.0 * math.pi / 180.0)) / float(width)
+        src_res = 14818.67
+        sampling_ratio = disp_res / src_res
+        if sampling_ratio < 0.95:
+            sampling_regime = "oversampled_resampled_visualization"
+        elif sampling_ratio > 1.05:
+            sampling_regime = "undersampled_decimated_overview"
+        else:
+            sampling_regime = "native_matched"
+
         headers = {
             "X-Source-Dataset": "mola-megdr-4",
             "X-Source-Resolution": "14818.67 m/px",
             "X-Display-Resolution": f"{disp_res:.2f} m/px",
+            "X-Sampling-Regime": sampling_regime,
+            "X-Sampling-Ratio": f"{sampling_ratio:.4f}",
+            "X-Output-Dimensions": f"{width}x{height}",
             "X-Resampling-Method": "bilinear",
             "X-Source-Checksum": "25f16fb7aaf857898dcf98bc4f841341a24f8b9f7e98453ca083bc45d897ca2c",
             "X-Geographic-Bounds": f"[{min_lon:.4f}, {min_lat:.4f}, {max_lon:.4f}, {max_lat:.4f}]",
@@ -1181,6 +1244,9 @@ async def get_window_render_metadata(
         x_min = math.radians(lon_min_norm) * R_IAU
         x_max = math.radians(lon_max_norm) * R_IAU
         disp_res = (x_max - x_min) / float(width)
+        src_res = 20.0128
+        ratio = disp_res / src_res
+        regime = "oversampled_resampled_visualization" if ratio < 0.95 else ("undersampled_decimated_overview" if ratio > 1.05 else "native_matched")
         return WindowRenderMetadata(
             bbox=[min_lon, min_lat, max_lon, max_lat],
             width=width,
@@ -1188,32 +1254,56 @@ async def get_window_render_metadata(
             dataset_id="ctx-dtm-p21-009323",
             source_resolution_m=20.0128,
             display_resolution_m=round(disp_res, 2),
+            sampling_regime=regime,
+            sampling_ratio=round(ratio, 4),
             resampling_method="bilinear",
             source_checksum="a4edb9f414500fe44e1a3c2ba06ee39e5c060cf1483619e43f461be29d31aff2",
         )
-    elif not (max_lat < -44.0 or min_lat > 0.0 or lon_max_norm < 0.0 or lon_min_norm > 90.0):
-        disp_res = ((lon_max_norm - lon_min_norm) * (3396190.0 * math.pi / 180.0)) / float(width)
-        return WindowRenderMetadata(
-            bbox=[min_lon, min_lat, max_lon, max_lat],
-            width=width,
-            height=height,
-            dataset_id="mola-megdr-128",
-            source_resolution_m=463.08,
-            display_resolution_m=round(disp_res, 2),
-            resampling_method="stride_subsample",
-            source_checksum="f57274b5e459ab35a1975ca5f186f98bdb929475a4557098a7c632b9aa175c75",
-        )
-    else:
-        disp_res = ((lon_max_norm - lon_min_norm) * (3396190.0 * math.pi / 180.0)) / float(width)
-        return WindowRenderMetadata(
-            bbox=[min_lon, min_lat, max_lon, max_lat],
-            width=width,
-            height=height,
-            dataset_id="mola-megdr-4",
-            source_resolution_m=14818.67,
-            display_resolution_m=round(disp_res, 2),
-            resampling_method="bilinear",
-            source_checksum="25f16fb7aaf857898dcf98bc4f841341a24f8b9f7e98453ca083bc45d897ca2c",
-        )
+
+    # Check MOLA 128 tiles
+    mola128_tiles = [
+        ("00n000", "megt00n000hb", -44.0, 0.0, 0.0, 90.0, "f57274b5e459ab35a1975ca5f186f98bdb929475a4557098a7c632b9aa175c75"),
+        ("44n000", "megt44n000hb", 0.0, 44.0, 0.0, 90.0, "14022166079edafc99650f354e5a634e6eb2c2ea544b444c01cd8ee55437df36"),
+        ("00n090", "megt00n090hb", -44.0, 0.0, 90.0, 180.0, "764946162d4c650abfb22aa284595a15374a7185f302a639c19e6602c67a1d6e"),
+    ]
+    for t_key, t_id, t_min_lat, t_max_lat, t_min_lon, t_max_lon, t_sha in mola128_tiles:
+        overlap_lat_min = max(min_lat, t_min_lat)
+        overlap_lat_max = min(max_lat, t_max_lat)
+        overlap_lon_min = max(lon_min_norm, t_min_lon)
+        overlap_lon_max = min(lon_max_norm, t_max_lon)
+        if overlap_lat_max > overlap_lat_min and overlap_lon_max > overlap_lon_min:
+            disp_res = ((lon_max_norm - lon_min_norm) * (3396190.0 * math.pi / 180.0)) / float(width)
+            src_res = 463.08
+            ratio = disp_res / src_res
+            regime = "oversampled_resampled_visualization" if ratio < 0.95 else ("undersampled_decimated_overview" if ratio > 1.05 else "native_matched")
+            return WindowRenderMetadata(
+                bbox=[min_lon, min_lat, max_lon, max_lat],
+                width=width,
+                height=height,
+                dataset_id="mola-megdr-128",
+                source_resolution_m=463.08,
+                display_resolution_m=round(disp_res, 2),
+                sampling_regime=regime,
+                sampling_ratio=round(ratio, 4),
+                resampling_method="stride_subsample",
+                source_checksum=t_sha,
+            )
+
+    disp_res = ((lon_max_norm - lon_min_norm) * (3396190.0 * math.pi / 180.0)) / float(width)
+    src_res = 14818.67
+    ratio = disp_res / src_res
+    regime = "oversampled_resampled_visualization" if ratio < 0.95 else ("undersampled_decimated_overview" if ratio > 1.05 else "native_matched")
+    return WindowRenderMetadata(
+        bbox=[min_lon, min_lat, max_lon, max_lat],
+        width=width,
+        height=height,
+        dataset_id="mola-megdr-4",
+        source_resolution_m=14818.67,
+        display_resolution_m=round(disp_res, 2),
+        sampling_regime=regime,
+        sampling_ratio=round(ratio, 4),
+        resampling_method="bilinear",
+        source_checksum="25f16fb7aaf857898dcf98bc4f841341a24f8b9f7e98453ca083bc45d897ca2c",
+    )
 
 

@@ -157,6 +157,8 @@ class WindowRenderMetadata(BaseModel):
     dataset_id: str
     source_resolution_m: float
     display_resolution_m: float
+    sampling_regime: str
+    sampling_ratio: float
     resampling_method: str
     source_checksum: str
 

@@ -93,3 +93,4 @@ To provide quantitative elevation insight, color mapping applies the Turbo color
 1. **Global Scale**: Span $[-8,200\text{ m}, +21,200\text{ m}]$ covers the full Martian topographical dynamic range from Hellas Planitia floor to Olympus Mons summit.
 2. **Local CTX Scale**: Span $[+800\text{ m}, +2,520\text{ m}]$ highlights subtle terrace, crater ejecta, and channel morphology within Tyrrhena Terra.
 3. **NoData Masking**: NoData void values ($-32,768$ and $-32,767$) are assigned zero alpha (fully transparent), preventing false topographic interpretation.
+

@@ -49,3 +49,4 @@ The progressive rendering router implements an LRU-bounded cache `_WINDOW_CACHE`
 - **Cache Hit Latency**: Mean $0.42\text{ ms}$, standard deviation $0.08\text{ ms}$.
 - **Network Payload**: Average rendered $256 \times 256$ PNG size is $28\text{ KB}$ to $45\text{ KB}$, compared to transferring the raw $148\text{ MB}$ CTX raster.
 - **Bandwidth Reduction**: $> 99.97\%$ bandwidth saving over sending raw elevation rasters to the browser.
+

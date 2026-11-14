@@ -30,7 +30,7 @@ Zero synthetic terrain was created. Zero placeholder imagery is used. In-band me
 | **3** | CTX DTM renders over Tyrrhena Terra with distinct high-resolution topographic relief. | Verified via `/api/v1/terrain/render/ctx-dtm` and windowed endpoint. Dynamic range $[+800\text{ m}, +2520\text{ m}]$ exposes crater rim and ejecta blankets. | **COMPLIANT** |
 | **4** | Progressive rendering serves appropriate raster decimation/window for the viewport. | Implemented via `/api/v1/terrain/render/window`. Reads spatial windows dynamically via `rasterio.windows` and pure NumPy striding. | **COMPLIANT** |
 | **5** | Elevation inspector returns real numerical elevation for clicked points, identifying correct source dataset. | Verified via `/api/v1/terrain/elevation/point`. Priority cascade routes CTX $\to$ MOLA 128 $\to$ Global MOLA $\to$ Out of Bounds. | **COMPLIANT** |
-| **6** | Elevation inspector accurately identifies CTX within its boundary and MOLA 128 within its tiles. | Tyrrhena Terra $(-4.600, 66.317)$ returns CTX $+2189.28\text{ m}$ ($20.01\text{ m/px}$). Sinus Meridiani $(-2.000, 5.000)$ returns MOLA 128 $-1428.00\text{ m}$ ($463.08\text{ m/px}$). | **COMPLIANT** |
+| **6** | Elevation inspector accurately identifies CTX within its boundary and MOLA 128 within its tiles. | Tyrrhena Terra $(-4.600, 66.317)$ returns CTX $+2189.49\text{ m}$ ($20.01\text{ m/px}$). Sinus Meridiani $(-2.000, 5.000)$ returns MOLA 128 $-909.00\text{ m}$ ($463.08\text{ m/px}$). | **COMPLIANT** |
 | **7** | Inspector displays native resolution alongside display resolution, preventing confusion. | Implemented in `CoordinateInspector.tsx` and response models. Both `native_resolution_m` and `display_resolution_m` are clearly presented with badges. | **COMPLIANT** |
 | **8** | Elevation profile draws an accurate elevation transect across the clicked/specified line. | Implemented via `/api/v1/terrain/elevation/profile` and `ElevationProfilePanel.tsx`. Evaluates spherical geodesics across any line with SVG curve rendering. | **COMPLIANT** |
 | **9** | Profile handles NoData without NaN crashes or false zero-elevation readings. | NoData cells ($-32768, -32767$) are preserved as `null`, counted in `nodata_count`, and displayed with clear warning alerts. | **COMPLIANT** |
@@ -87,3 +87,4 @@ Per explicit mission requirements:
 - **Phase 9 has NOT been started.**
 - **No synthetic terrain was generated.**
 - **No original datasets were replaced.**
+
