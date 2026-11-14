@@ -214,7 +214,7 @@ export function TerrainAnalysis({ currentCoordinates }: TerrainAnalysisProps) {
               <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                 <div>
                   <span className="text-xs font-mono uppercase text-red-400 font-bold tracking-wider">
-                    Terrain Complexity Indicators ({queryLat.toFixed(2)}°N, {queryLon.toFixed(2)}°E)
+                    Terrain Complexity Indicators ({queryLat >= 0 ? `${queryLat.toFixed(2)}°N` : `${Math.abs(queryLat).toFixed(2)}°S`}, {queryLon.toFixed(2)}°E)
                   </span>
                   <div className="text-[11px] text-slate-400">
                     Source: <code className="text-emerald-300">{hazards.source_dataset}</code> (Window: {hazards.spatial_scale?.analysis_window_size_m?.toLocaleString() ?? "N/A"}m)

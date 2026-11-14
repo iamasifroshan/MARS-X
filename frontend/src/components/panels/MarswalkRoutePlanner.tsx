@@ -121,8 +121,8 @@ export const MarswalkRoutePlanner: React.FC = () => {
                 </div>
                 <div className="text-[10px] text-slate-400 mt-1 line-clamp-1">{p.description}</div>
                 <div className="text-[9px] text-slate-500 mt-1 flex justify-between">
-                  <span>Start: ({p.start_lat.toFixed(3)}°, {p.start_lon.toFixed(3)}°E)</span>
-                  <span>Dest: ({p.dest_lat.toFixed(3)}°, {p.dest_lon.toFixed(3)}°E)</span>
+                  <span>Start: ({p.start_lat >= 0 ? `${p.start_lat.toFixed(3)}°N` : `${Math.abs(p.start_lat).toFixed(3)}°S`}, {p.start_lon.toFixed(3)}°E)</span>
+                  <span>Dest: ({p.dest_lat >= 0 ? `${p.dest_lat.toFixed(3)}°N` : `${Math.abs(p.dest_lat).toFixed(3)}°S`}, {p.dest_lon.toFixed(3)}°E)</span>
                 </div>
               </button>
             );
@@ -142,7 +142,7 @@ export const MarswalkRoutePlanner: React.FC = () => {
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Waypoint Coordinates</span>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[10px] text-slate-400 block mb-1">Start Latitude (°N)</label>
+                <label className="text-[10px] text-slate-400 block mb-1">Start Latitude (°)</label>
                 <input
                   type="number"
                   step="0.0001"
@@ -162,7 +162,7 @@ export const MarswalkRoutePlanner: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-[10px] text-slate-400 block mb-1">Dest Latitude (°N)</label>
+                <label className="text-[10px] text-slate-400 block mb-1">Dest Latitude (°)</label>
                 <input
                   type="number"
                   step="0.0001"
@@ -307,7 +307,7 @@ export const MarswalkRoutePlanner: React.FC = () => {
           </div>
 
           {/* Key Metrics Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 text-center">
             <div className="bg-[#12162a] border border-[#202742] rounded p-2.5">
               <div className="text-[9px] uppercase tracking-wider text-slate-400">Surface Distance</div>
               <div className="text-sm font-bold text-emerald-400 mt-0.5">
@@ -316,6 +316,14 @@ export const MarswalkRoutePlanner: React.FC = () => {
                   : `${routeResult.total_surface_distance_m.toFixed(1)} m`}
               </div>
               <div className="text-[9px] text-slate-500">Horiz: {(routeResult.total_horizontal_distance_m >= 1000 ? (routeResult.total_horizontal_distance_m / 1000).toFixed(2) + " km" : routeResult.total_horizontal_distance_m.toFixed(1) + " m")}</div>
+            </div>
+
+            <div className="bg-[#12162a] border border-[#202742] rounded p-2.5">
+              <div className="text-[9px] uppercase tracking-wider text-slate-400">Optimization Cost</div>
+              <div className="text-sm font-bold text-amber-400 mt-0.5">
+                {routeResult.total_optimization_cost !== undefined ? routeResult.total_optimization_cost.toFixed(1) : (routeResult.search_metrics?.total_path_cost ?? "N/A")}
+              </div>
+              <div className="text-[9px] text-slate-500">Analytical Metric (Weighted)</div>
             </div>
 
             <div className="bg-[#12162a] border border-[#202742] rounded p-2.5">

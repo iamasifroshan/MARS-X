@@ -1053,7 +1053,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           </div>
           <p className="text-[11px] text-gray-300 mb-2">{activeSite.description}</p>
           <div className="text-[10px] grid grid-cols-2 gap-2 text-gray-400 bg-[#0a0c16] p-2 rounded border border-[#1e2338]">
-            <div>Lat: <span className="text-gray-200">{activeSite.lat.toFixed(3)}°N</span></div>
+            <div>Lat: <span className="text-gray-200">{activeSite.lat >= 0 ? `${activeSite.lat.toFixed(3)}°N` : `${Math.abs(activeSite.lat).toFixed(3)}°S`}</span></div>
             <div>Lon: <span className="text-gray-200">{activeSite.lon.toFixed(3)}°E</span></div>
             <div className="col-span-2">Type: <span className="text-amber-400">{activeSite.type}</span></div>
           </div>

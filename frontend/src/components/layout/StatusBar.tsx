@@ -31,7 +31,9 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           <span className="text-gray-500">CURSOR POS:</span>
           {cursorCoords ? (
             <span className="text-gray-200">
-              {cursorCoords.lat.toFixed(4)}°N, {cursorCoords.lon.toFixed(4)}°E
+              {cursorCoords.lat >= 0
+                ? `${cursorCoords.lat.toFixed(4)}°N`
+                : `${Math.abs(cursorCoords.lat).toFixed(4)}°S`}, {cursorCoords.lon.toFixed(4)}°E
             </span>
           ) : (
             <span className="text-gray-500 italic">Pointer outside viewport</span>

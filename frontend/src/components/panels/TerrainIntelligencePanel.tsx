@@ -565,7 +565,7 @@ export function TerrainIntelligencePanel({ currentCoordinates }: TerrainIntellig
           <div className="flex items-center justify-between bg-slate-900/60 border border-slate-800 p-3 rounded-lg font-mono text-xs">
             <div>
               <span className="font-bold text-white">Corridor Coordinates:</span>
-              <span className="text-slate-400 ml-2">(-14.2°N, 59.1°E) ➔ (-14.0°N, 59.3°E)</span>
+              <span className="text-slate-400 ml-2">(14.2°S, 59.1°E) ➔ (14.0°S, 59.3°E)</span>
             </div>
             <button
               onClick={handleRunRouteSourceEval}

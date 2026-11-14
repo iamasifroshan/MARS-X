@@ -177,7 +177,7 @@ export const RoutePlanning: React.FC = () => {
           <span className="text-[11px] text-slate-400 font-bold block uppercase">Mission Coordinates:</span>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] text-slate-500 block">Start Lat (°N)</label>
+              <label className="text-[10px] text-slate-500 block">Start Lat (°)</label>
               <input
                 type="number"
                 step="0.01"
@@ -197,7 +197,7 @@ export const RoutePlanning: React.FC = () => {
               />
             </div>
             <div>
-              <label className="text-[10px] text-slate-500 block">Dest Lat (°N)</label>
+              <label className="text-[10px] text-slate-500 block">Dest Lat (°)</label>
               <input
                 type="number"
                 step="0.01"

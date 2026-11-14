@@ -958,6 +958,7 @@ export interface MarswalkRouteResponse {
   vertical_datum_type: string;
   total_surface_distance_m: number;
   total_horizontal_distance_m: number;
+  total_optimization_cost?: number;
   cumulative_elevation_gain_m: number;
   cumulative_elevation_loss_m: number;
   min_elevation_m: number;

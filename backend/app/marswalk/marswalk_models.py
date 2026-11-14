@@ -45,6 +45,10 @@ class MarswalkRouteRequest(BaseModel):
         le=1000000,
         description="Maximum A* node expansion limit before timeout",
     )
+    algorithm: Optional[str] = Field(
+        default="astar",
+        description="Pathfinding algorithm: 'astar' (heuristic-guided) or 'dijkstra' (uniform-cost)",
+    )
     route_name: Optional[str] = Field(
         default=None,
         description="Optional human-readable label for the planned traverse",
@@ -80,6 +84,10 @@ class MarswalkRouteResponse(BaseModel):
     vertical_datum_type: str
     total_surface_distance_m: float
     total_horizontal_distance_m: float
+    total_optimization_cost: float = Field(
+        default=0.0,
+        description="Total analytical graph traversal cost (minimized by A*/Dijkstra). Distinct from physical surface distance.",
+    )
     cumulative_elevation_gain_m: float
     cumulative_elevation_loss_m: float
     min_elevation_m: float

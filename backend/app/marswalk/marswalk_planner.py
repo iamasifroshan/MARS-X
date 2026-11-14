@@ -22,6 +22,7 @@ import math
 import time
 import uuid
 import heapq
+import hashlib
 import logging
 from typing import Tuple, List, Dict, Any, Optional
 
@@ -102,22 +103,60 @@ VALIDATED_CORRIDORS: List[ValidatedCorridorPreset] = [
     ),
 ]
 
-# In-memory LRU route cache
+# In-memory LRU route cache with deterministic request hash mapping
 _ROUTE_CACHE: Dict[str, MarswalkRouteResponse] = {}
+_REQUEST_HASH_TO_ROUTE_ID: Dict[str, str] = {}
 _MAX_CACHE_SIZE = 50
 
 
-def _cache_route(route: MarswalkRouteResponse):
+def compute_request_hash(request: MarswalkRouteRequest) -> str:
+    """Compute deterministic cryptographic hash of all route parameters."""
+    norm_start_lon = request.start_lon % 360.0
+    norm_dest_lon = request.dest_lon % 360.0
+    algo = getattr(request, "algorithm", "astar") or "astar"
+    pref = request.preferred_source or "auto"
+    name = getattr(request, "route_name", None) or ""
+    raw = (
+        f"{request.start_lat:.6f}:{norm_start_lon:.6f}:"
+        f"{request.dest_lat:.6f}:{norm_dest_lon:.6f}:"
+        f"{pref}:{request.slope_penalty_factor:.3f}:"
+        f"{request.max_slope_deg:.2f}:{request.max_search_nodes}:{algo}:{name}"
+    )
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+
+def _cache_route(route: MarswalkRouteResponse, request_hash: Optional[str] = None):
     """Store route in memory cache, evicting oldest if capacity reached."""
     if len(_ROUTE_CACHE) >= _MAX_CACHE_SIZE:
-        oldest_key = next(iter(_ROUTE_CACHE))
-        _ROUTE_CACHE.pop(oldest_key, None)
+        oldest_id = next(iter(_ROUTE_CACHE))
+        _ROUTE_CACHE.pop(oldest_id, None)
+        evict_hashes = [h for h, r_id in _REQUEST_HASH_TO_ROUTE_ID.items() if r_id == oldest_id]
+        for h in evict_hashes:
+            _REQUEST_HASH_TO_ROUTE_ID.pop(h, None)
+
     _ROUTE_CACHE[route.route_id] = route
+    if request_hash:
+        _REQUEST_HASH_TO_ROUTE_ID[request_hash] = route.route_id
 
 
 def get_cached_route(route_id: str) -> Optional[MarswalkRouteResponse]:
-    """Retrieve previously computed route from cache."""
+    """Retrieve previously computed route from cache by unique route_id."""
     return _ROUTE_CACHE.get(route_id)
+
+
+def get_cached_route_by_request(request: MarswalkRouteRequest) -> Optional[MarswalkRouteResponse]:
+    """Retrieve cached route if an identical request was already solved."""
+    req_hash = compute_request_hash(request)
+    route_id = _REQUEST_HASH_TO_ROUTE_ID.get(req_hash)
+    if route_id:
+        return _ROUTE_CACHE.get(route_id)
+    return None
+
+
+def clear_route_cache():
+    """Clear all cached routes and request hashes (for testing and cache invalidation)."""
+    _ROUTE_CACHE.clear()
+    _REQUEST_HASH_TO_ROUTE_ID.clear()
 
 
 class BoundedTerrainGrid:
@@ -206,7 +245,7 @@ class BoundedTerrainGrid:
         glob_r = self.row_offset + r
         glob_c = self.col_offset + c
 
-        if self.is_projected:
+        if self.is_projected and self.transform is not None:
             x_m, y_m = xy(self.transform, glob_r, glob_c)
             lat = math.degrees(y_m / MARS_RADIUS_M)
             lon = (math.degrees(x_m / MARS_RADIUS_M)) % 360.0
@@ -215,8 +254,12 @@ class BoundedTerrainGrid:
             lon_c, lat_c = xy(self.transform, glob_r, glob_c)
             return float(lat_c), float(lon_c % 360.0)
         else:
-            lat = self.lat_top - (r + 0.5) * self.d_lat_deg
-            lon = (self.lon_left + (c + 0.5) * self.d_lon_deg) % 360.0
+            lat_top = self.lat_top if self.lat_top is not None else 0.0
+            lon_left = self.lon_left if self.lon_left is not None else 0.0
+            d_lat = self.d_lat_deg if self.d_lat_deg is not None else (self.dy_m / MARS_RADIUS_M) * (180.0 / math.pi)
+            d_lon = self.d_lon_deg if self.d_lon_deg is not None else (self.dx_m / MARS_RADIUS_M) * (180.0 / math.pi)
+            lat = lat_top - (r + 0.5) * d_lat
+            lon = (lon_left + (c + 0.5) * d_lon) % 360.0
             return float(lat), float(lon)
 
 
@@ -502,7 +545,12 @@ class MarswalkPlanner:
 
     @classmethod
     def plan_route(cls, request: MarswalkRouteRequest) -> MarswalkRouteResponse:
-        """Execute full terrain-aware A* pathfinding and telemetry calculation."""
+        """Execute full terrain-aware A* or Dijkstra pathfinding and telemetry calculation."""
+        # Check deterministic request cache first
+        cached = get_cached_route_by_request(request)
+        if cached is not None:
+            return cached
+
         t0 = time.perf_counter()
 
         # Step 1: Source selection
@@ -530,7 +578,8 @@ class MarswalkPlanner:
         snapped_start_lat, snapped_start_lon = grid.cell_to_lat_lon(*snapped_start_rc)
         snapped_dest_lat, snapped_dest_lon = grid.cell_to_lat_lon(*snapped_goal_rc)
 
-        # Step 4: A* Pathfinding
+        # Step 4: Pathfinding (A* or Dijkstra)
+        algo = getattr(request, "algorithm", "astar") or "astar"
         path_cells, search_stats = cls._run_astar(
             grid=grid,
             start_rc=snapped_start_rc,
@@ -538,6 +587,7 @@ class MarswalkPlanner:
             slope_penalty_factor=request.slope_penalty_factor,
             max_slope_deg=request.max_slope_deg,
             max_nodes=request.max_search_nodes,
+            algorithm=algo,
         )
 
         # Step 5: Metrics & Telemetry calculation
@@ -546,10 +596,10 @@ class MarswalkPlanner:
         elev_gain = 0.0
         elev_loss = 0.0
         max_slope = 0.0
-        sum_slope = 0.0
+        weighted_slope_sum = 0.0
         total_horiz_dist = 0.0
 
-        # Exposure tracking in metres
+        # Exposure tracking in metres (distance-weighted)
         exposure_meters = {"low": 0.0, "moderate": 0.0, "high": 0.0, "very_high": 0.0, "unknown": 0.0}
 
         geojson_coords: List[List[float]] = []
@@ -572,6 +622,7 @@ class MarswalkPlanner:
 
                 cum_dist += d_surf
                 total_horiz_dist += d_horiz
+                weighted_slope_sum += d_surf * slope_val
 
                 if dz > 0:
                     elev_gain += dz
@@ -583,7 +634,6 @@ class MarswalkPlanner:
                 exposure_meters[category] += 0.0
 
             max_slope = max(max_slope, slope_val)
-            sum_slope += slope_val
 
             path_points.append(
                 MarswalkRoutePoint(
@@ -599,9 +649,10 @@ class MarswalkPlanner:
             geojson_coords.append([round(lon, 6), round(lat, 6)])
 
         n_pts = len(path_cells)
-        mean_slope = sum_slope / n_pts if n_pts > 0 else 0.0
+        # Length-weighted mean slope across traversed segments
+        mean_slope = (weighted_slope_sum / cum_dist) if cum_dist > 0.0 else (path_points[0].slope_deg if path_points else 0.0)
 
-        # Percentages by surface distance (or point fraction if zero distance)
+        # Distance-weighted percentages across standard analytical slope bands
         exposure_pct = {}
         if cum_dist > 0.0:
             for cat, dist_m in exposure_meters.items():
@@ -615,11 +666,13 @@ class MarswalkPlanner:
         search_stats["total_duration_ms"] = round(total_duration_ms, 2)
         search_stats["grid_window_shape"] = [grid.rows, grid.cols]
         search_stats["path_length_nodes"] = n_pts
+        search_stats["algorithm"] = algo
 
         elevations = [p.elevation_m for p in path_points]
         min_elev = min(elevations) if elevations else 0.0
         max_elev = max(elevations) if elevations else 0.0
 
+        total_opt_cost = round(float(search_stats.get("total_path_cost", cum_dist)), 2)
         route_id = f"mw-{uuid.uuid4().hex[:12]}"
 
         response = MarswalkRouteResponse(
@@ -639,6 +692,7 @@ class MarswalkPlanner:
             vertical_datum_type=source["vertical_datum_type"],
             total_surface_distance_m=round(cum_dist, 2),
             total_horizontal_distance_m=round(total_horiz_dist, 2),
+            total_optimization_cost=total_opt_cost,
             cumulative_elevation_gain_m=round(elev_gain, 2),
             cumulative_elevation_loss_m=round(elev_loss, 2),
             min_elevation_m=round(min_elev, 2),
@@ -656,6 +710,7 @@ class MarswalkPlanner:
                 "slope_penalty_factor_beta": request.slope_penalty_factor,
                 "reference_slope_deg": THETA_REF_DEG,
                 "max_slope_cutoff_deg": request.max_slope_deg,
+                "algorithm": algo,
                 "formula": "Cost(u, v) = d_surface * [1.0 + beta * (theta_v / 15.0)^2]",
             },
             search_metrics=search_stats,
@@ -666,7 +721,7 @@ class MarswalkPlanner:
             safety_disclaimer=MARSWALK_SAFETY_DISCLAIMER,
         )
 
-        _cache_route(response)
+        _cache_route(response, request_hash=compute_request_hash(request))
         return response
 
     @classmethod
@@ -678,8 +733,9 @@ class MarswalkPlanner:
         slope_penalty_factor: float,
         max_slope_deg: float,
         max_nodes: int,
+        algorithm: str = "astar",
     ) -> Tuple[List[Tuple[int, int]], Dict[str, Any]]:
-        """Core A* pathfinding algorithm on 8-connected bounded DEM."""
+        """Core A* or Dijkstra pathfinding algorithm on 8-connected bounded DEM."""
         t_search_start = time.perf_counter()
 
         if start_rc == goal_rc:
@@ -693,12 +749,42 @@ class MarswalkPlanner:
         goal_r, goal_c = goal_rc
         goal_elev = float(grid.elevation[goal_r, goal_c])
 
+        # Precompute destination coordinate for spherical great-circle heuristic (geographic grids only)
+        if not grid.is_projected and grid.lat_top is not None:
+            goal_lat, goal_lon = grid.cell_to_lat_lon(goal_r, goal_c)
+            goal_phi = math.radians(goal_lat)
+            goal_lam = math.radians(goal_lon)
+        else:
+            goal_phi = 0.0
+            goal_lam = 0.0
+
         def heuristic(r: int, c: int) -> float:
-            """Admissible and consistent 3D Euclidean distance lower bound."""
-            if r == goal_r and c == goal_c:
+            """Admissible and consistent 3D Euclidean distance lower bound.
+
+            Returns 0.0 under Dijkstra mode, guaranteeing uniform-cost search.
+            Under A* mode:
+            - Projected grids: exact planimetric Euclidean distance.
+            - Geographic grids: exact spherical Great-Circle geodesic distance.
+            Combined with vertical delta_z via Minkowski lower bound.
+            """
+            if algorithm == "dijkstra" or (r == goal_r and c == goal_c):
                 return 0.0
-            dy, dx = grid.get_cell_spacing(r)
-            d_horiz = math.sqrt(((goal_c - c) * dx) ** 2 + ((goal_r - r) * dy) ** 2)
+
+            if not grid.is_projected and grid.lat_top is not None:
+                cur_lat, cur_lon = grid.cell_to_lat_lon(r, c)
+                cur_phi = math.radians(cur_lat)
+                cur_lam = math.radians(cur_lon)
+                dphi = goal_phi - cur_phi
+                dlam = goal_lam - cur_lam
+                a = (
+                    math.sin(dphi * 0.5) ** 2
+                    + math.cos(cur_phi) * math.cos(goal_phi) * (math.sin(dlam * 0.5) ** 2)
+                )
+                d_horiz = 2.0 * MARS_RADIUS_M * math.asin(min(1.0, math.sqrt(max(0.0, a))))
+            else:
+                dy, dx = grid.get_cell_spacing(r)
+                d_horiz = math.sqrt(((goal_c - c) * dx) ** 2 + ((goal_r - r) * dy) ** 2)
+
             cur_elev = float(grid.elevation[r, c])
             dz = goal_elev - cur_elev
             return 0.999 * math.sqrt(d_horiz**2 + dz**2)
@@ -793,6 +879,27 @@ class MarswalkPlanner:
         raise RuntimeError(
             f"No valid path exists between start {start_rc} and destination {goal_rc} "
             f"within slope threshold {max_slope_deg}° and available DEM coverage."
+        )
+
+    @classmethod
+    def _run_dijkstra(
+        cls,
+        grid: BoundedTerrainGrid,
+        start_rc: Tuple[int, int],
+        goal_rc: Tuple[int, int],
+        slope_penalty_factor: float,
+        max_slope_deg: float,
+        max_nodes: int = 150000,
+    ) -> Tuple[List[Tuple[int, int]], Dict[str, Any]]:
+        """Uniform-cost search benchmark using zero-heuristic Dijkstra."""
+        return cls._run_astar(
+            grid=grid,
+            start_rc=start_rc,
+            goal_rc=goal_rc,
+            slope_penalty_factor=slope_penalty_factor,
+            max_slope_deg=max_slope_deg,
+            max_nodes=max_nodes,
+            algorithm="dijkstra",
         )
 
     @classmethod
