@@ -50,3 +50,4 @@ The complete MARS-X multi-resolution elevation hierarchy is now operational acro
 2. **Global Base (`global_base`):** MOLA MEGDR 128 ppd (463.08 m/px), 3 authentic regional tiles on disk covering 26.05% of Mars.
 3. **Regional High-Res (`regional`):** USGS Controlled MRO CTX DTM (20.01 m/px), Tyrrhena Terra analysis-ready.
 4. **Local Tactical (`local_tactical`):** MRO HiRISE DTM (1.01 m/px), meter-scale microtopography.
+

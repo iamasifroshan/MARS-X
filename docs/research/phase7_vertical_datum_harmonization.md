@@ -24,3 +24,4 @@ The ingested regional CTX DTM (`P21_009323_1754_XN_04S293W...`) was produced fol
 4. Gridding to a 20.01 m/px Cloud-Optimized GeoTIFF tied directly to the MOLA Areoid.
 
 Because the CTX product has already been rigidly tied to MOLA tracks using documented ICP adjustment, MARS-X compares elevations directly on the MOLA Areoid while registering localized variance ($\sigma = 75.45\text{ m}$) as legitimate microtopographic detail rather than datum error.
+

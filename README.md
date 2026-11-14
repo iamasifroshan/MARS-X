@@ -147,7 +147,7 @@ NASA Mars Trek WMTS tile services use EPSG:104905 (areocentric coordinates on a 
 
 ## 📊 Current Status
 
-**Phase: Phase 7 (Multi-Resolution Mars Terrain Intelligence & Mission Planning)** 🧭🔴
+**Phase: Phase 7.1 (Independent Scientific Data Audit & Cross-Resolution Validation)** 🧭🔴
 
 - [x] Project scaffolding and directory structure
 - [x] Backend API with FastAPI (health, status, dataset catalogue)
@@ -163,9 +163,14 @@ NASA Mars Trek WMTS tile services use EPSG:104905 (areocentric coordinates on a 
 - [x] Expanded MOLA 128 ppd regional coverage (3 authentic tiles, 26.05% of Mars sphere)
 - [x] Acquired authentic USGS Controlled MRO CTX numerical DTM (20.01 m/px, 100% inside MOLA tile)
 - [x] Catalogued local meter-scale HiRISE DTM with strict datum tie
-- [x] Real raster-to-raster numerical elevation comparison ($\mu_{\Delta z} = -45.58\text{ m}$, $\sigma = 75.45\text{ m}$)
+- [x] Independent bit-for-bit SHA-256 verification of all MOLA and CTX source files
+- [x] Discrepancy resolution for CTX overlap area ($2,410.1\text{ km}^2$ spherical bbox; $1,714.8\text{ km}^2$ valid data)
+- [x] Formal geodetic sign convention ($\Delta z = z_{\text{CTX}} - z_{\text{MOLA}} = -57.57\text{ m}$)
+- [x] Dual-support sampling audit: Point sampling ($N = 184$) and MOLA cell aggregation ($N = 1,877$)
+- [x] Zero-median boundary continuity verified across MOLA tile seams (0.0 m median)
 - [x] Resolution-aware routing data availability service and anti-upsampling guarantees
 - [x] Next.js multi-resolution terrain intelligence dashboard with 4-tier hierarchy inspector
+- [x] 134 comprehensive backend tests passed with zero regressions
 
 ---
 

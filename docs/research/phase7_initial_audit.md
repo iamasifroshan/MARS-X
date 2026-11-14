@@ -80,3 +80,4 @@ The spherical great-circle lower bound $h(u, G)$ is mathematically valid for sin
 8. **Stage 8: REST API Layer:** Expose product availability, coverage queries, and comparison endpoints.
 9. **Stage 9: Frontend Mission-Control Dashboard:** Multi-resolution inspection deck, coverage visualizer, and datum compatibility indicators.
 10. **Stage 10: Pytest Suite & Production Build:** End-to-end automated verification.
+

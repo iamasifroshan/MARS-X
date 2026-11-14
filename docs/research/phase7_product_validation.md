@@ -21,15 +21,17 @@ To ensure rigorous planetary data standards, all elevation products in MARS-X ar
 
 ## 3. Real Raster Numerical Elevation Comparison
 
-Using the authentic USGS CTX numerical DTM (`P21_009323_1754_XN_04S293W...`) and the overlapping authentic MOLA 128 tile (`megt00n000hb`), MARS-X executed cross-sensor elevation analysis across 92 spatial sample points:
+Using the authentic USGS CTX numerical DTM (`P21_009323_1754_XN_04S293W...`) and the overlapping authentic MOLA 128 tile (`megt00n000hb`), MARS-X executed cross-sensor elevation analysis across the confirmed overlap region:
 
-- **Overlap Region:** Latitude `[-5.137°, -4.053°]`, Longitude `[66.086°, 66.567°E]`
-- **Overlap Area:** ~3,889.3 km²
-- **MOLA 128 ppd Mean Elevation:** **+2,038.2 meters**
-- **CTX DTM Mean Elevation:** **+1,992.7 meters**
-- **Mean Elevation Difference ($\mu_{\Delta z} = \text{MOLA} - \text{CTX}$):** **-45.58 meters**
-- **Standard Deviation ($\sigma_{\Delta z}$):** **75.45 meters**
-- **Min Delta / Max Delta:** -248.2 m / +184.6 m
+- **Overlap Footprint:** Latitude `[-5.187°, -4.003°]`, Longitude `[66.036°, 66.617°E]`
+- **Geographic Overlap Area:** **2,410.10 km²** (Spherical bounding box) / **1,714.77 km²** (Valid stereo data)
+- **MOLA 128 ppd Mean Elevation:** **+2,054.16 meters**
+- **CTX DTM Mean Elevation:** **+1,996.59 meters**
+- **Mean Elevation Difference ($\mu_{\Delta z} = z_{\text{CTX}} - z_{\text{MOLA}}$):** **-57.57 meters**
+- **Standard Deviation ($\sigma_{\Delta z}$):** **51.79 meters**
+- **Root Mean Square Error (RMSE):** **77.44 meters**
+- **Min Delta / Max Delta:** -258.82 m / +184.04 m
 
 ### Scientific Interpretation
-The systematic elevation difference ($\mu_{\Delta z} = -45.58\text{ m}$) is scientifically expected when comparing regional orbital laser altimetry against high-resolution stereophotogrammetry. MOLA's 463 m post-spacing and ~168 m physical laser footprint spatially averages crater rims and canyon floors, smoothing sharp local depressions. In contrast, 20 m/px CTX stereogrammetry accurately resolves interior crater depth and micro-canyons, resulting in lower local minima and higher crest peaks within the complex cratered terrain of Tyrrhena Terra.
+The systematic elevation difference ($\mu_{\Delta z} = -57.57\text{ m}$) is scientifically expected when comparing regional orbital laser altimetry against high-resolution stereophotogrammetry. MOLA's 463 m post-spacing and ~168 m physical laser footprint spatially averages crater rims and canyon floors, smoothing sharp local depressions. In contrast, 20 m/px CTX stereogrammetry accurately resolves interior crater depth and micro-canyons, resulting in lower local minima and higher crest peaks within the complex cratered terrain of Tyrrhena Terra.
+

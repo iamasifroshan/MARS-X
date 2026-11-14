@@ -23,3 +23,4 @@ MARS-X is an advanced academic and exploratory research platform developed for t
 ### 2.4 Prohibition of Astronaut Safety Claims
 - All cost metrics, slopes, relief values, and calculated path lines represent mathematical optimizations of specified terrain surfaces.
 - Traverses must never be represented as guaranteed safe or approved for astronaut Marswalk operations without in-situ ground-truth verification and multi-sensor orbital imaging.
+

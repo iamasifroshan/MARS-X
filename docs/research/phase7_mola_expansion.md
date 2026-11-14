@@ -55,3 +55,4 @@ MARS-X strictly separates theoretical archive potential from verified on-disk av
 - **Single-Tile Route Planning Sandbox:** 8.68% (`megt00n000hb`).
 
 No UI or API endpoint is permitted to represent the theoretical 99.94% archive coverage as locally available terrain.
+

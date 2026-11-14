@@ -57,3 +57,4 @@ All terrain rasters in MARS-X are governed by a deterministic lifecycle state ma
 To prevent dangerous pathfinding over synthetic data:
 - MARS-X strictly prohibits interpolating a coarser DTM (e.g. 463 m/px) into finer grid cells (e.g. 20 m/px) to fabricate high-resolution navigation grids.
 - If a route region requests high-resolution pathfinding, MARS-X inspects the multi-resolution catalog. If only MOLA 128 is available, the route planner operates at 463 m/px grid spacing and explicitly reports the minimum detectable feature limit (~1,157 m Nyquist threshold).
+

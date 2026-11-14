@@ -34,3 +34,4 @@ The NASA PDS MOLA MEG128 archive is partitioned into 16 tiles across 4 latitude 
 - **Pending Remote Retrieval (13 tiles):** $73.8895\%$
 
 MARS-X dashboards report both metrics side-by-side with distinct color-coded indicators to guarantee transparent geospatial accounting.
+

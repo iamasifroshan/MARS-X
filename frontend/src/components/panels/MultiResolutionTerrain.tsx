@@ -440,3 +440,4 @@ export function MultiResolutionTerrain({ currentCoordinates }: MultiResolutionTe
     </div>
   );
 }
+
