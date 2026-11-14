@@ -352,18 +352,21 @@ class MultiStopPlanner:
         intermediate_stops: List[ScienceStop],
         pairwise_matrix: Dict[Tuple[str, str], PairwiseRouteLeg],
         strategy: str,
-    ) -> Tuple[List[ScienceStop], str, bool, int]:
+    ) -> Tuple[List[ScienceStop], str, bool, Dict[str, Any]]:
         """Determine optimal visit order for intermediate stops using actual A* leg costs.
 
-        Returns: (ordered_stops, effective_strategy, is_heuristic, two_opt_iterations)
+        Mathematically accounts for directed asymmetric costs where Cost(u, v) != Cost(v, u).
+        For K <= 4 intermediate stops, evaluates exact permutations as a reference oracle.
+        For K > 4 stops, executes nearest-neighbor greedy initialization followed by
+        asymmetric 2-opt local search with full directed path cost re-evaluation.
+
+        Returns: (ordered_stops, effective_strategy, is_heuristic, opt_stats)
         """
         k = len(intermediate_stops)
         if k == 0:
-            return [], strategy, False, 0
-        if strategy == "preserve_order" or k == 1:
-            return intermediate_stops, "preserve_order", False, 0
+            return [], strategy, False, {"iterations": 0, "optimality_gap_pct": 0.0}
 
-        # Helper to calculate total traverse optimization cost for a candidate ordering
+        # Helper to calculate complete directed traverse optimization cost for a candidate ordering
         def eval_sequence_cost(seq: List[ScienceStop]) -> float:
             cost = 0.0
             prev = start_stop
@@ -379,19 +382,21 @@ class MultiStopPlanner:
             cost += final_leg.optimization_cost
             return cost
 
-        # Exact brute-force optimization for small k (k <= 4 intermediate stops, <= 24 permutations)
-        if k <= 4:
-            best_seq = intermediate_stops
-            best_cost = eval_sequence_cost(intermediate_stops)
-            for perm in itertools.permutations(intermediate_stops):
-                candidate = list(perm)
-                cand_cost = eval_sequence_cost(candidate)
-                if cand_cost < best_cost:
-                    best_cost = cand_cost
-                    best_seq = candidate
-            return best_seq, "exact_permutation", False, 0
+        if strategy == "preserve_order" or k == 1:
+            seq_cost = eval_sequence_cost(intermediate_stops)
+            return intermediate_stops, ("preserve_order" if strategy == "preserve_order" else "exact_permutation"), False, {
+                "initial_cost": round(seq_cost, 2),
+                "final_cost": round(seq_cost, 2),
+                "initial_nn_cost": round(seq_cost, 2),
+                "two_opt_cost": round(seq_cost, 2),
+                "exact_optimum_cost": round(seq_cost, 2),
+                "iterations": 0,
+                "reversals_accepted": 0,
+                "optimality_gap_pct": 0.0,
+                "permutations_evaluated": 1,
+            }
 
-        # Nearest-Neighbor Initial Solution
+        # Step 1: Nearest-Neighbor Initial Solution
         unvisited = list(intermediate_stops)
         current = start_stop
         nn_sequence: List[ScienceStop] = []
@@ -406,20 +411,19 @@ class MultiStopPlanner:
                     best_next = cand
 
             if best_next is None:
-                # Fallback to remaining in list if disconnected
                 best_next = unvisited[0]
 
             nn_sequence.append(best_next)
             unvisited.remove(best_next)
             current = best_next
 
-        if strategy == "nearest_neighbor":
-            return nn_sequence, "nearest_neighbor", True, 0
+        nn_cost = eval_sequence_cost(nn_sequence)
 
-        # 2-Opt Local Search Improvement
+        # Step 2: Asymmetric 2-Opt Local Search Improvement
         cur_sequence = list(nn_sequence)
-        cur_cost = eval_sequence_cost(cur_sequence)
+        cur_cost = nn_cost
         two_opt_iters = 0
+        reversals_accepted = 0
         improved = True
 
         while improved and two_opt_iters < 100:
@@ -427,18 +431,70 @@ class MultiStopPlanner:
             for i in range(len(cur_sequence) - 1):
                 for j in range(i + 1, len(cur_sequence)):
                     # Reverse sub-sequence from index i to j
+                    # In an asymmetric matrix, reversing internal vertices reverses directed edges
+                    # Therefore, we re-evaluate the full directed sequence cost
                     candidate = cur_sequence[:i] + cur_sequence[i : j + 1][::-1] + cur_sequence[j + 1 :]
                     cand_cost = eval_sequence_cost(candidate)
                     if cand_cost < cur_cost - 1e-4:
                         cur_sequence = candidate
                         cur_cost = cand_cost
+                        reversals_accepted += 1
                         improved = True
                         two_opt_iters += 1
                         break
                 if improved:
                     break
 
-        return cur_sequence, "nearest_neighbor_2opt", True, two_opt_iters
+        two_opt_cost = cur_cost
+        two_opt_seq = cur_sequence
+
+        # Step 3: Exact Permutation Reference Oracle for K <= 4
+        if k <= 4:
+            exact_best_seq = intermediate_stops
+            exact_best_cost = eval_sequence_cost(intermediate_stops)
+            for perm in itertools.permutations(intermediate_stops):
+                cand = list(perm)
+                cand_cost = eval_sequence_cost(cand)
+                if cand_cost < exact_best_cost:
+                    exact_best_cost = cand_cost
+                    exact_best_seq = cand
+
+            gap_pct = 0.0
+            if exact_best_cost > 0.0 and math.isfinite(two_opt_cost) and math.isfinite(exact_best_cost):
+                gap_pct = max(0.0, ((two_opt_cost - exact_best_cost) / exact_best_cost) * 100.0)
+
+            opt_stats = {
+                "initial_nn_cost": round(nn_cost, 2),
+                "two_opt_cost": round(two_opt_cost, 2),
+                "exact_optimum_cost": round(exact_best_cost, 2),
+                "optimality_gap_pct": round(gap_pct, 2),
+                "reversals_accepted": reversals_accepted,
+                "iterations": two_opt_iters,
+                "permutations_evaluated": math.factorial(k),
+            }
+
+            if strategy == "nearest_neighbor":
+                return nn_sequence, "nearest_neighbor", True, opt_stats
+            # optimize_tsp selects the provably exact sequence for K <= 4
+            return exact_best_seq, "exact_permutation", False, opt_stats
+
+        # For K > 4 stops
+        improvement_pct = 0.0
+        if nn_cost > 0.0 and math.isfinite(nn_cost) and math.isfinite(two_opt_cost):
+            improvement_pct = max(0.0, ((nn_cost - two_opt_cost) / nn_cost) * 100.0)
+
+        opt_stats = {
+            "initial_nn_cost": round(nn_cost, 2),
+            "final_2opt_cost": round(two_opt_cost, 2),
+            "cost_improvement_pct": round(improvement_pct, 2),
+            "reversals_accepted": reversals_accepted,
+            "iterations": two_opt_iters,
+        }
+
+        if strategy == "nearest_neighbor":
+            return nn_sequence, "nearest_neighbor", True, opt_stats
+
+        return two_opt_seq, "nearest_neighbor_2opt", True, opt_stats
 
     @classmethod
     def plan_multi_stop_traverse(cls, request: MultiStopRouteRequest) -> MultiStopTraverseResponse:
@@ -515,8 +571,9 @@ class MultiStopPlanner:
             pairwise_matrix[(u.stop_id, v.stop_id)] = leg
             legs_computed += 1
 
-        # Check for unreachable mandatory stops
+        # Check for unreachable stops and exclude optional ones
         unreachable = []
+        reachable_stops = []
         for s in stops:
             # Must be reachable from start or at least one other stop, and must be able to reach dest or another stop
             can_enter = any(
@@ -539,13 +596,33 @@ class MultiStopPlanner:
                     "reason": "Impassable terrain (slope > max_slope_deg or NoData) blocks route entrance or exit.",
                 })
                 if s.is_mandatory:
+                    lat_str = f"{abs(s.lat):.4f}°S" if s.lat < 0 else f"{s.lat:.4f}°N"
+                    lon_str = f"{s.lon % 360.0:.4f}°E"
                     raise ValueError(
-                        f"Mandatory science stop '{s.name}' ({s.stop_id}) at ({s.lat:.4f}°, {s.lon:.4f}°) "
+                        f"Mandatory science stop '{s.name}' ({s.stop_id}) at ({lat_str}, {lon_str}) "
                         f"is unreachable within slope threshold {request.max_slope_deg}° or DEM coverage."
                     )
+            else:
+                reachable_stops.append(s)
+
+        stops = reachable_stops
+
+        # If all stops were filtered out or empty, ensure direct start->dest leg exists in pairwise_matrix
+        if not stops and (start_stop.stop_id, dest_stop.stop_id) not in pairwise_matrix:
+            direct_leg = cls.compute_pairwise_leg(
+                from_stop=start_stop,
+                to_stop=dest_stop,
+                source_id=source_id,
+                slope_penalty_factor=request.slope_penalty_factor,
+                max_slope_deg=request.max_slope_deg,
+                max_search_nodes=request.max_search_nodes,
+                leg_index=legs_computed,
+            )
+            pairwise_matrix[(start_stop.stop_id, dest_stop.stop_id)] = direct_leg
+            legs_computed += 1
 
         # Step 5: Bounded TSP Optimization of stop ordering
-        ordered_intermediate, effective_strategy, is_heuristic, two_opt_iters = cls.optimize_stop_sequence(
+        ordered_intermediate, effective_strategy, is_heuristic, opt_stats = cls.optimize_stop_sequence(
             start_stop=start_stop,
             dest_stop=dest_stop,
             intermediate_stops=stops,
@@ -625,9 +702,11 @@ class MultiStopPlanner:
         traverse_id = f"mst-{uuid.uuid4().hex[:12]}"
         title = request.traverse_name or f"Marswalk Multi-Stop Traverse ({source_id})"
 
+        status_str = "partial" if unreachable else "success"
+
         response = MultiStopTraverseResponse(
             traverse_id=traverse_id,
-            status="success",
+            status=status_str,
             traverse_name=title,
             start_stop=start_stop,
             dest_stop=dest_stop,
@@ -658,11 +737,12 @@ class MultiStopPlanner:
             computation_metrics={
                 "duration_ms": round(total_ms, 2),
                 "pairwise_legs_computed": legs_computed,
-                "two_opt_iterations": two_opt_iters,
+                "two_opt_iterations": opt_stats.get("iterations", 0),
                 "total_stops_visited": len(final_sequence),
                 "algorithm_version": MARSWALK_ALGORITHM_VERSION,
                 "cost_function_version": MARSWALK_COST_FUNCTION_VERSION,
                 "derivative_version": MARSWALK_DERIVATIVE_VERSION,
+                "optimization_stats": opt_stats,
             },
             safety_disclaimer=MARSWALK_SAFETY_DISCLAIMER,
         )
