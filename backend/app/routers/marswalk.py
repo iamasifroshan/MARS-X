@@ -4,6 +4,7 @@ Provides endpoints for terrain-aware route computation, cached route retrieval,
 and engine metadata with mandatory safety disclaimers.
 """
 
+import logging
 from fastapi import APIRouter, HTTPException, Path, status
 from app.config import API_V1_PREFIX
 from app.marswalk.marswalk_models import (
@@ -15,6 +16,17 @@ from app.marswalk.marswalk_planner import (
     MarswalkPlanner,
     get_cached_route,
 )
+from app.marswalk.multi_stop_models import (
+    MultiStopRouteRequest,
+    MultiStopTraverseResponse,
+    MultiStopMetadataResponse,
+)
+from app.marswalk.multi_stop_planner import (
+    MultiStopPlanner,
+    get_cached_multi_stop_traverse,
+)
+
+logger = logging.getLogger("MARS-X.routers.marswalk")
 
 router = APIRouter(
     prefix=f"{API_V1_PREFIX}/marswalk",
@@ -103,3 +115,84 @@ async def get_route(
 )
 async def get_metadata() -> MarswalkMetadataResponse:
     return MarswalkPlanner.get_metadata()
+
+
+# =============================================================================
+# MULTI-STOP SCIENCE TRAVERSE ENDPOINTS — PHASE 8.8.3
+# =============================================================================
+
+@router.post(
+    "/multi-stop",
+    response_model=MultiStopTraverseResponse,
+    summary="Plan multi-stop science traverse with TSP optimization",
+    description=(
+        "Calculates an optimal connected multi-stop science traverse across authentic Mars DEMs. "
+        "Evaluates pairwise directed A* terrain-aware route costs, performs TSP-style stop ordering "
+        "(brute-force exact for K <= 4; nearest-neighbor + 2-opt for K > 4), and stitches "
+        "connected GeoJSON geometry without duplicate junction vertices. "
+        "WARNING: Minimizing terrain cost does NOT certify physical astronaut or rover safety."
+    ),
+    responses={
+        200: {"description": "Multi-stop traverse successfully planned and optimized."},
+        400: {"description": "Invalid coordinates, discovery ID not found, or unreachable mandatory stop."},
+        404: {"description": "Required DEM or slope raster not found on disk."},
+        422: {"description": "Traverse infeasible within slope or elevation limits."},
+    },
+)
+async def plan_multi_stop_traverse(request: MultiStopRouteRequest) -> MultiStopTraverseResponse:
+    try:
+        return MultiStopPlanner.plan_multi_stop_traverse(request)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except (RuntimeError, TimeoutError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+    except Exception as e:
+        logger.error("Multi-stop traverse planning unexpected error: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal multi-stop planning engine error: {str(e)}",
+        )
+
+
+@router.get(
+    "/multi-stop/metadata",
+    response_model=MultiStopMetadataResponse,
+    summary="Get multi-stop engine metadata, presets, and capabilities",
+    description="Returns supported TSP optimization strategies, max stop limits, presets, and version signatures.",
+)
+async def get_multi_stop_metadata() -> MultiStopMetadataResponse:
+    return MultiStopPlanner.get_metadata()
+
+
+@router.get(
+    "/multi-stop/{traverse_id}",
+    response_model=MultiStopTraverseResponse,
+    summary="Retrieve previously planned multi-stop traverse",
+    description="Fetches full connected geometry, leg breakdown, and analytics for a cached multi-stop traverse by ID.",
+    responses={
+        200: {"description": "Cached multi-stop traverse found and returned."},
+        404: {"description": "Traverse ID not found in cache or expired."},
+    },
+)
+async def get_multi_stop_traverse(
+    traverse_id: str = Path(..., description="Unique multi-stop traverse identifier, e.g. mst-1a2b3c4d"),
+) -> MultiStopTraverseResponse:
+    traverse = get_cached_multi_stop_traverse(traverse_id)
+    if traverse is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Multi-stop traverse '{traverse_id}' not found in cache or expired. Please re-run planning.",
+        )
+    return traverse
+

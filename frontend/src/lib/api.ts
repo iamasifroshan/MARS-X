@@ -40,6 +40,9 @@ import {
   MarswalkRouteRequest,
   MarswalkRouteResponse,
   MarswalkMetadataResponse,
+  MultiStopRouteRequest,
+  MultiStopTraverseResponse,
+  MultiStopMetadataResponse,
 } from "./types";
 
 
@@ -949,6 +952,44 @@ export async function fetchMarswalkRoute(
   }
   return res.json();
 }
+
+// ---------------------------------------------------------------------------
+// Multi-Stop Marswalk Planning — Phase 8.8.3
+// ---------------------------------------------------------------------------
+
+export async function fetchMultiStopMetadata(): Promise<MultiStopMetadataResponse> {
+  const res = await apiFetch(`${API_BASE}/api/v1/marswalk/multi-stop/metadata`);
+  if (!res.ok) {
+    throw new Error(`Multi-stop metadata fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function planMultiStopTraverse(
+  request: MultiStopRouteRequest
+): Promise<MultiStopTraverseResponse> {
+  const res = await apiFetch(`${API_BASE}/api/v1/marswalk/multi-stop`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.detail || `Multi-stop planning failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchMultiStopTraverse(
+  traverseId: string
+): Promise<MultiStopTraverseResponse> {
+  const res = await apiFetch(`${API_BASE}/api/v1/marswalk/multi-stop/${encodeURIComponent(traverseId)}`);
+  if (!res.ok) {
+    throw new Error(`Multi-stop traverse fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
 
 
 

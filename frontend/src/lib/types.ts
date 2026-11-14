@@ -998,9 +998,130 @@ export interface MarswalkMetadataResponse {
   default_parameters: Record<string, any>;
   cost_function_definition: string;
   heuristic_definition: string;
+  engine_versions?: Record<string, string>;
   safety_disclaimer: string;
   validated_corridors: ValidatedCorridorPreset[];
 }
+
+// ---------------------------------------------------------------------------
+// Multi-Stop Marswalk Planning — Phase 8.8.3
+// ---------------------------------------------------------------------------
+
+export interface ScienceStop {
+  stop_id: string;
+  name: string;
+  lat: number;
+  lon: number;
+  discovery_id?: string;
+  is_mandatory?: boolean;
+  target_geology?: string;
+  description?: string;
+}
+
+export interface MultiStopRouteRequest {
+  start_lat: number;
+  start_lon: number;
+  start_name?: string;
+  dest_lat: number;
+  dest_lon: number;
+  dest_name?: string;
+  stops: ScienceStop[];
+  discovery_ids?: string[];
+  max_stops?: number;
+  optimization_strategy?: string;
+  preferred_source?: string;
+  slope_penalty_factor?: number;
+  max_slope_deg?: number;
+  max_search_nodes?: number;
+  traverse_name?: string;
+}
+
+export interface PairwiseRouteLeg {
+  leg_index: number;
+  from_stop_id: string;
+  from_stop_name: string;
+  to_stop_id: string;
+  to_stop_name: string;
+  from_coord: [number, number];
+  to_coord: [number, number];
+  route_id: string;
+  is_feasible: boolean;
+  surface_distance_m: number;
+  horizontal_distance_m: number;
+  optimization_cost: number;
+  elevation_gain_m: number;
+  elevation_loss_m: number;
+  min_elevation_m: number;
+  max_elevation_m: number;
+  max_slope_deg: number;
+  mean_slope_deg: number;
+  slope_band_exposure_pct: Record<string, number>;
+  source_dataset: string;
+  geometry: {
+    type: "LineString";
+    coordinates: Array<[number, number]>;
+  };
+  error_message?: string;
+}
+
+export interface MultiStopTraverseResponse {
+  traverse_id: string;
+  status: string;
+  traverse_name: string;
+  start_stop: ScienceStop;
+  dest_stop: ScienceStop;
+  ordered_stops: ScienceStop[];
+  legs: PairwiseRouteLeg[];
+  total_surface_distance_m: number;
+  total_horizontal_distance_m: number;
+  total_optimization_cost: number;
+  cumulative_elevation_gain_m: number;
+  cumulative_elevation_loss_m: number;
+  min_elevation_m: number;
+  max_elevation_m: number;
+  max_route_slope_deg: number;
+  mean_route_slope_deg: number;
+  slope_band_exposure_pct: Record<string, number>;
+  unknown_data_exposure_pct: number;
+  source_dataset: string;
+  instrument: string;
+  tier: string;
+  native_resolution_desc: string;
+  connected_geometry: {
+    type: "LineString";
+    coordinates: Array<[number, number]>;
+  };
+  optimization_strategy: string;
+  is_heuristic_solution: boolean;
+  unreachable_stops: Array<Record<string, any>>;
+  computation_metrics: Record<string, any>;
+  safety_disclaimer: string;
+}
+
+export interface MultiStopPreset {
+  preset_id: string;
+  name: string;
+  region: string;
+  source_dataset: string;
+  start_lat: number;
+  start_lon: number;
+  dest_lat: number;
+  dest_lon: number;
+  stops: ScienceStop[];
+  description: string;
+  target_geology: string;
+}
+
+export interface MultiStopMetadataResponse {
+  supported_strategies: Array<{ strategy: string; description: string }>;
+  max_allowed_stops: number;
+  cost_function_definition: string;
+  optimization_objective: string;
+  curated_presets: MultiStopPreset[];
+  engine_versions: Record<string, string>;
+  safety_disclaimer: string;
+}
+
 
 
 
