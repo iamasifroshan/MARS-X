@@ -9,7 +9,7 @@ Endpoints for:
 """
 
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
@@ -22,11 +22,11 @@ router = APIRouter(prefix=f"{API_V1_PREFIX}/discovery", tags=["discovery"])
 
 
 class CompareRequest(BaseModel):
-    locations: List[str] = Field(
+    locations: List[Union[str, Dict[str, Any]]] = Field(
         ...,
         min_length=1,
         max_length=5,
-        description="List of discovery IDs (e.g. 'disc-terr-tyrrhena-ctx') or coordinate strings (e.g. '-4.6,66.317')",
+        description="List of discovery IDs (e.g. 'disc-terr-tyrrhena-ctx'), coordinate strings (e.g. '-4.6,66.317'), or location dicts {'lat': float, 'lon': float, 'label': str}",
     )
 
 
