@@ -1,6 +1,6 @@
 {
-  "registry_version": "1.0.0",
-  "last_audited_utc": "2026-11-14T14:50:00Z",
+  "registry_version": "1.1.0",
+  "last_audited_utc": "2026-11-14T15:25:00Z",
   "policy_compliance": "POL-SCI-001",
   "datasets": [
     {
@@ -59,7 +59,8 @@
         "Global elevation lookup and elevation inspection fallback",
         "Global Great-Circle profile transects",
         "Global terrain slope and roughness baseline"
-      ]
+      ],
+      "production_status": "downloaded_verified"
     },
     {
       "dataset_id": "mola-megdr-128-44n000",
@@ -116,7 +117,8 @@
         "Regional high-resolution terrain rendering (Northern tropics 0-44N, 0-90E)",
         "Regional elevation inspection",
         "Seam continuity validation with 00n000"
-      ]
+      ],
+      "production_status": "downloaded_verified"
     },
     {
       "dataset_id": "mola-megdr-128-00n000",
@@ -174,7 +176,8 @@
         "Sinus Meridiani benchmark elevation inspection (-2N, 5E: -909m)",
         "Marswalk A* and Dijkstra pathfinding grid extraction",
         "Seam continuity validation with 44n000 and 00n090"
-      ]
+      ],
+      "production_status": "downloaded_verified"
     },
     {
       "dataset_id": "mola-megdr-128-00n090",
@@ -230,7 +233,8 @@
       "production_usage": [
         "Regional high-resolution terrain rendering (Eastern quadrant -44 to 0N, 90-180E)",
         "Seam continuity validation at 90 deg E meridian"
-      ]
+      ],
+      "production_status": "downloaded_verified"
     },
     {
       "dataset_id": "ctx-dtm-p21-009323",
@@ -283,7 +287,8 @@
         "Local elevation inspection benchmark (-4.600N, 66.317E: +2189.49m)",
         "Sub-pixel affine registration and coordinate validation",
         "Multi-resolution zoom level elevation profile"
-      ]
+      ],
+      "production_status": "downloaded_verified"
     },
     {
       "dataset_id": "mola-elevation-global-cog",
@@ -321,7 +326,8 @@
       "nodata_value": -32768.0,
       "production_usage": [
         "Production COG serving /api/v1/terrain/render/window and tile basemaps"
-      ]
+      ],
+      "production_status": "downloaded_verified"
     },
     {
       "dataset_id": "mola-slope-global-cog",
@@ -359,7 +365,8 @@
       "production_usage": [
         "Global slope visualization layer (/api/v1/terrain/layers)",
         "Terrain hazard and traverse slope impedance modeling"
-      ]
+      ],
+      "production_status": "downloaded_verified"
     },
     {
       "dataset_id": "mola-roughness-global-cog",
@@ -396,7 +403,8 @@
       "production_usage": [
         "Global surface roughness visualization layer (/api/v1/terrain/layers)",
         "Landing site and rover obstacle roughness assessment"
-      ]
+      ],
+      "production_status": "downloaded_verified"
     },
     {
       "dataset_id": "hirise-dtm-schiaparelli",
@@ -429,7 +437,8 @@
       "units": "metres",
       "nodata_value": -3.4028235e+38,
       "production_usage": [],
-      "status_note": "Product catalogued; file not downloaded to local workspace. Analysis disabled."
+      "status_note": "Product catalogued; file not downloaded to local workspace. Analysis disabled.",
+      "production_status": "unavailable"
     },
     {
       "dataset_id": "hrsc-dtm-mc11",
@@ -462,7 +471,8 @@
       "units": "metres",
       "nodata_value": -32768.0,
       "production_usage": [],
-      "status_note": "Product catalogued; file not downloaded to local workspace. Analysis disabled."
+      "status_note": "Product catalogued; file not downloaded to local workspace. Analysis disabled.",
+      "production_status": "unavailable"
     },
     {
       "dataset_id": "ctx-dtm-jezero",
@@ -495,7 +505,8 @@
       "units": "metres",
       "nodata_value": -32768.0,
       "production_usage": [],
-      "status_note": "Product catalogued; file not downloaded to local workspace. Analysis disabled."
+      "status_note": "Product catalogued; file not downloaded to local workspace. Analysis disabled.",
+      "production_status": "unavailable"
     },
     {
       "dataset_id": "hirise-dtm-jezero",
@@ -528,7 +539,8 @@
       "units": "metres",
       "nodata_value": -3.4028235e+38,
       "production_usage": [],
-      "status_note": "Product catalogued; file not downloaded to local workspace. Analysis disabled."
+      "status_note": "Product catalogued; file not downloaded to local workspace. Analysis disabled.",
+      "production_status": "unavailable"
     },
     {
       "dataset_id": "hrsc-dtm-h0018",
@@ -536,6 +548,7 @@
       "mission": "Mars Express (ESA / NASA PDS)",
       "instrument": "High Resolution Stereo Camera (HRSC)",
       "provenance_status": "authoritative_original",
+      "production_status": "downloaded_validation_pending",
       "official_archive": "NASA Planetary Data System (PDS) Geosciences Node / ESA PSA",
       "archive_collection": "MEX-M-HRSC-5-REFDR-DTM-V1.0 (mexhrs_2001)",
       "official_urls": {
@@ -555,16 +568,17 @@
       "sha256": {
         "image": "32270e0a565624d3c9f8032c7ec616b85cc939be63bce3c2ee7cac1c9937a43e"
       },
-      "crs": "Sinusoidal / Mars Sphere R=3,396,190 m",
-      "vertical_datum": "MOLA Areoid",
-      "units": "metres relative to MOLA Areoid",
+      "crs": "Sinusoidal / Mars Sphere R=3,396.0 km (PLANETOCENTRIC)",
+      "vertical_datum": "HEIGHT_ABOVE_SPHEROID (Mars Sphere R=3,396.0 km, NOT MOLA Areoid)",
+      "units": "metres above 3,396 km reference sphere",
       "nodata_value": -32768.0,
       "native_resolution": {
         "pixel_size_m": 50.0,
         "description": "50 m/px Level 4 Digital Terrain Model"
       },
+      "validation_note": "Vertical reference is HEIGHT_ABOVE_SPHEROID. Elevation values require MOLA areoid separation geoid adjustment before merging with MOLA or CTX.",
       "production_usage": [
-        "Regional high-resolution terrain validation and elevation profiles"
+        "Regional stereophotogrammetric DTM (pending areoid geoid adjustment)"
       ]
     },
     {
@@ -573,6 +587,7 @@
       "mission": "Mars Reconnaissance Orbiter (MRO)",
       "instrument": "Context Camera (CTX)",
       "provenance_status": "authoritative_original",
+      "production_status": "downloaded_verified",
       "official_archive": "USGS Astrogeology Science Center / AWS Open Data",
       "archive_collection": "USGS Controlled CTX DTMs (mars/mro/ctx/controlled/dtm)",
       "official_urls": {
@@ -611,6 +626,7 @@
       "mission": "Mars Reconnaissance Orbiter (MRO)",
       "instrument": "High Resolution Imaging Science Experiment (HiRISE)",
       "provenance_status": "authoritative_original",
+      "production_status": "downloaded_verified",
       "official_archive": "USGS Astrogeology Science Center / AWS Open Data",
       "archive_collection": "USGS Controlled HiRISE DTMs (mars/mro/hirise/controlled/dtm)",
       "official_urls": {
@@ -649,6 +665,7 @@
       "mission": "Mars Global Surveyor (MGS)",
       "instrument": "Thermal Emission Spectrometer (TES)",
       "provenance_status": "authoritative_original",
+      "production_status": "downloaded_verified",
       "official_archive": "ASU Mars Space Flight Facility / NASA PDS Geosciences Node",
       "archive_collection": "Putzig & Mellon (2007) Global Thermal Inertia",
       "official_urls": {
@@ -680,47 +697,95 @@
         "description": "20 ppd (~3.0 km/px) global day/night thermal inertia"
       },
       "production_usage": [
-        "Physical surface characterization, bedrock vs dust discrimination"
+        "Physical thermophysical surface property characterization (bedrock vs dust/sand)"
+      ]
+    },
+    {
+      "dataset_id": "themis-ir-mosaics-regional",
+      "product_id": "THEMIS_IR_MOSAICS_100M_REGIONAL",
+      "mission": "2001 Mars Odyssey",
+      "instrument": "Thermal Emission Imaging System (THEMIS)",
+      "provenance_status": "authoritative_original",
+      "production_status": "downloaded_verified",
+      "official_archive": "ASU Mars Space Flight Facility / THEMIS Science Team",
+      "archive_collection": "THEMIS 100m Infrared Regional Mosaics (thm_dir / themis_nightir)",
+      "official_urls": {
+        "day_ir": "https://www.mars.asu.edu/data/thm_dir/large/thm_dir_N-30_000.png",
+        "night_ir": "https://www.mars.asu.edu/data/themis_nightir/large/themis_nightir_N-30_000.png"
+      },
+      "original_filename": "thm_dir_N-30_000.png / themis_nightir_N-30_000.png",
+      "local_files": {
+        "day_ir": "data/originals/themis/thm_dir_N-30_000.png",
+        "night_ir": "data/originals/themis/themis_nightir_N-30_000.png"
+      },
+      "local_availability": "available",
+      "published_checksum": null,
+      "sha256": {
+        "day_ir": "0f80f5cd8a4bdc59d7f9f3b9d1c566bd8f9437cccff68c873d1394b1aa19d7af",
+        "night_ir": "ebd045a3ca522624ec41c41611415095d07db9452b867cbb205ddba2c2a2f66d"
+      },
+      "crs": "Simple Cylindrical Mars",
+      "vertical_datum": "N/A",
+      "units": "Calibrated Band 9 (12.57 um) Infrared Brightness Temperature / Radiance DN",
+      "nodata_value": 0,
+      "native_resolution": {
+        "pixel_size_m": 100.0,
+        "footprint": "lat -30 to 0, lon 0 to 30",
+        "description": "100 m/px regional daytime and nighttime calibrated infrared mosaics"
+      },
+      "production_usage": [
+        "Thermal brightness, night warming / bedrock exposure, regional context"
       ]
     },
     {
       "dataset_id": "usgs-geology-sim3292",
       "product_id": "USGS_SIM_3292",
       "mission": "USGS Astrogeology Scientific Investigations Map",
-      "instrument": "Global Geologic Map of Mars (Tanaka et al. 2014)",
+      "instrument": "Global Geologic Map of Mars (Tanaka et al. 2014, DOI: 10.3133/sim3292)",
       "provenance_status": "authoritative_original",
+      "production_status": "downloaded_verified",
       "official_archive": "USGS Publications Warehouse",
-      "archive_collection": "SIM 3292",
+      "archive_collection": "SIM 3292 (DOI: 10.3133/sim3292)",
       "official_urls": {
+        "database_zip": "https://pubs.usgs.gov/sim/3292/downloads/sim3292_database.zip",
         "readme": "https://pubs.usgs.gov/sim/3292/sim3292_readme.txt",
         "metadata_xml": "https://pubs.usgs.gov/sim/3292/sim3292_metadata.xml",
         "pamphlet": "https://pubs.usgs.gov/sim/3292/sim3292_pamphlet.pdf"
       },
-      "original_filename": "sim3292_*",
+      "original_filename": "sim3292_database.zip",
       "local_files": {
+        "database_zip": "data/originals/geology/sim3292_database.zip",
         "readme": "data/originals/geology/sim3292_readme.txt",
         "metadata_xml": "data/originals/geology/sim3292_metadata.xml",
         "metadata_txt": "data/originals/geology/sim3292_metadata.txt",
         "pamphlet": "data/originals/geology/sim3292_pamphlet.pdf"
       },
+      "working_copies": {
+        "extracted_gis": "data/derived/geology/sim3292_database/SIM3292_MarsGlobalGeologicGIS_20M",
+        "shapefiles": "data/derived/geology/sim3292_database/SIM3292_MarsGlobalGeologicGIS_20M/SIM3292_Shapefiles",
+        "geodatabase": "data/derived/geology/sim3292_database/SIM3292_MarsGlobalGeologicGIS_20M/SIM3292_geodatabase.gdb"
+      },
       "local_availability": "available",
       "published_checksum": null,
       "sha256": {
+        "database_zip": "ef75f059b1f2f5a47aff55e6c6e39500cf1ab65e743fabc5d463b97bc10b6541",
         "readme": "702c8d8dd705a7746dad2b47a36f85fd850cc44939388ccc5f8e636369731aeb",
         "metadata_xml": "38806845cae2354e4ab65c55f57819d3e001b3865aceb5a24426efd5412683f8",
         "metadata_txt": "f6124030ad026b0f0f249f9aff64b733dcfe0174c97aa8027b7af33b6f3527a6",
         "pamphlet": "18d3f0547e2f8cd82891f5adc454a8177ab62339c0b4a7f8370d8d2ecbce16ca"
       },
-      "crs": "Mars 2000 Sphere",
+      "crs": "GCS_Mars_2000_Sphere (R=3,396,190 m, flattening=0.0)",
       "vertical_datum": "N/A",
       "units": "stratigraphic classification",
       "nodata_value": null,
       "native_resolution": {
         "scale": "1:20,000,000",
+        "polygon_count": 1311,
+        "distinct_units": 39,
         "description": "Global chronostratigraphic and geological unit classification"
       },
       "production_usage": [
-        "Geological exploration and terrain unit identification"
+        "Geological exploration, chronostratigraphic unit boundary and contact analysis"
       ]
     },
     {
@@ -729,6 +794,7 @@
       "mission": "Mars Reconnaissance Orbiter (MRO)",
       "instrument": "Compact Reconnaissance Imaging Spectrometer for Mars (CRISM)",
       "provenance_status": "authoritative_original",
+      "production_status": "downloaded_validation_pending",
       "official_archive": "NASA Planetary Data System (PDS) Geosciences Node",
       "archive_collection": "MRO-M-CRISM-3-RDR-TARGETED-V1.0 (mrocr_2101)",
       "official_urls": {
@@ -763,8 +829,9 @@
         "spectral_range_um": "1.0 - 3.92 um",
         "description": "Hyperspectral I/F radiance factor targeted observation"
       },
+      "validation_note": "Calibrated I/F cube verified. Label records atmospheric and thermal corrections OFF. No mineral detection claimed without band-ratio processing.",
       "production_usage": [
-        "Mineralogical exploration, hydrated minerals, phyllosilicate detection"
+        "Mineralogical hyperspectral cube (pending photometric/band-ratio analysis)"
       ]
     },
     {
@@ -773,6 +840,7 @@
       "mission": "Mars 2020 (Perseverance)",
       "instrument": "Mars Environmental Dynamics Analyzer (MEDA)",
       "provenance_status": "authoritative_original",
+      "production_status": "downloaded_verified",
       "official_archive": "NASA Planetary Data System (PDS) Atmospheres Node",
       "archive_collection": "urn:nasa:pds:mars2020_meda:data_derived_env",
       "official_urls": {
@@ -805,10 +873,11 @@
       "nodata_value": null,
       "native_resolution": {
         "sampling_frequency_hz": 1.0,
+        "sample_coverage": "Sol 1 historical sample (2021-02-19T21:35:54 to 22:29:54 UTC)",
         "description": "In-situ Sol 1 meteorological time series"
       },
       "production_usage": [
-        "Atmospheric context, diurnal pressure cycle, surface temperature modeling"
+        "In-situ Jezero Crater atmospheric baseline (limited historical sample)"
       ]
     },
     {
@@ -817,6 +886,7 @@
       "mission": "Mars Science Laboratory (MSL Curiosity)",
       "instrument": "Rover Environmental Monitoring Station (REMS)",
       "provenance_status": "authoritative_original",
+      "production_status": "downloaded_verified",
       "official_archive": "NASA Planetary Data System (PDS) Atmospheres Node",
       "archive_collection": "urn:nasa:pds:msl_rems_bundle:data_calibrated",
       "official_urls": {
@@ -844,11 +914,39 @@
       "nodata_value": null,
       "native_resolution": {
         "sampling_frequency_hz": 1.0,
+        "sample_coverage": "Sol 1 historical sample (2012-08-07T04:04:38 to 04:24:19 UTC)",
         "description": "In-situ Sol 1 meteorological time series"
       },
       "production_usage": [
-        "Comparative atmospheric analysis, environmental safety monitoring"
+        "In-situ Gale Crater atmospheric baseline (limited historical sample)"
       ]
+    },
+    {
+      "dataset_id": "mars-climate-sounder-mcs",
+      "product_id": "MRO_MCS_DDR",
+      "mission": "Mars Reconnaissance Orbiter (MRO)",
+      "instrument": "Mars Climate Sounder (MCS)",
+      "provenance_status": "catalogued_unavailable",
+      "production_status": "unavailable",
+      "official_archive": "NASA Planetary Data System (PDS) Atmospheres Node",
+      "official_urls": {
+        "archive": "https://pds-atmospheres.nmsu.edu/data_and_services/atmospheres_data/MARS/mcs.html"
+      },
+      "original_filename": "N/A",
+      "local_files": {},
+      "local_availability": "unavailable",
+      "published_checksum": null,
+      "sha256": null,
+      "crs": "Global Mars limb/nadir soundings",
+      "vertical_datum": "Pressure levels (0-80 km)",
+      "units": "Kelvin, Pa, dust/ice opacity",
+      "nodata_value": null,
+      "native_resolution": {
+        "vertical_resolution_km": 5.0,
+        "description": "Atmospheric vertical profiles of temperature, pressure, dust, and ice"
+      },
+      "production_usage": [],
+      "status_note": "No localized atmospheric profile acquired in Phase 8.5/8.5.1. Catalogued as unavailable."
     },
     {
       "dataset_id": "nasa-3d-visualization-assets",
@@ -856,6 +954,7 @@
       "mission": "NASA 3D Resources / Science Mission Directorate",
       "instrument": "Computer-Aided Design (CAD) & Textured Polygonal Meshes",
       "provenance_status": "authoritative_original",
+      "production_status": "downloaded_verified",
       "official_archive": "NASA Official 3D Resources Repository (github.com/nasa/NASA-3D-Resources)",
       "archive_collection": "NASA-3D-Resources / 3D Models & Images and Textures",
       "official_urls": {
