@@ -78,8 +78,15 @@ def test_geological_unit_count_audit():
 
 
 def test_geological_crs_and_landmark_identification():
-    """Verify GCS_Mars_2000_Sphere CRS and point identification at 3 landmark locations."""
+    """Verify GCS_Mars_2000_Sphere CRS, projection distortion notes, and 3 landmark locations."""
     service = get_geology_service()
+    meta = service.get_metadata()
+
+    # Verify CRS and projection distortion explanation
+    assert "GCS_Mars_2000_Sphere" in meta["crs"]
+    assert "R=3,396,190" in meta["display_transformation_note"]
+    assert "NOT eliminate projection distortion" in meta["display_transformation_note"]
+    assert "sec(phi)" in meta["display_transformation_note"]
 
     # Landmark 1: Olympus Mons Caldera/Edifice (lat=18.65, lon=226.2 / -133.8W)
     pt_om = service.query_point(18.65, 226.2)
@@ -104,15 +111,19 @@ def test_geological_crs_and_landmark_identification():
 
 
 def test_tes_thermal_inertia_calibration_audit():
-    """Verify TES thermal inertia calibration metadata, quantization uncertainty, and indicative descriptions."""
+    """Verify TES thermal inertia calibration metadata, unvalidated nominal proxy status, and indicative descriptions."""
     resp_meta = client.get("/api/v1/thermal/metadata")
     assert resp_meta.status_code == 200
     meta = resp_meta.json()
 
     assert "calibration" in meta
     assert meta["calibration"]["quantization_uncertainty_pct"] == 2.5
+    assert meta["calibration"]["mathematical_step_resolution_pct"] == 0.50
+    assert meta["calibration"]["uncertainty_status"] == "unvalidated_nominal_estimate"
     assert "790-step" in meta["calibration"]["method"]
-    assert "I = 50.0 * (50.0 ** t)" in meta["calibration"]["formula"]
+    assert "I(t) = 50.0 * (50.0 ** t)" in meta["calibration"]["formula"]
+    assert meta["calibration"]["endpoints_tiu"]["i_0"] == 50.0
+    assert meta["calibration"]["endpoints_tiu"]["i_789"] == 2500.0
     assert "legend_calibrated_estimate" in meta["calibration"]["measurement_status"]
 
     # Point query check
@@ -121,6 +132,9 @@ def test_tes_thermal_inertia_calibration_audit():
     pt = resp_pt.json()
     assert pt["calibrated_thermal_inertia_estimate_tiu"] == pt["thermal_inertia_tiu"]
     assert pt["quantization_uncertainty_pct"] == 2.5
+    assert pt["mathematical_step_resolution_pct"] == 0.50
+    assert pt["uncertainty_status"] == "unvalidated_nominal_estimate"
+    assert "Unvalidated nominal proxy" in pt["uncertainty_statement"]
     assert pt["calibration_status"] == "legend_calibrated_estimate"
     assert pt["physical_interpretation"].startswith("Indicative:")
 
@@ -131,8 +145,13 @@ def test_themis_resolution_and_grid_semantics_audit():
     assert resp.status_code == 200
     meta = resp.json()
 
+    assert meta["is_raw_100m_raster"] is False
+    assert meta["delivered_mosaic_grid_resolution_ppd"] == 256.0
+    assert meta["nominal_instrument_nadir_resolution_m"] == 100.0
+    assert meta["delivered_pixel_width_equator_m"] == 231.55
     assert "100 m/px" in meta["native_camera_resolution"]
     assert "256 ppd" in meta["mosaic_grid_resolution"]
     assert "231.55 m/px" in meta["mosaic_grid_resolution"]
     assert "cosine convergence" in meta["mosaic_grid_resolution"].lower()
+    assert "NOT a 100 m/px raster" in meta["resolution_qualification"]
     assert meta["measurement_semantics"]["quantitative_analysis_supported"] is False

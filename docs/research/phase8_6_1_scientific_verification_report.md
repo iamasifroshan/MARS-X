@@ -143,16 +143,16 @@ GEOGCS["GCS_Mars_2000_Sphere",
 
 1. **ArcGIS File Geodatabase (`SIM3292_geodatabase.gdb`):** Uses the **Robinson Projection** (projected coordinate system, central meridian $0.0^\circ\text{E}$, units in metres) for planar cartographic rendering.
 2. **Shapefiles (`SIM3292_Shapefiles/*.shp`):** Exported from the geodatabase into **Geographic Coordinate System** (`GCS_Mars_2000_Sphere`), with coordinates directly stored in **decimal degrees** (longitude $[-180^\circ, +180^\circ]$, latitude $[-90^\circ, +90^\circ]$).
-3. **Web Map (MapLibre GL JS):** Projects longitude and latitude in equirectangular coordinates (EPSG:4326/geographic degrees on Mars sphere). Because the shapefile geometries are in decimal degrees, they overlay directly onto the MapLibre canvas without spherical-to-planar projection distortion.
+3. **Web Map (MapLibre GL JS):** Ingests longitude and latitude directly as geographic decimal degrees on the Mars sphere. In the web viewport, MapLibre projects these coordinates to planar canvas space via forward Web Mercator projection ($m = \sec\phi$). Avoiding an intermediate file-level reprojection is NOT equivalent to eliminating projection distortion: planar display of a 3D sphere inevitably introduces metric and areal scale distortion away from the equator ($\sec^2\phi$).
 
 ### 3.3 Multi-Point Spatial Consistency Check
 
 | Landmark | Coordinates | Projected Unit | Chronostratigraphic Period | Feature ID | Verification |
 |---|---|---|---|---:|---|
 | **Olympus Mons Caldera/Flank** | $18.65^\circ\text{N}$, $226.20^\circ\text{E}$ ($-133.80^\circ\text{W}$) | `Ave` (Amazonian volcanic edifice) | Amazonian | 1046 | Matches Tanaka et al. (2014) edifice polygon |
-| **Gale Crater Transition** | $-5.40^\circ\text{N}$, $137.80^\circ\text{E}$ | `Htu` (Hesperian transition undivided unit) | Hesperian | 754 | Matches Gale crater floor/cratered unit |
-| **Tyrrhena Terra Highlands** | $-4.60^\circ\text{N}$, $66.317^\circ\text{E}$ | `eNh` (Early Noachian highland unit) | Noachian | 846 | Matches southern cratered highland basement |
-| **Sinus Meridiani Plateau** | $-2.00^\circ\text{N}$, $5.00^\circ\text{E}$ | `mNh` (Middle Noachian highland unit) | Noachian | 1189 | Matches Opportunity landing site bedrock regional context |
+| **Gale Crater Transition** | $-5.40^\circ\text{ (5.40}^\circ\text{S)}$, $137.80^\circ\text{E}$ | `Htu` (Hesperian transition undivided unit) | Hesperian | 754 | Matches Gale crater floor/cratered unit |
+| **Tyrrhena Terra Highlands** | $-4.60^\circ\text{ (4.60}^\circ\text{S)}$, $66.317^\circ\text{E}$ | `eNh` (Early Noachian highland unit) | Noachian | 846 | Matches southern cratered highland basement |
+| **Sinus Meridiani Plateau** | $-2.00^\circ\text{ (2.00}^\circ\text{S)}$, $5.00^\circ\text{E}$ | `mNh` (Middle Noachian highland unit) | Noachian | 1189 | Matches Opportunity landing site bedrock regional context |
 
 ---
 
@@ -275,3 +275,4 @@ As mandated by all MARS-X scientific integrity directives:
 | `backend/app/routers/thermal.py` | Calibrated estimates documentation | UPDATED |
 | `frontend/src/app/page.tsx` | 256 ppd regional tile label and note | UPDATED |
 | `backend/tests/test_phase8_6_1_audit.py` | 5/5 dedicated verification tests | PASS |
+

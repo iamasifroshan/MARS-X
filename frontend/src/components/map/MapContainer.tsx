@@ -54,12 +54,12 @@ const FAMOUS_MARS_SITES: MarsFeature[] = [
     description: "Authentic USGS 20m controlled CTX numerical elevation model (T01_000893_1847)."
   },
   {
-    name: "Sinus Meridiani (THEMIS 100m IR / Opportunity)",
+    name: "Sinus Meridiani (THEMIS 256 ppd IR / Opportunity)",
     lat: -2.000,
     lon: 5.000,
     zoom: 6.0,
     type: "Regional Visual IR / Hematite Plains",
-    description: "Authentic 256 ppd THEMIS 100m Band 9 visual display mosaic and high thermal inertia plains."
+    description: "Authentic 256 ppd (~231.5 m/px) THEMIS Band 9 visual display mosaic and high thermal inertia plains."
   },
   {
     name: "MOLA 128 Base Tile (00n000)",

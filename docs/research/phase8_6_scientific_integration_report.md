@@ -164,7 +164,7 @@ Extended the layer configuration to support dynamic toggling of:
 - `USGS CTX DTM: Apollinaris Sulci (20m/px)` (Active by default)
 - `USGS HiRISE DTM: Holden Crater (1.0m/px)` (Active by default)
 - `MGS TES Global Thermal Inertia (20 ppd)` (Toggleable overlay)
-- `THEMIS 100m IR Mosaic (Sinus Meridiani)` (Toggleable overlay)
+- `THEMIS Regional IR Mosaic (256 ppd, ~231.5 m/px — Sinus Meridiani)` (Toggleable overlay)
 - `USGS Mars Global Geologic Map (SIM 3292)` (Toggleable overlay)
 - `Mars Coordinate Graticule (30° mesh)` (Active by default)
 - `Coverage Footprints & Boundaries` (Active by default)

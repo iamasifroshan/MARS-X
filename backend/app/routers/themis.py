@@ -1,4 +1,4 @@
-"""FastAPI Router for 2001 Mars Odyssey THEMIS 100m Infrared Regional Mosaics."""
+"""FastAPI Router for 2001 Mars Odyssey THEMIS Regional Infrared Mosaics (256 ppd)."""
 
 import logging
 from typing import Optional, Dict, Any
@@ -14,7 +14,7 @@ router = APIRouter(prefix=f"{API_V1_PREFIX}/themis", tags=["themis"])
 
 @router.get("/metadata")
 async def get_themis_metadata() -> Dict[str, Any]:
-    """Retrieve THEMIS 100m IR regional mosaic metadata, footprint, and qualitative semantics."""
+    """Retrieve THEMIS 256 ppd regional IR mosaic metadata, footprint, and qualitative semantics."""
     service = get_themis_service()
     return service.get_metadata()
 
@@ -33,7 +33,7 @@ async def render_themis_window(
     width: int = Query(default=256, ge=64, le=1024, description="Output image width in pixels"),
     height: int = Query(default=256, ge=64, le=1024, description="Output image height in pixels"),
 ):
-    """Render a bounding box window of authentic THEMIS 100m regional infrared mosaic as an RGBA PNG."""
+    """Render a bounding box window of authentic THEMIS 256 ppd regional infrared mosaic as an RGBA PNG."""
     if min_lat > max_lat:
         raise HTTPException(status_code=400, detail=f"min_lat ({min_lat}) cannot exceed max_lat ({max_lat})")
 

@@ -204,7 +204,12 @@ class GeologyService:
             "scale": "1:20,000,000",
             "crs": "GCS_Mars_2000_Sphere (R=3,396,190.0 m, flattening=0.0)",
             "native_projection": "Robinson Projection (Central Meridian 0.0 deg E)",
-            "display_transformation_note": "Shapefile coordinates are native geographic degrees on the Mars 2000 Sphere [-180 to 180 deg longitude, -90 to 90 deg latitude], directly compatible with planetary equirectangular/web maps.",
+            "display_transformation_note": (
+                "Shapefile features store native coordinates in decimal degrees (GCS_Mars_2000_Sphere, R=3,396,190 m). "
+                "In MapLibre, these coordinates are projected to the viewport canvas via the Web Mercator projection. "
+                "Direct consumption of decimal degrees avoids an offline file reprojection step, but does NOT eliminate "
+                "projection distortion: linear and areal scale factors increase with latitude as sec(phi) and sec^2(phi)."
+            ),
             "layers": {
                 k: {
                     "filename": cfg["filename"],

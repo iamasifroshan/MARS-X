@@ -226,23 +226,27 @@ export const CoordinateInspector: React.FC<CoordinateInspectorProps> = ({
         </div>
       )}
 
-      {/* MGS TES Thermal Inertia */}
+      {/* MGS TES Calibrated Thermal-Inertia Estimate */}
       {thermalData && (
         <div className="bg-[#0c0e1a] p-2.5 rounded-lg border border-[#1b2034] text-[10px] space-y-1.5">
           <div className="flex items-center justify-between border-b border-[#181d30] pb-1">
             <span className="font-bold text-cyan-400 uppercase tracking-wider text-[10px]">
-              Thermal Inertia (TES)
+              Calibrated Thermal-Inertia Estimate (TIU)
             </span>
             <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/40 font-mono">
-              {thermalData.thermal_inertia_tiu !== null ? `${thermalData.thermal_inertia_tiu} tiu` : "NoData"}
+              {thermalData.calibrated_thermal_inertia_estimate_tiu !== null && thermalData.calibrated_thermal_inertia_estimate_tiu !== undefined
+                ? `${thermalData.calibrated_thermal_inertia_estimate_tiu} TIU`
+                : thermalData.thermal_inertia_tiu !== null
+                ? `${thermalData.thermal_inertia_tiu} TIU`
+                : "NoData"}
             </span>
           </div>
           <div className="text-gray-300 text-[9px] leading-tight">
-            <span className="text-gray-500 font-semibold block mb-0.5">Physical Interpretation:</span>
+            <span className="text-gray-500 font-semibold block mb-0.5">Indicative Surface Property:</span>
             {thermalData.physical_interpretation}
           </div>
           <div className="text-[8px] text-cyan-300/80 bg-cyan-950/30 p-1.5 rounded border border-cyan-900/30 leading-snug">
-            ⚠️ <span className="font-bold">Not Temperature:</span> Represents regolith thermal resistance (J m⁻² K⁻¹ s⁻¹/²). High values = bedrock/lag; low values = fine dust.
+            ⚠️ <span className="font-bold">Not Temperature:</span> Represents regolith thermal resistance (J m⁻² K⁻¹ s⁻¹/²). High values = bedrock/lag; low values = fine dust. Unvalidated proxy estimate.
           </div>
         </div>
       )}

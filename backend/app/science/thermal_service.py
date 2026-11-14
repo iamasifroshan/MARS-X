@@ -102,9 +102,17 @@ class TESThermalInertiaService:
             "spatial_coverage": {"min_lon": -180.0, "max_lon": 180.0, "min_lat": -90.0, "max_lat": 90.0},
             "raster_format": "3-band 8-bit RGB color image (IDL rainbow palette representation)",
             "calibration": {
-                "method": "790-step reverse lookup table extracted from published label colorbar",
-                "formula": "I = 50.0 * (50.0 ** t) [tiu], where t in [0.0, 1.0]",
+                "method": "790-step reverse lookup table extracted from published label colorbar (x=1050..1839, y=2000)",
+                "formula": "I(t) = 50.0 * (50.0 ** t) [tiu], where t = i / 789 for step index i in [0, 789]",
+                "endpoints_tiu": {"i_0": 50.0, "i_789": 2500.0},
+                "mathematical_step_resolution_pct": 0.50,
                 "quantization_uncertainty_pct": 2.5,
+                "uncertainty_status": "unvalidated_nominal_estimate",
+                "uncertainty_statement": (
+                    "Unvalidated nominal proxy estimate. Mathematical step resolution of the 790-step log LUT is ~0.50%; "
+                    "the nominal +/-2.5% color-matching quantization window is an uncalibrated proxy. Radiometric accuracy "
+                    "cannot be established without direct comparison to calibrated TES spectral radiances."
+                ),
                 "range_tiu": {"min": 50.0, "max": 2500.0, "scale": "logarithmic"},
                 "measurement_status": "legend_calibrated_estimate (not direct spectrometer radiance)",
             },
@@ -195,7 +203,7 @@ class TESThermalInertiaService:
             "product": product,
             "thermal_inertia_tiu": ti_val,
             "calibrated_thermal_inertia_estimate_tiu": ti_val,
-            "units": "J m^-2 K^-1 s^-1/2 (Thermal Inertia)",
+            "units": "J m^-2 K^-1 s^-1/2 (Thermal Inertia Units, tiu)",
             "is_nodata": False,
             "physical_interpretation": interpretation,
             "pixel_row": row,
@@ -203,7 +211,14 @@ class TESThermalInertiaService:
             "raw_rgb": [r, g, b],
             "citation": "Putzig & Mellon (2007), Icarus 191, 68-94",
             "calibration_status": "legend_calibrated_estimate",
+            "mathematical_step_resolution_pct": 0.50,
             "quantization_uncertainty_pct": 2.5,
+            "uncertainty_status": "unvalidated_nominal_estimate",
+            "uncertainty_statement": (
+                "Unvalidated nominal proxy estimate. Mathematical step resolution of the 790-step log LUT is ~0.50%; "
+                "the +/-2.5% color-matching window is an uncalibrated proxy. Radiometric accuracy cannot be established "
+                "without direct comparison to calibrated TES spectral radiances."
+            ),
             "estimation_method": "Putzig 2007 790-step logarithmic colorbar reverse lookup",
         }
 
@@ -299,7 +314,8 @@ class THEMISInfraredService:
         """Return THEMIS IR mosaic metadata, resolution audit, and strict qualitative usage instructions."""
         return {
             "dataset_id": "themis-ir-mosaics-regional",
-            "product_id": "THEMIS_IR_MOSAICS_100M_REGIONAL",
+            "product_id": "THEMIS_IR_MOSAICS_256PPD_REGIONAL",
+            "title": "2001 Mars Odyssey THEMIS Regional Infrared Mosaic (256 ppd, ~231.5 m/px)",
             "instrument": "Thermal Emission Imaging System (THEMIS)",
             "mission": "2001 Mars Odyssey",
             "archive": "ASU Mars Space Flight Facility / THEMIS Science Team",
@@ -310,9 +326,19 @@ class THEMISInfraredService:
                 "min_lon": self.footprint_min_lon,
                 "max_lon": self.footprint_max_lon,
             },
+            "nominal_instrument_nadir_resolution_m": 100.0,
+            "delivered_mosaic_grid_resolution_ppd": 256.0,
+            "delivered_pixel_width_equator_m": 231.55,
+            "delivered_pixel_width_min_lat_m": 200.52,
+            "is_raw_100m_raster": False,
             "native_camera_resolution": "100 m/px at 430 km circular orbit (nadir pointing)",
             "mosaic_grid_resolution": "256 ppd (equatorial pixel width ~231.55 m/px, reducing to ~200.5 m/px at -30° latitude due to cosine convergence)",
             "resolution": "256 ppd (~231.55 m/px equatorial)",
+            "resolution_qualification": (
+                "The 100 m/px descriptor refers exclusively to the THEMIS instrument's native nadir camera optics. "
+                "The actual downloaded regional product (thm_dir_N-30_000.png) is gridded at 256 ppd (~231.55 m/px equatorial). "
+                "It is NOT a 100 m/px raster."
+            ),
             "pixel_format": "8-bit grayscale display DN (0-255)",
             "products": {
                 "day_ir": {"file": "thm_dir_N-30_000.png", "exists": os.path.exists(self.day_path)},
