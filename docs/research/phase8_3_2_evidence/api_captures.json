@@ -1,0 +1,2354 @@
+{
+  "health": {
+    "status": 200,
+    "headers": {
+      "date": "Sat, 14 Nov 2026 08:11:25 GMT",
+      "server": "uvicorn",
+      "content-length": "48",
+      "content-type": "application/json",
+      "vary": "Origin",
+      "connection": "close"
+    },
+    "body": {
+      "status": "ok",
+      "app": "MARS-X",
+      "version": "0.1.0"
+    }
+  },
+  "catalog": {
+    "status": 200,
+    "headers": {
+      "date": "Sat, 14 Nov 2026 08:11:25 GMT",
+      "server": "uvicorn",
+      "content-length": "3021",
+      "content-type": "application/json",
+      "vary": "Origin",
+      "connection": "close"
+    },
+    "body": [
+      {
+        "dataset_id": "mola-megdr",
+        "name": "MOLA Mission Experiment Gridded Data Records (MEGDR)",
+        "mission": "Mars Global Surveyor (MGS)",
+        "instrument": "Mars Orbiter Laser Altimeter (MOLA)",
+        "product_type": "Numerical Topographic DTM",
+        "status": "registered",
+        "elevation_unit": "metres relative to MOLA Areoid",
+        "native_resolution_desc": "128 pixels/degree (~463 m/px at equator)",
+        "is_numerical_dtm": true,
+        "coverage": "Near-global (\u00b188\u00b0 Lat, 0\u00b0\u2013360\u00b0 East Lon)",
+        "nodata_value_repr": "-32768 (int16)",
+        "scientific_limitations": "Spatial resolution limited to ~463 m; polar gap beyond 88\u00b0 latitude; microtopography (<100m) not resolved.",
+        "provenance_source": "NASA Planetary Data System (PDS) Geosciences Node / Smith et al. (2001)"
+      },
+      {
+        "dataset_id": "hrsc-dtm",
+        "name": "HRSC High Resolution Stereo Camera DTMs",
+        "mission": "Mars Express (ESA/MEX)",
+        "instrument": "High Resolution Stereo Camera (HRSC)",
+        "product_type": "Stereophotogrammetric DTM",
+        "status": "registered",
+        "elevation_unit": "metres relative to MOLA Areoid",
+        "native_resolution_desc": "50\u2013100 m/px",
+        "is_numerical_dtm": true,
+        "coverage": "Regional orbital swaths (covering ~50%\u201370% of Martian surface)",
+        "nodata_value_repr": "-32768.0 (float32)",
+        "scientific_limitations": "Non-contiguous strip coverage; precision depends on stereo convergence angle and atmospheric dust optical depth.",
+        "provenance_source": "ESA Planetary Science Archive / DLR Institute of Planetary Research / Gwinner et al. (2010)"
+      },
+      {
+        "dataset_id": "hirise-dtm",
+        "name": "HiRISE High Resolution Imaging Science Experiment DTMs",
+        "mission": "Mars Reconnaissance Orbiter (MRO)",
+        "instrument": "High Resolution Imaging Science Experiment (HiRISE)",
+        "product_type": "Ultra-High-Resolution Stereo DTM",
+        "status": "registered",
+        "elevation_unit": "metres relative to MOLA Areoid",
+        "native_resolution_desc": "1.0 m/px (post-spacing derived from 0.25 m imagery)",
+        "is_numerical_dtm": true,
+        "coverage": "Targeted candidate landing sites and high-priority scientific targets (<0.1% global coverage)",
+        "nodata_value_repr": "-3.4028235e+38 (float32 IEEE-754)",
+        "scientific_limitations": "Extremely sparse spatial footprint (~5 km x 20 km swaths); DTM edges contain photogrammetric interpolation artifacts.",
+        "provenance_source": "University of Arizona Lunar & Planetary Laboratory / NASA PDS / McEwen et al. (2007)"
+      },
+      {
+        "dataset_id": "ctx-dtm",
+        "name": "CTX Context Camera Stereo DTMs",
+        "mission": "Mars Reconnaissance Orbiter (MRO)",
+        "instrument": "Context Camera (CTX)",
+        "product_type": "Regional Stereo Photogrammetric DTM",
+        "status": "registered",
+        "elevation_unit": "metres relative to MOLA Areoid",
+        "native_resolution_desc": "18\u201324 m/px (processed from 6 m optical frames)",
+        "is_numerical_dtm": true,
+        "coverage": "Regional corridors around major craters, rift canyons, and landing sites (~5%\u201310% of surface)",
+        "nodata_value_repr": "-32768.0 (float32)",
+        "scientific_limitations": "Stereo pairs processed on demand via NASA Ames Stereo Pipeline; gaps between non-overlapping orbits.",
+        "provenance_source": "NASA Ames Stereo Pipeline (ASP) / Murray Lab Caltech / Malin et al. (2007)"
+      }
+    ]
+  },
+  "elevation_sinus_meridiani": {
+    "status": 200,
+    "headers": {
+      "date": "Sat, 14 Nov 2026 08:11:25 GMT",
+      "server": "uvicorn",
+      "content-length": "678",
+      "content-type": "application/json",
+      "vary": "Origin",
+      "connection": "close"
+    },
+    "body": {
+      "latitude": -2.0,
+      "longitude": 5.0,
+      "elevation_m": -909.0,
+      "dataset_id": "mola-megdr-128 (megt00n000hb)",
+      "instrument": "MOLA (Mars Orbiter Laser Altimeter)",
+      "tier": "regional_high_resolution",
+      "native_resolution_m": 463.08,
+      "native_resolution_desc": "0.0078125\u00b0/px (~463.08 m/px at equator)",
+      "display_resolution_m": 7409.3,
+      "crs": "IAU:49900 (Simple Cylindrical / Mars Sphere R=3396000 m)",
+      "vertical_reference": "MOLA Areoid (GMM3 mgm1025 degree 50)",
+      "is_nodata": false,
+      "is_valid": true,
+      "query_status": "success_regional_mola_128",
+      "status_note": "Sampled from authentic regional MOLA 128 ppd tile megt00n000hb.",
+      "source_checksum": "f57274b5e459ab35a1975ca5f186f98bdb929475a4557098a7c632b9aa175c75"
+    }
+  },
+  "elevation_olympus_mons": {
+    "status": 200,
+    "headers": {
+      "date": "Sat, 14 Nov 2026 08:11:25 GMT",
+      "server": "uvicorn",
+      "content-length": "660",
+      "content-type": "application/json",
+      "vary": "Origin",
+      "connection": "close"
+    },
+    "body": {
+      "latitude": 18.65,
+      "longitude": 226.2,
+      "elevation_m": 20009.0,
+      "dataset_id": "mola-megdr-4",
+      "instrument": "MOLA (Mars Orbiter Laser Altimeter)",
+      "tier": "global_baseline",
+      "native_resolution_m": 14818.67,
+      "native_resolution_desc": "0.25\u00b0/px (~14.8 km/px at equator)",
+      "display_resolution_m": 14818.67,
+      "crs": "IAU:49900 (Equirectangular Mars Sphere R=3396000 m)",
+      "vertical_reference": "MOLA Areoid (GMM3 mgm1025 degree 50)",
+      "is_nodata": false,
+      "is_valid": true,
+      "query_status": "success_global_mola_baseline",
+      "status_note": "Sampled from authentic Global MOLA 4 ppd continuous elevation baseline.",
+      "source_checksum": "25f16fb7aaf857898dcf98bc4f841341a24f8b9f7e98453ca083bc45d897ca2c"
+    }
+  },
+  "elevation_tyrrhena_ctx": {
+    "status": 200,
+    "headers": {
+      "date": "Sat, 14 Nov 2026 08:11:25 GMT",
+      "server": "uvicorn",
+      "content-length": "624",
+      "content-type": "application/json",
+      "vary": "Origin",
+      "connection": "close"
+    },
+    "body": {
+      "latitude": -4.6,
+      "longitude": 66.317,
+      "elevation_m": 2189.49,
+      "dataset_id": "ctx-dtm-p21-009323",
+      "instrument": "CTX (Context Camera)",
+      "tier": "local_high_resolution",
+      "native_resolution_m": 20.0128,
+      "native_resolution_desc": "20.01 m/px stereo numerical DTM",
+      "display_resolution_m": 80.05,
+      "crs": "IAU:49910 (Equirectangular Mars Sphere, R=3396190 m)",
+      "vertical_reference": "MOLA Areoid (ASP pc_align tied)",
+      "is_nodata": false,
+      "is_valid": true,
+      "query_status": "success_high_resolution_ctx",
+      "status_note": "Sampled from authentic USGS 20m numerical CTX DTM.",
+      "source_checksum": "a4edb9f414500fe44e1a3c2ba06ee39e5c060cf1483619e43f461be29d31aff2"
+    }
+  },
+  "window_metadata_ctx": {
+    "status": 200,
+    "headers": {
+      "date": "Sat, 14 Nov 2026 08:11:25 GMT",
+      "server": "uvicorn",
+      "content-length": "340",
+      "content-type": "application/json",
+      "vary": "Origin",
+      "connection": "close"
+    },
+    "body": {
+      "bbox": [
+        66.1,
+        -4.8,
+        66.5,
+        -4.4
+      ],
+      "width": 512,
+      "height": 512,
+      "dataset_id": "ctx-dtm-p21-009323",
+      "source_resolution_m": 20.0128,
+      "display_resolution_m": 46.31,
+      "sampling_regime": "undersampled_decimated_overview",
+      "sampling_ratio": 2.3139,
+      "resampling_method": "bilinear",
+      "source_checksum": "a4edb9f414500fe44e1a3c2ba06ee39e5c060cf1483619e43f461be29d31aff2"
+    }
+  },
+  "window_metadata_mola128": {
+    "status": 200,
+    "headers": {
+      "date": "Sat, 14 Nov 2026 08:11:25 GMT",
+      "server": "uvicorn",
+      "content-length": "342",
+      "content-type": "application/json",
+      "vary": "Origin",
+      "connection": "close"
+    },
+    "body": {
+      "bbox": [
+        10.0,
+        10.0,
+        20.0,
+        20.0
+      ],
+      "width": 512,
+      "height": 512,
+      "dataset_id": "mola-megdr-128",
+      "source_resolution_m": 463.08,
+      "display_resolution_m": 1157.71,
+      "sampling_regime": "undersampled_decimated_overview",
+      "sampling_ratio": 2.5,
+      "resampling_method": "stride_subsample",
+      "source_checksum": "14022166079edafc99650f354e5a634e6eb2c2ea544b444c01cd8ee55437df36"
+    }
+  },
+  "profile_valles_marineris": {
+    "status": 200,
+    "headers": {
+      "date": "Sat, 14 Nov 2026 08:11:25 GMT",
+      "server": "uvicorn",
+      "content-length": "8462",
+      "content-type": "application/json",
+      "vary": "Origin",
+      "connection": "close"
+    },
+    "body": {
+      "start_lat": -14.0,
+      "start_lon": 282.0,
+      "end_lat": -4.0,
+      "end_lon": 305.0,
+      "total_distance_m": 1469329.25,
+      "sampling_interval_m": 29986.31,
+      "num_samples": 50,
+      "min_elevation_m": -4941.0,
+      "max_elevation_m": 6121.0,
+      "elevation_gain_m": 18884.0,
+      "elevation_loss_m": 20410.0,
+      "datasets_used": [
+        "mola-megdr-4"
+      ],
+      "nodata_count": 0,
+      "points": [
+        {
+          "point_index": 0,
+          "lat": -14.0,
+          "lon": 282.0,
+          "distance_m": 0.0,
+          "elevation_m": 3353.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 1,
+          "lat": -13.81315,
+          "lon": 282.48431,
+          "distance_m": 29986.3,
+          "elevation_m": 3207.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 2,
+          "lat": -13.62535,
+          "lon": 282.96784,
+          "distance_m": 59972.6,
+          "elevation_m": 2806.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 3,
+          "lat": -13.43661,
+          "lon": 283.45061,
+          "distance_m": 89958.9,
+          "elevation_m": 3367.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 4,
+          "lat": -13.24696,
+          "lon": 283.93261,
+          "distance_m": 119945.2,
+          "elevation_m": 3603.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 5,
+          "lat": -13.05641,
+          "lon": 284.41386,
+          "distance_m": 149931.6,
+          "elevation_m": 3679.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 6,
+          "lat": -12.86496,
+          "lon": 284.89436,
+          "distance_m": 179917.9,
+          "elevation_m": 3824.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 7,
+          "lat": -12.67265,
+          "lon": 285.37414,
+          "distance_m": 209904.2,
+          "elevation_m": 4005.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 8,
+          "lat": -12.47947,
+          "lon": 285.85318,
+          "distance_m": 239890.5,
+          "elevation_m": -708.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 9,
+          "lat": -12.28546,
+          "lon": 286.33151,
+          "distance_m": 269876.8,
+          "elevation_m": -1828.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 10,
+          "lat": -12.09061,
+          "lon": 286.80914,
+          "distance_m": 299863.1,
+          "elevation_m": -1829.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 11,
+          "lat": -11.89495,
+          "lon": 287.28606,
+          "distance_m": 329849.4,
+          "elevation_m": -2332.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 12,
+          "lat": -11.69849,
+          "lon": 287.7623,
+          "distance_m": 359835.7,
+          "elevation_m": -3252.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 13,
+          "lat": -11.50124,
+          "lon": 288.23787,
+          "distance_m": 389822.0,
+          "elevation_m": -3232.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 14,
+          "lat": -11.30322,
+          "lon": 288.71276,
+          "distance_m": 419808.4,
+          "elevation_m": -4289.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 15,
+          "lat": -11.10445,
+          "lon": 289.187,
+          "distance_m": 449794.7,
+          "elevation_m": -4673.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 16,
+          "lat": -10.90494,
+          "lon": 289.66059,
+          "distance_m": 479781.0,
+          "elevation_m": -4850.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 17,
+          "lat": -10.7047,
+          "lon": 290.13355,
+          "distance_m": 509767.3,
+          "elevation_m": -4941.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 18,
+          "lat": -10.50375,
+          "lon": 290.60588,
+          "distance_m": 539753.6,
+          "elevation_m": -4797.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 19,
+          "lat": -10.3021,
+          "lon": 291.0776,
+          "distance_m": 569739.9,
+          "elevation_m": -1988.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 20,
+          "lat": -10.09977,
+          "lon": 291.54871,
+          "distance_m": 599726.2,
+          "elevation_m": 440.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 21,
+          "lat": -9.89678,
+          "lon": 292.01923,
+          "distance_m": 629712.5,
+          "elevation_m": 4683.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 22,
+          "lat": -9.69313,
+          "lon": 292.48916,
+          "distance_m": 659698.8,
+          "elevation_m": 4880.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 23,
+          "lat": -9.48884,
+          "lon": 292.95853,
+          "distance_m": 689685.2,
+          "elevation_m": 5045.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 24,
+          "lat": -9.28392,
+          "lon": 293.42733,
+          "distance_m": 719671.5,
+          "elevation_m": 5316.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 25,
+          "lat": -9.0784,
+          "lon": 293.89559,
+          "distance_m": 749657.8,
+          "elevation_m": 5190.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 26,
+          "lat": -8.87228,
+          "lon": 294.36331,
+          "distance_m": 779644.1,
+          "elevation_m": 5168.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 27,
+          "lat": -8.66558,
+          "lon": 294.8305,
+          "distance_m": 809630.4,
+          "elevation_m": 1770.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 28,
+          "lat": -8.45831,
+          "lon": 295.29718,
+          "distance_m": 839616.7,
+          "elevation_m": -87.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 29,
+          "lat": -8.25049,
+          "lon": 295.76336,
+          "distance_m": 869603.0,
+          "elevation_m": 5989.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 30,
+          "lat": -8.04213,
+          "lon": 296.22904,
+          "distance_m": 899589.3,
+          "elevation_m": 6121.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 31,
+          "lat": -7.83325,
+          "lon": 296.69425,
+          "distance_m": 929575.6,
+          "elevation_m": 3892.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 32,
+          "lat": -7.62385,
+          "lon": 297.15899,
+          "distance_m": 959562.0,
+          "elevation_m": 3287.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 33,
+          "lat": -7.41397,
+          "lon": 297.62327,
+          "distance_m": 989548.3,
+          "elevation_m": 3048.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 34,
+          "lat": -7.2036,
+          "lon": 298.08712,
+          "distance_m": 1019534.6,
+          "elevation_m": 1881.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 35,
+          "lat": -6.99276,
+          "lon": 298.55053,
+          "distance_m": 1049520.9,
+          "elevation_m": 2681.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 36,
+          "lat": -6.78148,
+          "lon": 299.01352,
+          "distance_m": 1079507.2,
+          "elevation_m": 2580.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 37,
+          "lat": -6.56975,
+          "lon": 299.47611,
+          "distance_m": 1109493.5,
+          "elevation_m": 2556.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 38,
+          "lat": -6.3576,
+          "lon": 299.9383,
+          "distance_m": 1139479.8,
+          "elevation_m": 2521.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 39,
+          "lat": -6.14504,
+          "lon": 300.40011,
+          "distance_m": 1169466.1,
+          "elevation_m": 2434.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 40,
+          "lat": -5.93209,
+          "lon": 300.86155,
+          "distance_m": 1199452.4,
+          "elevation_m": 2405.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 41,
+          "lat": -5.71875,
+          "lon": 301.32264,
+          "distance_m": 1229438.8,
+          "elevation_m": 2374.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 42,
+          "lat": -5.50505,
+          "lon": 301.78338,
+          "distance_m": 1259425.1,
+          "elevation_m": 2257.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 43,
+          "lat": -5.29099,
+          "lon": 302.24379,
+          "distance_m": 1289411.4,
+          "elevation_m": 2277.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 44,
+          "lat": -5.07659,
+          "lon": 302.70388,
+          "distance_m": 1319397.7,
+          "elevation_m": 2103.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 45,
+          "lat": -4.86187,
+          "lon": 303.16366,
+          "distance_m": 1349384.0,
+          "elevation_m": 2015.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 46,
+          "lat": -4.64683,
+          "lon": 303.62316,
+          "distance_m": 1379370.3,
+          "elevation_m": 1867.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 47,
+          "lat": -4.4315,
+          "lon": 304.08237,
+          "distance_m": 1409356.6,
+          "elevation_m": 1824.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 48,
+          "lat": -4.21588,
+          "lon": 304.54131,
+          "distance_m": 1439342.9,
+          "elevation_m": 2204.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 49,
+          "lat": -4.0,
+          "lon": 305.0,
+          "distance_m": 1469329.2,
+          "elevation_m": 1827.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        }
+      ]
+    }
+  },
+  "profile_olympus_mons": {
+    "status": 200,
+    "headers": {
+      "date": "Sat, 14 Nov 2026 08:11:25 GMT",
+      "server": "uvicorn",
+      "content-length": "8436",
+      "content-type": "application/json",
+      "vary": "Origin",
+      "connection": "close"
+    },
+    "body": {
+      "start_lat": 13.0,
+      "start_lon": 220.0,
+      "end_lat": 23.0,
+      "end_lon": 232.0,
+      "total_distance_m": 898490.6,
+      "sampling_interval_m": 18336.54,
+      "num_samples": 50,
+      "min_elevation_m": -1707.0,
+      "max_elevation_m": 20242.0,
+      "elevation_gain_m": 22463.0,
+      "elevation_loss_m": 21293.0,
+      "datasets_used": [
+        "mola-megdr-4"
+      ],
+      "nodata_count": 0,
+      "points": [
+        {
+          "point_index": 0,
+          "lat": 13.0,
+          "lon": 220.0,
+          "distance_m": 0.0,
+          "elevation_m": -1707.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 1,
+          "lat": 13.21068,
+          "lon": 220.23257,
+          "distance_m": 18336.5,
+          "elevation_m": -1687.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 2,
+          "lat": 13.42116,
+          "lon": 220.46554,
+          "distance_m": 36673.1,
+          "elevation_m": -1644.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 3,
+          "lat": 13.63142,
+          "lon": 220.69893,
+          "distance_m": 55009.6,
+          "elevation_m": -1570.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 4,
+          "lat": 13.84146,
+          "lon": 220.93272,
+          "distance_m": 73346.2,
+          "elevation_m": -1217.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 5,
+          "lat": 14.05128,
+          "lon": 221.16694,
+          "distance_m": 91682.7,
+          "elevation_m": -881.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 6,
+          "lat": 14.26087,
+          "lon": 221.40159,
+          "distance_m": 110019.3,
+          "elevation_m": -639.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 7,
+          "lat": 14.47024,
+          "lon": 221.63668,
+          "distance_m": 128355.8,
+          "elevation_m": -403.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 8,
+          "lat": 14.67937,
+          "lon": 221.87221,
+          "distance_m": 146692.3,
+          "elevation_m": 128.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 9,
+          "lat": 14.88826,
+          "lon": 222.10819,
+          "distance_m": 165028.9,
+          "elevation_m": 949.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 10,
+          "lat": 15.09691,
+          "lon": 222.34463,
+          "distance_m": 183365.4,
+          "elevation_m": 1705.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 11,
+          "lat": 15.30532,
+          "lon": 222.58153,
+          "distance_m": 201702.0,
+          "elevation_m": 3335.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 12,
+          "lat": 15.51347,
+          "lon": 222.8189,
+          "distance_m": 220038.5,
+          "elevation_m": 5860.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 13,
+          "lat": 15.72137,
+          "lon": 223.05675,
+          "distance_m": 238375.1,
+          "elevation_m": 6756.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 14,
+          "lat": 15.92901,
+          "lon": 223.29509,
+          "distance_m": 256711.6,
+          "elevation_m": 8184.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 15,
+          "lat": 16.13639,
+          "lon": 223.53393,
+          "distance_m": 275048.1,
+          "elevation_m": 9066.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 16,
+          "lat": 16.34351,
+          "lon": 223.77326,
+          "distance_m": 293384.7,
+          "elevation_m": 10313.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 17,
+          "lat": 16.55035,
+          "lon": 224.0131,
+          "distance_m": 311721.2,
+          "elevation_m": 11838.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 18,
+          "lat": 16.75692,
+          "lon": 224.25345,
+          "distance_m": 330057.8,
+          "elevation_m": 13073.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 19,
+          "lat": 16.96321,
+          "lon": 224.49433,
+          "distance_m": 348394.3,
+          "elevation_m": 13073.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 20,
+          "lat": 17.16922,
+          "lon": 224.73574,
+          "distance_m": 366730.9,
+          "elevation_m": 14382.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 21,
+          "lat": 17.37494,
+          "lon": 224.97768,
+          "distance_m": 385067.4,
+          "elevation_m": 15882.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 22,
+          "lat": 17.58037,
+          "lon": 225.22017,
+          "distance_m": 403403.9,
+          "elevation_m": 16906.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 23,
+          "lat": 17.7855,
+          "lon": 225.46321,
+          "distance_m": 421740.5,
+          "elevation_m": 18443.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 24,
+          "lat": 17.99033,
+          "lon": 225.7068,
+          "distance_m": 440077.0,
+          "elevation_m": 19312.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 25,
+          "lat": 18.19485,
+          "lon": 225.95097,
+          "distance_m": 458413.6,
+          "elevation_m": 20215.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 26,
+          "lat": 18.39907,
+          "lon": 226.1957,
+          "distance_m": 476750.1,
+          "elevation_m": 20242.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 27,
+          "lat": 18.60297,
+          "lon": 226.44102,
+          "distance_m": 495086.7,
+          "elevation_m": 19340.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 28,
+          "lat": 18.80656,
+          "lon": 226.68692,
+          "distance_m": 513423.2,
+          "elevation_m": 19594.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 29,
+          "lat": 19.00982,
+          "lon": 226.93342,
+          "distance_m": 531759.7,
+          "elevation_m": 19086.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 30,
+          "lat": 19.21275,
+          "lon": 227.18052,
+          "distance_m": 550096.3,
+          "elevation_m": 19213.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 31,
+          "lat": 19.41535,
+          "lon": 227.42824,
+          "distance_m": 568432.8,
+          "elevation_m": 17682.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 32,
+          "lat": 19.61762,
+          "lon": 227.67657,
+          "distance_m": 586769.4,
+          "elevation_m": 15978.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 33,
+          "lat": 19.81954,
+          "lon": 227.92552,
+          "distance_m": 605105.9,
+          "elevation_m": 14393.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 34,
+          "lat": 20.02112,
+          "lon": 228.17511,
+          "distance_m": 623442.5,
+          "elevation_m": 12881.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 35,
+          "lat": 20.22235,
+          "lon": 228.42534,
+          "distance_m": 641779.0,
+          "elevation_m": 12359.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 36,
+          "lat": 20.42322,
+          "lon": 228.67621,
+          "distance_m": 660115.5,
+          "elevation_m": 10996.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 37,
+          "lat": 20.62373,
+          "lon": 228.92775,
+          "distance_m": 678452.1,
+          "elevation_m": 9484.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 38,
+          "lat": 20.82388,
+          "lon": 229.17994,
+          "distance_m": 696788.6,
+          "elevation_m": 7977.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 39,
+          "lat": 21.02366,
+          "lon": 229.43281,
+          "distance_m": 715125.2,
+          "elevation_m": 6973.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 40,
+          "lat": 21.22306,
+          "lon": 229.68635,
+          "distance_m": 733461.7,
+          "elevation_m": 6326.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 41,
+          "lat": 21.42208,
+          "lon": 229.94058,
+          "distance_m": 751798.3,
+          "elevation_m": 4799.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 42,
+          "lat": 21.62072,
+          "lon": 230.1955,
+          "distance_m": 770134.8,
+          "elevation_m": 892.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 43,
+          "lat": 21.81897,
+          "lon": 230.45112,
+          "distance_m": 788471.3,
+          "elevation_m": 489.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 44,
+          "lat": 22.01683,
+          "lon": 230.70745,
+          "distance_m": 806807.9,
+          "elevation_m": 26.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 45,
+          "lat": 22.21428,
+          "lon": 230.9645,
+          "distance_m": 825144.4,
+          "elevation_m": -229.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 46,
+          "lat": 22.41133,
+          "lon": 231.22227,
+          "distance_m": 843481.0,
+          "elevation_m": -503.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 47,
+          "lat": 22.60797,
+          "lon": 231.48077,
+          "distance_m": 861817.5,
+          "elevation_m": -640.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 48,
+          "lat": 22.8042,
+          "lon": 231.74001,
+          "distance_m": 880154.1,
+          "elevation_m": -670.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        },
+        {
+          "point_index": 49,
+          "lat": 23.0,
+          "lon": 232.0,
+          "distance_m": 898490.6,
+          "elevation_m": -537.0,
+          "dataset_id": "mola-megdr-4",
+          "resolution_m": 14818.67,
+          "is_nodata": false
+        }
+      ]
+    }
+  },
+  "profile_gale_crater": {
+    "status": 200,
+    "headers": {
+      "date": "Sat, 14 Nov 2026 08:11:25 GMT",
+      "server": "uvicorn",
+      "content-length": "9140",
+      "content-type": "application/json",
+      "vary": "Origin",
+      "connection": "close"
+    },
+    "body": {
+      "start_lat": -5.4,
+      "start_lon": 137.8,
+      "end_lat": -4.6,
+      "end_lon": 138.2,
+      "total_distance_m": 52976.53,
+      "sampling_interval_m": 1081.15,
+      "num_samples": 50,
+      "min_elevation_m": -4342.0,
+      "max_elevation_m": 437.0,
+      "elevation_gain_m": 2083.0,
+      "elevation_loss_m": 5410.0,
+      "datasets_used": [
+        "mola-megdr-128 (megt00n090hb)"
+      ],
+      "nodata_count": 0,
+      "points": [
+        {
+          "point_index": 0,
+          "lat": -5.4,
+          "lon": 137.8,
+          "distance_m": 0.0,
+          "elevation_m": -1015.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 1,
+          "lat": -5.38368,
+          "lon": 137.80817,
+          "distance_m": 1081.2,
+          "elevation_m": -448.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 2,
+          "lat": -5.36735,
+          "lon": 137.81635,
+          "distance_m": 2162.3,
+          "elevation_m": -34.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 3,
+          "lat": -5.35103,
+          "lon": 137.82452,
+          "distance_m": 3243.5,
+          "elevation_m": 437.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 4,
+          "lat": -5.3347,
+          "lon": 137.83269,
+          "distance_m": 4324.6,
+          "elevation_m": 375.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 5,
+          "lat": -5.31838,
+          "lon": 137.84086,
+          "distance_m": 5405.8,
+          "elevation_m": 191.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 6,
+          "lat": -5.30205,
+          "lon": 137.84903,
+          "distance_m": 6486.9,
+          "elevation_m": -141.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 7,
+          "lat": -5.28573,
+          "lon": 137.8572,
+          "distance_m": 7568.1,
+          "elevation_m": -447.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 8,
+          "lat": -5.2694,
+          "lon": 137.86537,
+          "distance_m": 8649.2,
+          "elevation_m": -692.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 9,
+          "lat": -5.25308,
+          "lon": 137.87354,
+          "distance_m": 9730.4,
+          "elevation_m": -785.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 10,
+          "lat": -5.23675,
+          "lon": 137.88171,
+          "distance_m": 10811.5,
+          "elevation_m": -926.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 11,
+          "lat": -5.22043,
+          "lon": 137.88988,
+          "distance_m": 11892.7,
+          "elevation_m": -978.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 12,
+          "lat": -5.2041,
+          "lon": 137.89805,
+          "distance_m": 12973.8,
+          "elevation_m": -985.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 13,
+          "lat": -5.18778,
+          "lon": 137.90622,
+          "distance_m": 14055.0,
+          "elevation_m": -969.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 14,
+          "lat": -5.17145,
+          "lon": 137.91439,
+          "distance_m": 15136.2,
+          "elevation_m": -945.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 15,
+          "lat": -5.15513,
+          "lon": 137.92255,
+          "distance_m": 16217.3,
+          "elevation_m": -916.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 16,
+          "lat": -5.1388,
+          "lon": 137.93072,
+          "distance_m": 17298.5,
+          "elevation_m": -888.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 17,
+          "lat": -5.12248,
+          "lon": 137.93889,
+          "distance_m": 18379.6,
+          "elevation_m": -854.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 18,
+          "lat": -5.10615,
+          "lon": 137.94705,
+          "distance_m": 19460.8,
+          "elevation_m": -797.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 19,
+          "lat": -5.08982,
+          "lon": 137.95522,
+          "distance_m": 20541.9,
+          "elevation_m": -679.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 20,
+          "lat": -5.0735,
+          "lon": 137.96338,
+          "distance_m": 21623.1,
+          "elevation_m": -615.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 21,
+          "lat": -5.05717,
+          "lon": 137.97155,
+          "distance_m": 22704.2,
+          "elevation_m": -491.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 22,
+          "lat": -5.04085,
+          "lon": 137.97971,
+          "distance_m": 23785.4,
+          "elevation_m": -402.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 23,
+          "lat": -5.02452,
+          "lon": 137.98788,
+          "distance_m": 24866.5,
+          "elevation_m": -384.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 24,
+          "lat": -5.00819,
+          "lon": 137.99604,
+          "distance_m": 25947.7,
+          "elevation_m": -367.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 25,
+          "lat": -4.99187,
+          "lon": 138.0042,
+          "distance_m": 27028.8,
+          "elevation_m": -435.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 26,
+          "lat": -4.97554,
+          "lon": 138.01237,
+          "distance_m": 28110.0,
+          "elevation_m": -480.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 27,
+          "lat": -4.95921,
+          "lon": 138.02053,
+          "distance_m": 29191.1,
+          "elevation_m": -625.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 28,
+          "lat": -4.94289,
+          "lon": 138.02869,
+          "distance_m": 30272.3,
+          "elevation_m": -704.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 29,
+          "lat": -4.92656,
+          "lon": 138.03685,
+          "distance_m": 31353.5,
+          "elevation_m": -926.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 30,
+          "lat": -4.91023,
+          "lon": 138.04501,
+          "distance_m": 32434.6,
+          "elevation_m": -1150.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 31,
+          "lat": -4.89391,
+          "lon": 138.05317,
+          "distance_m": 33515.8,
+          "elevation_m": -1562.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 32,
+          "lat": -4.87758,
+          "lon": 138.06133,
+          "distance_m": 34596.9,
+          "elevation_m": -1978.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 33,
+          "lat": -4.86125,
+          "lon": 138.06949,
+          "distance_m": 35678.1,
+          "elevation_m": -2430.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 34,
+          "lat": -4.84492,
+          "lon": 138.07765,
+          "distance_m": 36759.2,
+          "elevation_m": -2882.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 35,
+          "lat": -4.8286,
+          "lon": 138.08581,
+          "distance_m": 37840.4,
+          "elevation_m": -3132.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 36,
+          "lat": -4.81227,
+          "lon": 138.09397,
+          "distance_m": 38921.5,
+          "elevation_m": -3285.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 37,
+          "lat": -4.79594,
+          "lon": 138.10213,
+          "distance_m": 40002.7,
+          "elevation_m": -3329.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 38,
+          "lat": -4.77961,
+          "lon": 138.11029,
+          "distance_m": 41083.8,
+          "elevation_m": -3344.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 39,
+          "lat": -4.76328,
+          "lon": 138.11845,
+          "distance_m": 42165.0,
+          "elevation_m": -3331.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 40,
+          "lat": -4.74696,
+          "lon": 138.1266,
+          "distance_m": 43246.1,
+          "elevation_m": -3463.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 41,
+          "lat": -4.73063,
+          "lon": 138.13476,
+          "distance_m": 44327.3,
+          "elevation_m": -3509.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 42,
+          "lat": -4.7143,
+          "lon": 138.14292,
+          "distance_m": 45408.5,
+          "elevation_m": -3619.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 43,
+          "lat": -4.69797,
+          "lon": 138.15107,
+          "distance_m": 46489.6,
+          "elevation_m": -3844.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 44,
+          "lat": -4.68164,
+          "lon": 138.15923,
+          "distance_m": 47570.8,
+          "elevation_m": -4002.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 45,
+          "lat": -4.66532,
+          "lon": 138.16738,
+          "distance_m": 48651.9,
+          "elevation_m": -4134.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 46,
+          "lat": -4.64899,
+          "lon": 138.17554,
+          "distance_m": 49733.1,
+          "elevation_m": -4245.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 47,
+          "lat": -4.63266,
+          "lon": 138.18369,
+          "distance_m": 50814.2,
+          "elevation_m": -4331.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 48,
+          "lat": -4.61633,
+          "lon": 138.19185,
+          "distance_m": 51895.4,
+          "elevation_m": -4340.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        },
+        {
+          "point_index": 49,
+          "lat": -4.6,
+          "lon": 138.2,
+          "distance_m": 52976.5,
+          "elevation_m": -4342.0,
+          "dataset_id": "mola-megdr-128 (megt00n090hb)",
+          "resolution_m": 463.08,
+          "is_nodata": false
+        }
+      ]
+    }
+  },
+  "profile_tyrrhena_ctx": {
+    "status": 200,
+    "headers": {
+      "date": "Sat, 14 Nov 2026 08:11:25 GMT",
+      "server": "uvicorn",
+      "content-length": "8600",
+      "content-type": "application/json",
+      "vary": "Origin",
+      "connection": "close"
+    },
+    "body": {
+      "start_lat": -4.8,
+      "start_lon": 66.15,
+      "end_lat": -4.4,
+      "end_lon": 66.45,
+      "total_distance_m": 29602.99,
+      "sampling_interval_m": 604.14,
+      "num_samples": 50,
+      "min_elevation_m": 977.56,
+      "max_elevation_m": 2445.08,
+      "elevation_gain_m": 1458.11,
+      "elevation_loss_m": 1788.21,
+      "datasets_used": [
+        "ctx-dtm-p21-009323"
+      ],
+      "nodata_count": 0,
+      "points": [
+        {
+          "point_index": 0,
+          "lat": -4.8,
+          "lon": 66.15,
+          "distance_m": 0.0,
+          "elevation_m": 2376.27,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 1,
+          "lat": -4.79184,
+          "lon": 66.15613,
+          "distance_m": 604.1,
+          "elevation_m": 2445.08,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 2,
+          "lat": -4.78368,
+          "lon": 66.16225,
+          "distance_m": 1208.3,
+          "elevation_m": 2309.86,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 3,
+          "lat": -4.77551,
+          "lon": 66.16838,
+          "distance_m": 1812.4,
+          "elevation_m": 2070.39,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 4,
+          "lat": -4.76735,
+          "lon": 66.1745,
+          "distance_m": 2416.6,
+          "elevation_m": 1849.42,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 5,
+          "lat": -4.75919,
+          "lon": 66.18063,
+          "distance_m": 3020.7,
+          "elevation_m": 1648.45,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 6,
+          "lat": -4.75103,
+          "lon": 66.18675,
+          "distance_m": 3624.9,
+          "elevation_m": 1509.14,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 7,
+          "lat": -4.74286,
+          "lon": 66.19288,
+          "distance_m": 4229.0,
+          "elevation_m": 1387.42,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 8,
+          "lat": -4.7347,
+          "lon": 66.199,
+          "distance_m": 4833.1,
+          "elevation_m": 1285.35,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 9,
+          "lat": -4.72654,
+          "lon": 66.20513,
+          "distance_m": 5437.3,
+          "elevation_m": 1188.15,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 10,
+          "lat": -4.71838,
+          "lon": 66.21125,
+          "distance_m": 6041.4,
+          "elevation_m": 1098.41,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 11,
+          "lat": -4.71022,
+          "lon": 66.21738,
+          "distance_m": 6645.6,
+          "elevation_m": 1024.81,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 12,
+          "lat": -4.70205,
+          "lon": 66.2235,
+          "distance_m": 7249.7,
+          "elevation_m": 977.56,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 13,
+          "lat": -4.69389,
+          "lon": 66.22962,
+          "distance_m": 7853.9,
+          "elevation_m": 977.64,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 14,
+          "lat": -4.68573,
+          "lon": 66.23575,
+          "distance_m": 8458.0,
+          "elevation_m": 1004.76,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 15,
+          "lat": -4.67756,
+          "lon": 66.24187,
+          "distance_m": 9062.1,
+          "elevation_m": 1017.06,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 16,
+          "lat": -4.6694,
+          "lon": 66.248,
+          "distance_m": 9666.3,
+          "elevation_m": 1043.54,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 17,
+          "lat": -4.66124,
+          "lon": 66.25412,
+          "distance_m": 10270.4,
+          "elevation_m": 1103.19,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 18,
+          "lat": -4.65308,
+          "lon": 66.26024,
+          "distance_m": 10874.6,
+          "elevation_m": 1183.04,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 19,
+          "lat": -4.64491,
+          "lon": 66.26637,
+          "distance_m": 11478.7,
+          "elevation_m": 1212.38,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 20,
+          "lat": -4.63675,
+          "lon": 66.27249,
+          "distance_m": 12082.9,
+          "elevation_m": 1246.82,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 21,
+          "lat": -4.62859,
+          "lon": 66.27861,
+          "distance_m": 12687.0,
+          "elevation_m": 1436.04,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 22,
+          "lat": -4.62042,
+          "lon": 66.28474,
+          "distance_m": 13291.1,
+          "elevation_m": 1467.92,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 23,
+          "lat": -4.61226,
+          "lon": 66.29086,
+          "distance_m": 13895.3,
+          "elevation_m": 1476.28,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 24,
+          "lat": -4.6041,
+          "lon": 66.29698,
+          "distance_m": 14499.4,
+          "elevation_m": 1623.92,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 25,
+          "lat": -4.59593,
+          "lon": 66.3031,
+          "distance_m": 15103.6,
+          "elevation_m": 1883.77,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 26,
+          "lat": -4.58777,
+          "lon": 66.30923,
+          "distance_m": 15707.7,
+          "elevation_m": 2202.56,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 27,
+          "lat": -4.57961,
+          "lon": 66.31535,
+          "distance_m": 16311.9,
+          "elevation_m": 2233.83,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 28,
+          "lat": -4.57144,
+          "lon": 66.32147,
+          "distance_m": 16916.0,
+          "elevation_m": 2141.61,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 29,
+          "lat": -4.56328,
+          "lon": 66.32759,
+          "distance_m": 17520.1,
+          "elevation_m": 2177.92,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 30,
+          "lat": -4.55512,
+          "lon": 66.33371,
+          "distance_m": 18124.3,
+          "elevation_m": 2181.63,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 31,
+          "lat": -4.54695,
+          "lon": 66.33983,
+          "distance_m": 18728.4,
+          "elevation_m": 2139.61,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 32,
+          "lat": -4.53879,
+          "lon": 66.34596,
+          "distance_m": 19332.6,
+          "elevation_m": 2098.01,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 33,
+          "lat": -4.53063,
+          "lon": 66.35208,
+          "distance_m": 19936.7,
+          "elevation_m": 2067.93,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 34,
+          "lat": -4.52246,
+          "lon": 66.3582,
+          "distance_m": 20540.9,
+          "elevation_m": 2034.49,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 35,
+          "lat": -4.5143,
+          "lon": 66.36432,
+          "distance_m": 21145.0,
+          "elevation_m": 2033.86,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 36,
+          "lat": -4.50613,
+          "lon": 66.37044,
+          "distance_m": 21749.1,
+          "elevation_m": 2048.25,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 37,
+          "lat": -4.49797,
+          "lon": 66.37656,
+          "distance_m": 22353.3,
+          "elevation_m": 2052.63,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 38,
+          "lat": -4.48981,
+          "lon": 66.38268,
+          "distance_m": 22957.4,
+          "elevation_m": 2045.35,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 39,
+          "lat": -4.48164,
+          "lon": 66.3888,
+          "distance_m": 23561.6,
+          "elevation_m": 2055.81,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 40,
+          "lat": -4.47348,
+          "lon": 66.39492,
+          "distance_m": 24165.7,
+          "elevation_m": 2047.31,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 41,
+          "lat": -4.46531,
+          "lon": 66.40104,
+          "distance_m": 24769.9,
+          "elevation_m": 2049.43,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 42,
+          "lat": -4.45715,
+          "lon": 66.40716,
+          "distance_m": 25374.0,
+          "elevation_m": 2070.37,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 43,
+          "lat": -4.44899,
+          "lon": 66.41328,
+          "distance_m": 25978.1,
+          "elevation_m": 2075.8,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 44,
+          "lat": -4.44082,
+          "lon": 66.4194,
+          "distance_m": 26582.3,
+          "elevation_m": 2040.91,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 45,
+          "lat": -4.43266,
+          "lon": 66.42552,
+          "distance_m": 27186.4,
+          "elevation_m": 2014.71,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 46,
+          "lat": -4.42449,
+          "lon": 66.43164,
+          "distance_m": 27790.6,
+          "elevation_m": 2031.89,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 47,
+          "lat": -4.41633,
+          "lon": 66.43776,
+          "distance_m": 28394.7,
+          "elevation_m": 2049.54,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 48,
+          "lat": -4.40816,
+          "lon": 66.44388,
+          "distance_m": 28998.9,
+          "elevation_m": 2050.0,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        },
+        {
+          "point_index": 49,
+          "lat": -4.4,
+          "lon": 66.45,
+          "distance_m": 29603.0,
+          "elevation_m": 2046.17,
+          "dataset_id": "ctx-dtm-p21-009323",
+          "resolution_m": 20.0128,
+          "is_nodata": false
+        }
+      ]
+    }
+  }
+}

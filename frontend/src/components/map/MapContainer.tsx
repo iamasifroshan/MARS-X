@@ -303,6 +303,22 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
+    let initCenter: [number, number] = [45, 0];
+    let initZoom = 1.5;
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search);
+      const latP = p.get("lat");
+      const lonP = p.get("lon");
+      const zoomP = p.get("zoom");
+      if (latP && lonP) {
+        const rawLon = parseFloat(lonP);
+        initCenter = [rawLon > 180 ? rawLon - 360 : rawLon, parseFloat(latP)];
+      }
+      if (zoomP) {
+        initZoom = parseFloat(zoomP);
+      }
+    }
+
     // Dark Mars coordinate canvas
     const map = new Map({
       container: mapContainerRef.current,
@@ -320,8 +336,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           }
         ]
       },
-      center: [45, 0],
-      zoom: 1.5,
+      center: initCenter,
+      zoom: initZoom,
       minZoom: 1,
       maxZoom: 14,
       pitch: 0,

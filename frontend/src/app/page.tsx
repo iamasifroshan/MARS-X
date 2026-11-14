@@ -103,6 +103,25 @@ export default function ExplorationDashboard() {
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(true);
   const [drawerSubTab, setDrawerSubTab] = useState<"layers" | "coords" | "profile" | "presets">("layers");
 
+  // Read URL search parameters on initial mount for deep-linking
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      const drawer = params.get("drawer");
+      const lat = params.get("lat");
+      const lon = params.get("lon");
+      if (tab) setActiveTab(tab);
+      if (drawer) {
+        setIsDrawerOpen(true);
+        setDrawerSubTab(drawer as any);
+      }
+      if (lat && lon) {
+        setInspectedCoords({ lat: parseFloat(lat), lon: parseFloat(lon) });
+      }
+    }
+  }, []);
+
   const handleToggleLayer = (layerId: string) => {
     setLayers((prev) =>
       prev.map((l) => (l.id === layerId ? { ...l, enabled: !l.enabled } : l))
