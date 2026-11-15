@@ -21,6 +21,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: "terrain", label: "TERRAIN INTELLIGENCE" },
     { id: "profile", label: "ELEVATION PROFILE" },
     { id: "route", label: "MARSWALK ROUTING" },
+    { id: "environmental", label: "ENVIRONMENT & CLIMATOLOGY" },
     { id: "mission", label: "MISSION & EVA" },
     { id: "provenance", label: "SCIENCE & CRS" },
   ];

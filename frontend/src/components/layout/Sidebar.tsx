@@ -22,6 +22,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: "terrain", label: "Terrain", icon: "⛰️", tooltip: "Multi-Resolution Terrain Intelligence" },
     { id: "profile", label: "Profile", icon: "📈", tooltip: "Mars Great-Circle Elevation Profile" },
     { id: "route", label: "Routing", icon: "🥾", tooltip: "Marswalk Pathfinding (A* & Dijkstra)" },
+    { id: "environmental", label: "Environment", icon: "🛰️", tooltip: "Atmospheric Pressure, Solar & MCD Climatology" },
     { id: "mission", label: "Mission", icon: "🧑‍🚀", tooltip: "EVA Traverse Constraints & Logistics" },
     { id: "provenance", label: "Science", icon: "🔬", tooltip: "Planetary CRS & Geodetic Provenance" },
   ];

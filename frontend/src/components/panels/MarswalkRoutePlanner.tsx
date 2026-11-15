@@ -210,6 +210,20 @@ export const MarswalkRoutePlanner: React.FC = () => {
     }
   };
 
+  // URL deep-linking support for route modes and quick automated demonstration
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get("mode");
+      if (mode === "single" || mode === "multi" || mode === "intelligence" || mode === "environmental") {
+        setPlannerMode(mode);
+      }
+      if (params.get("autoPlan") === "1") {
+        handlePlanRoute();
+      }
+    }
+  }, []);
+
   const handleAddCustomStop = () => {
     if (!newStopLat || !newStopLon) return;
     const lat = parseFloat(newStopLat);

@@ -14,6 +14,7 @@ import { RoutePlanning } from "../components/panels/RoutePlanning";
 import { MissionInfo } from "../components/panels/MissionInfo";
 import { ScienceProvenance } from "../components/panels/ScienceProvenance";
 import { ScienceExplorerPanel } from "../components/panels/ScienceExplorerPanel";
+import { EnvironmentalIntelligenceView } from "../components/panels/EnvironmentalIntelligenceView";
 import { useBackendHealth } from "../hooks/useBackendHealth";
 import { MapLayer, ScienceDiscovery } from "../lib/types";
 import { fetchDiscoveries } from "../lib/api";
@@ -271,6 +272,12 @@ export default function ExplorationDashboard() {
                   </div>
                   <RoutePlanning />
                 </div>
+              </div>
+            </div>
+          ) : activeTab === "environmental" ? (
+            <div className="flex-1 p-6 bg-[#0a0c16] overflow-y-auto">
+              <div className="max-w-7xl mx-auto">
+                <EnvironmentalIntelligenceView />
               </div>
             </div>
           ) : activeTab === "mission" ? (
