@@ -83,9 +83,21 @@ def generate_route(request: MarswalkRouteRequest) -> MarswalkRouteResponse:
             detail=str(e),
         )
     except Exception as e:
+        err_msg = str(e)
+        if "No such file or directory" in err_msg or "does not exist" in err_msg or "Cannot open" in err_msg:
+            logger.error("Required planetary raster dataset missing on host: %s", err_msg)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=(
+                    f"Planetary raster dataset unavailable on hosting storage: {err_msg}. "
+                    "In cloud deployments without persistent volume mounting, high-resolution DEM rasters "
+                    "must be synchronized via the MARS-X dataset pipeline. "
+                    "Analytical models, climatology, and solar geometry remain fully operational."
+                ),
+            )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Internal routing engine error: {str(e)}",
+            detail=f"Internal routing engine error: {err_msg}",
         )
 
 

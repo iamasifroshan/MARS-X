@@ -65,21 +65,51 @@ export const CLOUD_API_BASE = "https://mars-x-backend.onrender.com";
 export const LOCAL_API_BASE = "http://127.0.0.1:8000";
 
 /**
- * Planetary Backend API Base URL.
+ * Validates and resolves the appropriate API Base URL for the current environment.
  * Priority:
- * 1. Explicit NEXT_PUBLIC_API_URL environment variable.
- * 2. Browser runtime: if running on non-localhost domain (Vercel, Render, etc.),
- *    direct queries to the live cloud backend (CLOUD_API_BASE).
- * 3. In local production builds without explicit override, defaults to CLOUD_API_BASE.
- * 4. In local development, defaults to LOCAL_API_BASE (with seamless cloud fallback).
+ * 1. Explicit NEXT_PUBLIC_API_BASE_URL or NEXT_PUBLIC_API_URL environment variable.
+ * 2. Browser runtime: if running on non-localhost domain (e.g. https://mars-x-nasa.vercel.app),
+ *    never connect to localhost; always use CLOUD_API_BASE.
+ * 3. Server-side / Build-time: if NODE_ENV === "production" and NEXT_PUBLIC_USE_LOCAL is not set,
+ *    use CLOUD_API_BASE.
+ * 4. Local development on localhost: default to LOCAL_API_BASE (with seamless cloud fallback).
  */
-export const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ||
-  (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
-    ? CLOUD_API_BASE
-    : process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_USE_LOCAL
-    ? CLOUD_API_BASE
-    : LOCAL_API_BASE);
+export function resolveApiBaseUrl(): string {
+  const rawEnv = (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "").trim();
+  const normalizedEnv = rawEnv.replace(/\/+$/, "");
+
+  // Client-side in browser
+  if (typeof window !== "undefined") {
+    const isLocalhost =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname === "0.0.0.0";
+
+    // If running in production browser on Vercel or custom domain:
+    if (!isLocalhost) {
+      // Guard against malformed or localhost env vars injected into production
+      if (normalizedEnv && !normalizedEnv.includes("localhost") && !normalizedEnv.includes("127.0.0.1")) {
+        return normalizedEnv;
+      }
+      return CLOUD_API_BASE;
+    }
+
+    // Running on localhost in browser
+    return normalizedEnv || LOCAL_API_BASE;
+  }
+
+  // Server-side / static generation
+  if (process.env.NODE_ENV === "production") {
+    if (normalizedEnv && !normalizedEnv.includes("localhost") && !normalizedEnv.includes("127.0.0.1")) {
+      return normalizedEnv;
+    }
+    return CLOUD_API_BASE;
+  }
+
+  return normalizedEnv || LOCAL_API_BASE;
+}
+
+export const API_BASE = resolveApiBaseUrl();
 
 export interface ApiFetchOptions extends RequestInit {
   timeoutMs?: number;

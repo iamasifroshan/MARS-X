@@ -74,13 +74,19 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center space-x-2 bg-[#121422] border border-[#23273e] px-2.5 py-1 rounded">
           <div
             className={`w-2 h-2 rounded-full ${
-              healthState.isConnected
+              healthState.isLoading
+                ? "bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.8)]"
+                : healthState.isConnected
                 ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
                 : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse"
             }`}
           />
           <span className="text-[11px] text-gray-300">
-            {healthState.isConnected ? "API ONLINE" : "API OFFLINE"}
+            {healthState.isLoading
+              ? "CONNECTING..."
+              : healthState.isConnected
+              ? "API ONLINE"
+              : "API OFFLINE"}
           </span>
         </div>
       </div>
