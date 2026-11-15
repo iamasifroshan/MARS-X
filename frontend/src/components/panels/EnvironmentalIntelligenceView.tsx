@@ -9,6 +9,9 @@ import {
   RouteEnvironmentalSummary,
   RoutePointEnvironment,
   ProvenanceClassification,
+  ClimatologyPoint,
+  ClimatologyProfileResponse,
+  RouteClimatologySummary,
 } from "@/lib/types";
 import {
   fetchAtmosphericPressureEstimate,
@@ -17,6 +20,9 @@ import {
   fetchHistoricalMeda,
   fetchHistoricalRems,
   enrichRouteEnvironment,
+  fetchClimatologyPoint,
+  fetchClimatologyProfile,
+  enrichRouteClimatology,
 } from "@/lib/api";
 
 const ENVIRONMENTAL_SAFETY_DISCLAIMER =
@@ -34,7 +40,7 @@ export const EnvironmentalIntelligenceView: React.FC<EnvironmentalIntelligenceVi
   routePoints,
   routeName,
 }) => {
-  const [activeTab, setActiveTab] = useState<"pressure" | "solar" | "rovers" | "route">("pressure");
+  const [activeTab, setActiveTab] = useState<"pressure" | "solar" | "rovers" | "climatology" | "route">("pressure");
 
   // ── 1. Pressure Model State ──────────────────────────────────────────────
   const [elevationInput, setElevationInput] = useState<number>(-2560); // Default to Jezero floor
@@ -58,7 +64,19 @@ export const EnvironmentalIntelligenceView: React.FC<EnvironmentalIntelligenceVi
   const [remsSummary, setRemsSummary] = useState<HistoricalWeatherSummary | null>(null);
   const [roverLoading, setRoverLoading] = useState<boolean>(false);
 
-  // ── 4. Route Environmental Enrichment State ──────────────────────────────
+  // ── 4. Climatology (MCD v6.2) State ──────────────────────────────────────
+  const [climLat, setClimLat] = useState<number>(18.4447);
+  const [climLon, setClimLon] = useState<number>(77.4508);
+  const [climLs, setClimLs] = useState<number>(0.0);
+  const [climLtst, setClimLtst] = useState<number>(12.0);
+  const [climElev, setClimElev] = useState<number>(-2560.0);
+  const [climPoint, setClimPoint] = useState<ClimatologyPoint | null>(null);
+  const [climProfile, setClimProfile] = useState<ClimatologyProfileResponse | null>(null);
+  const [climProfileType, setClimProfileType] = useState<"diurnal" | "seasonal">("diurnal");
+  const [climRouteSummary, setClimRouteSummary] = useState<RouteClimatologySummary | null>(null);
+  const [climLoading, setClimLoading] = useState<boolean>(false);
+
+  // ── 5. Route Environmental Enrichment State ──────────────────────────────
   const [routeSummary, setRouteSummary] = useState<RouteEnvironmentalSummary | null>(null);
   const [routeLoading, setRouteLoading] = useState<boolean>(false);
 
@@ -112,6 +130,57 @@ export const EnvironmentalIntelligenceView: React.FC<EnvironmentalIntelligenceVi
     }
   }, [routePoints, lsDeg, ltstHours, dustTau]);
 
+  // Fetch climatology point and profile when climatology tab active or parameters change
+  useEffect(() => {
+    if (activeTab === "climatology") {
+      updateClimatology(climLat, climLon, climLs, climLtst, climElev, climProfileType);
+    }
+  }, [activeTab, climLat, climLon, climLs, climLtst, climElev, climProfileType]);
+
+  // Enrich route with climatology if routePoints available
+  useEffect(() => {
+    if (routePoints && routePoints.length > 0 && activeTab === "climatology") {
+      enrichRouteClimatology(routePoints, climLs, climLtst)
+        .then((res) => setClimRouteSummary(res))
+        .catch((err) => console.error("Failed to enrich route climatology:", err));
+    }
+  }, [routePoints, climLs, climLtst, activeTab]);
+
+  const CLIMATOLOGY_LANDMARKS = [
+    { id: "JEZERO", name: "Jezero Crater", lat: 18.4447, lon: 77.4508, elev: -2560.0 },
+    { id: "GALE", name: "Gale Crater", lat: -4.5910, lon: 137.4410, elev: -4440.0 },
+    { id: "TYRRHENA", name: "Tyrrhena Terra", lat: -21.3600, lon: 106.5300, elev: 2189.49 },
+    { id: "APOLLINARIS", name: "Apollinaris Sulci", lat: -9.3000, lon: 174.4000, elev: -2930.77 },
+    { id: "HOLDEN", name: "Holden Crater", lat: -26.4000, lon: 326.0000, elev: -1132.14 },
+    { id: "OLYMPUS", name: "Olympus Mons", lat: 18.6500, lon: 226.2000, elev: 21287.0 },
+    { id: "HELLAS", name: "Hellas Planitia", lat: -42.7000, lon: 70.0000, elev: -7152.0 },
+  ];
+
+  const updateClimatology = (
+    lat: number,
+    lon: number,
+    ls: number,
+    ltst: number,
+    elev?: number,
+    profType: "diurnal" | "seasonal" = "diurnal"
+  ) => {
+    setClimLoading(true);
+    Promise.all([
+      fetchClimatologyPoint(lat, lon, ls, ltst, elev).catch((e) => {
+        console.error("Climatology point fetch error:", e);
+        return null;
+      }),
+      fetchClimatologyProfile(lat, lon, profType, profType === "diurnal" ? ls : ltst, elev, 24).catch((e) => {
+        console.error("Climatology profile fetch error:", e);
+        return null;
+      }),
+    ]).then(([pt, prof]) => {
+      if (pt) setClimPoint(pt);
+      if (prof) setClimProfile(prof);
+      setClimLoading(false);
+    });
+  };
+
   const updatePressureEstimate = (elev: number) => {
     setPressureLoading(true);
     fetchAtmosphericPressureEstimate(elev)
@@ -157,6 +226,12 @@ export const EnvironmentalIntelligenceView: React.FC<EnvironmentalIntelligenceVi
         return (
           <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 font-semibold">
             ▲ Analytical Model
+          </span>
+        );
+      case "Climatological Model":
+        return (
+          <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-purple-950/80 text-purple-300 border border-purple-700/60 font-semibold">
+            ● Climatological Model
           </span>
         );
       case "Derived Estimate":
@@ -238,6 +313,16 @@ export const EnvironmentalIntelligenceView: React.FC<EnvironmentalIntelligenceVi
           }`}
         >
           Rover In-Situ Data
+        </button>
+        <button
+          onClick={() => setActiveTab("climatology")}
+          className={`flex-1 py-2 font-medium border-b-2 transition-colors ${
+            activeTab === "climatology"
+              ? "border-orange-500 text-orange-400 bg-[#141933]/50"
+              : "border-transparent text-slate-400 hover:text-slate-200 hover:bg-[#141933]/20"
+          }`}
+        >
+          Climatology (MCD)
         </button>
         {routePoints && routePoints.length > 0 && (
           <button
@@ -817,7 +902,366 @@ export const EnvironmentalIntelligenceView: React.FC<EnvironmentalIntelligenceVi
         </div>
       )}
 
-      {/* ── TAB 4: Route Environmental Profile ── */}
+      {/* ── TAB 4: Seasonal and Diurnal Climatology (MCD v6.2) ── */}
+      {activeTab === "climatology" && (
+        <div className="space-y-4">
+          <div className="p-3.5 bg-[#0b0e1b] border border-[#1e253e] rounded-lg space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-semibold text-slate-200">
+                  Mars Climate Database (MCD v6.2) Climatology
+                </h4>
+                <span className="text-[10px] text-slate-400">
+                  Laboratoire de Météorologie Dynamique (LMD/CNRS/Sorbonne/ESA/CNES) • Forget et al. (1999)
+                </span>
+              </div>
+              {renderClassificationBadge("Climatological Model")}
+            </div>
+
+            {/* Landmark Quick Selectors */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
+                Exploration Landmark Anchors
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {CLIMATOLOGY_LANDMARKS.map((lm) => {
+                  const isSelected =
+                    Math.abs(climLat - lm.lat) < 0.01 && Math.abs(climLon - lm.lon) < 0.01;
+                  return (
+                    <button
+                      key={lm.id}
+                      onClick={() => {
+                        setClimLat(lm.lat);
+                        setClimLon(lm.lon);
+                        setClimElev(lm.elev);
+                      }}
+                      className={`px-2.5 py-1 text-[11px] rounded border transition-colors ${
+                        isSelected
+                          ? "bg-purple-900/60 border-purple-500 text-purple-200 font-semibold"
+                          : "bg-[#141933] border-[#273256] text-slate-400 hover:text-slate-200 hover:border-slate-500"
+                      }`}
+                    >
+                      {lm.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Input Parameter Sliders & Boxes */}
+            <div className="p-3 bg-[#12162a] border border-[#232b48] rounded space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-0.5">Latitude (°N/S)</label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    min="-90"
+                    max="90"
+                    value={climLat}
+                    onChange={(e) => setClimLat(parseFloat(e.target.value) || 0)}
+                    className="w-full px-2 py-1 bg-[#0b0e1b] border border-[#273256] rounded text-slate-200 font-mono text-xs focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-0.5">East Longitude (°E)</label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    max="360"
+                    value={climLon}
+                    onChange={(e) => setClimLon(parseFloat(e.target.value) || 0)}
+                    className="w-full px-2 py-1 bg-[#0b0e1b] border border-[#273256] rounded text-slate-200 font-mono text-xs focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-0.5">MOLA Elevation (m)</label>
+                  <input
+                    type="number"
+                    step="10"
+                    value={climElev ?? 0}
+                    onChange={(e) => setClimElev(parseFloat(e.target.value) || 0)}
+                    className="w-full px-2 py-1 bg-[#0b0e1b] border border-[#273256] rounded text-slate-200 font-mono text-xs focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+              </div>
+
+              {/* Solar Longitude Ls Slider */}
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-[11px] text-slate-300">
+                    Solar Longitude Ls: <strong className="font-mono text-purple-400">{climLs.toFixed(1)}°</strong>
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-purple-950/60 border border-purple-800/50 text-purple-300">
+                    {climPoint ? climPoint.season_name : (
+                      climLs < 90 ? "N. Spring / S. Autumn" :
+                      climLs < 180 ? "N. Summer / S. Winter (Aphelion Ls=71°)" :
+                      climLs < 270 ? "N. Autumn / S. Spring (Perihelion Ls=251°)" :
+                      "N. Winter / S. Summer"
+                    )}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="359"
+                  step="1"
+                  value={climLs}
+                  onChange={(e) => setClimLs(parseFloat(e.target.value))}
+                  className="w-full accent-purple-500 cursor-pointer h-1.5 bg-[#0b0e1b] rounded"
+                />
+              </div>
+
+              {/* Local True Solar Time LTST Slider */}
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-[11px] text-slate-300">
+                    Local True Solar Time: <strong className="font-mono text-purple-400">{climLtst.toFixed(1)}h</strong>
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {climLtst >= 6 && climLtst < 18 ? "☀️ Daytime Insolation" : "🌙 Nighttime Radiative Cooling"}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="23.9"
+                  step="0.1"
+                  value={climLtst}
+                  onChange={(e) => setClimLtst(parseFloat(e.target.value))}
+                  className="w-full accent-purple-500 cursor-pointer h-1.5 bg-[#0b0e1b] rounded"
+                />
+              </div>
+            </div>
+
+            {/* Current Climatological Metrics Grid */}
+            {climLoading ? (
+              <div className="p-6 text-center text-xs text-slate-400">
+                Evaluating multidimensional climatology interpolation...
+              </div>
+            ) : climPoint ? (
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div className="p-2.5 bg-[#12162a] rounded border border-[#232b48]">
+                    <span className="text-[10px] text-slate-400 block uppercase">Surface Pressure</span>
+                    <span className="text-base font-mono font-bold text-orange-400">
+                      {climPoint.surface_pressure_pa} Pa
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Scaled to z={climPoint.elevation_m}m
+                    </span>
+                  </div>
+
+                  <div className="p-2.5 bg-[#12162a] rounded border border-[#232b48]">
+                    <span className="text-[10px] text-slate-400 block uppercase">10m Air Temp (ALS)</span>
+                    <span className="text-base font-mono font-bold text-sky-400">
+                      {climPoint.atmospheric_temperature_k} K
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      {(climPoint.atmospheric_temperature_k - 273.15).toFixed(1)} °C
+                    </span>
+                  </div>
+
+                  <div className="p-2.5 bg-[#12162a] rounded border border-[#232b48]">
+                    <span className="text-[10px] text-slate-400 block uppercase">Ground Skin Temp</span>
+                    <span className="text-base font-mono font-bold text-amber-400">
+                      {climPoint.surface_temperature_k} K
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      {(climPoint.surface_temperature_k - 273.15).toFixed(1)} °C
+                    </span>
+                  </div>
+
+                  <div className="p-2.5 bg-[#12162a] rounded border border-[#232b48]">
+                    <span className="text-[10px] text-slate-400 block uppercase">Wind Speed & Dir</span>
+                    <span className="text-base font-mono font-bold text-emerald-400">
+                      {climPoint.wind_speed_m_s} m/s
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono block">
+                      {climPoint.wind_cardinal} ({climPoint.wind_direction_deg}°)
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                  <div className="p-2 bg-[#12162a] rounded border border-[#232b48]">
+                    <span className="text-[10px] text-slate-400 block uppercase">Dust Optical Depth (τ)</span>
+                    <span className="text-sm font-mono font-bold text-yellow-500">
+                      {climPoint.dust_optical_depth}
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">Daily column visible tau</span>
+                  </div>
+
+                  <div className="p-2 bg-[#12162a] rounded border border-[#232b48]">
+                    <span className="text-[10px] text-slate-400 block uppercase">Atmospheric Density</span>
+                    <span className="text-sm font-mono font-bold text-slate-300">
+                      {climPoint.density_kg_m3} kg/m³
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">Near-surface CO₂</span>
+                  </div>
+
+                  <div className="p-2 bg-[#12162a] rounded border border-[#232b48]">
+                    <span className="text-[10px] text-slate-400 block uppercase">Spatial Method</span>
+                    <span className="text-xs font-semibold text-purple-300 truncate block">
+                      {climPoint.is_landmark ? "● Landmark Anchor" : "▲ Spatial Grid Interp"}
+                    </span>
+                    <span className="text-[10px] text-slate-500 block truncate">
+                      {climPoint.nearest_landmark ? `${climPoint.nearest_landmark} (${climPoint.distance_to_landmark_km} km)` : "Global node"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Profile Curve Section */}
+            {climProfile && (
+              <div className="p-3 bg-[#12162a] border border-[#232b48] rounded space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs font-semibold text-slate-300">
+                      Climatological Profile Evolution
+                    </span>
+                    <span className="text-[10px] text-slate-500">
+                      ({climProfile.fixed_parameter})
+                    </span>
+                  </div>
+                  <div className="flex space-x-1.5">
+                    <button
+                      onClick={() => setClimProfileType("diurnal")}
+                      className={`px-2 py-0.5 text-[10px] rounded border ${
+                        climProfileType === "diurnal"
+                          ? "bg-purple-900/60 border-purple-500 text-purple-200"
+                          : "bg-[#0b0e1b] border-[#273256] text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      24h Diurnal
+                    </button>
+                    <button
+                      onClick={() => setClimProfileType("seasonal")}
+                      className={`px-2 py-0.5 text-[10px] rounded border ${
+                        climProfileType === "seasonal"
+                          ? "bg-purple-900/60 border-purple-500 text-purple-200"
+                          : "bg-[#0b0e1b] border-[#273256] text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      360° Seasonal
+                    </button>
+                  </div>
+                </div>
+
+                {/* Profile Extrema Badges */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] font-mono">
+                  <div className="p-1.5 bg-[#0b0e1b] rounded border border-[#1e253e]">
+                    <span className="text-slate-500 block">Min Air Temp</span>
+                    <span className="text-sky-400 font-bold">{climProfile.min_temperature_k} K</span>
+                  </div>
+                  <div className="p-1.5 bg-[#0b0e1b] rounded border border-[#1e253e]">
+                    <span className="text-slate-500 block">Max Air Temp</span>
+                    <span className="text-sky-400 font-bold">{climProfile.max_temperature_k} K</span>
+                  </div>
+                  <div className="p-1.5 bg-[#0b0e1b] rounded border border-[#1e253e]">
+                    <span className="text-slate-500 block">Thermal Swing (ΔT)</span>
+                    <span className="text-amber-400 font-bold">
+                      {(climProfile.max_temperature_k - climProfile.min_temperature_k).toFixed(1)} K
+                    </span>
+                  </div>
+                  <div className="p-1.5 bg-[#0b0e1b] rounded border border-[#1e253e]">
+                    <span className="text-slate-500 block">Mean Pressure</span>
+                    <span className="text-orange-400 font-bold">{climProfile.mean_pressure_pa} Pa</span>
+                  </div>
+                </div>
+
+                {/* Subsampled Profile Table */}
+                <div className="overflow-x-auto max-h-40">
+                  <table className="w-full text-left text-[10px] font-mono border border-[#1e253e]">
+                    <thead className="bg-[#141933] text-slate-400 sticky top-0">
+                      <tr>
+                        <th className="p-1.5">{climProfile.independent_variable}</th>
+                        <th className="p-1.5">Surface Pressure (Pa)</th>
+                        <th className="p-1.5">Air Temp (K)</th>
+                        <th className="p-1.5">Ground Temp (K)</th>
+                        <th className="p-1.5">Wind (m/s)</th>
+                        <th className="p-1.5">Dust (τ)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#1e253e] text-slate-300">
+                      {climProfile.points.filter((_, idx) => idx % 2 === 0).map((pt, i) => (
+                        <tr key={i} className="hover:bg-[#141933]/40">
+                          <td className="p-1.5 font-bold text-purple-300">
+                            {climProfileType === "diurnal" ? `${pt.step_value.toFixed(1)}h` : `${pt.step_value.toFixed(0)}°`}
+                          </td>
+                          <td className="p-1.5 text-orange-400">{pt.surface_pressure_pa}</td>
+                          <td className="p-1.5 text-sky-400">{pt.atmospheric_temperature_k}</td>
+                          <td className="p-1.5 text-amber-400">{pt.surface_temperature_k}</td>
+                          <td className="p-1.5 text-emerald-400">{pt.wind_speed_m_s}</td>
+                          <td className="p-1.5 text-yellow-500">{pt.dust_optical_depth}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Route Climatology Enrichment (if route active) */}
+            {climRouteSummary && (
+              <div className="p-3 bg-[#12162a] border border-[#232b48] rounded space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-200">
+                    Traverse Climatological Conditions ({routeName || "Active Marswalk"})
+                  </span>
+                  {renderClassificationBadge("Derived Estimate")}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div className="p-2 bg-[#0b0e1b] rounded border border-[#1e253e]">
+                    <span className="text-[10px] text-slate-400 block uppercase">Mean Traverse P</span>
+                    <span className="text-sm font-mono font-bold text-orange-400">
+                      {climRouteSummary.mean_climatology_pressure_pa} Pa
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      {climRouteSummary.min_climatology_pressure_pa} – {climRouteSummary.max_climatology_pressure_pa} Pa
+                    </span>
+                  </div>
+
+                  <div className="p-2 bg-[#0b0e1b] rounded border border-[#1e253e]">
+                    <span className="text-[10px] text-slate-400 block uppercase">Mean Air Temp</span>
+                    <span className="text-sm font-mono font-bold text-sky-400">
+                      {climRouteSummary.mean_climatology_temp_k} K
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      {(climRouteSummary.mean_climatology_temp_k - 273.15).toFixed(1)} °C
+                    </span>
+                  </div>
+
+                  <div className="p-2 bg-[#0b0e1b] rounded border border-[#1e253e]">
+                    <span className="text-[10px] text-slate-400 block uppercase">Mean Ground Temp</span>
+                    <span className="text-sm font-mono font-bold text-amber-400">
+                      {climRouteSummary.mean_surface_temp_k} K
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      {(climRouteSummary.mean_surface_temp_k - 273.15).toFixed(1)} °C
+                    </span>
+                  </div>
+
+                  <div className="p-2 bg-[#0b0e1b] rounded border border-[#1e253e]">
+                    <span className="text-[10px] text-slate-400 block uppercase">Mean Wind</span>
+                    <span className="text-sm font-mono font-bold text-emerald-400">
+                      {climRouteSummary.mean_wind_speed_m_s} m/s
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Max: {climRouteSummary.max_wind_speed_m_s} m/s
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 5: Route Environmental Profile ── */}
       {activeTab === "route" && routeSummary && (
         <div className="space-y-4">
           <div className="p-3.5 bg-[#0b0e1b] border border-[#1e253e] rounded-lg space-y-3">

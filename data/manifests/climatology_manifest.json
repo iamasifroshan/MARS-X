@@ -1,0 +1,83 @@
+{
+  "manifest_version": "1.0",
+  "product_id": "MCD_V6_2_CURATED_CLIMATOLOGY",
+  "title": "Mars Climate Database (MCD v6.2) Curated Climatological Dataset",
+  "publisher": "Laboratoire de M\u00e9t\u00e9orologie Dynamique (LMD/CNRS/Sorbonne/ESA/CNES)",
+  "source_url": "https://www-mars.lmd.jussieu.fr/mcd_python/",
+  "license": "Open access for academic and scientific research under ESA/CNES/CNRS terms",
+  "citation": "Millour, E., Forget, F., Spiga, A., et al. (2018/2022). The Mars Climate Database (version 6.2).",
+  "coordinate_system": "Planetocentric, East-positive longitude [0, 360), MOLA Areoid vertical datum",
+  "temporal_coverage": "All Martian Seasons (Ls 0, 90, 180, 270 deg) & Diurnal Sol (00, 06, 12, 18 LTST)",
+  "spatial_coverage": "Global Mars (-60 to +60 deg lat, 0 to 360 deg lon) + 7 Landmark Exploration Sites",
+  "files": [
+    {
+      "file_path": "data/originals/climatology/mcd_v6_2_curated_raw.json",
+      "format": "JSON",
+      "file_size_bytes": 343036,
+      "sha256": "9efb4a516d4871ac61834cbbeef5965be8a8dc5874e5ab02b8527df2644d6ecd",
+      "role": "Original Acquired Records"
+    },
+    {
+      "file_path": "data/derived/climatology/mcd_v6_2_climatology_cube.json",
+      "format": "JSON",
+      "file_size_bytes": 346075,
+      "sha256": "b519f0662ff9c25bc1bff670d1f2c284f8eeb9302088c9a797480e5e1e8f8c0b",
+      "role": "Normalized Multidimensional Climatology Cube"
+    }
+  ],
+  "variables": [
+    {
+      "key": "surface_pressure_pa",
+      "unit": "Pa",
+      "valid_range": [
+        50.0,
+        1500.0
+      ]
+    },
+    {
+      "key": "atmospheric_temperature_k",
+      "unit": "K",
+      "valid_range": [
+        120.0,
+        300.0
+      ]
+    },
+    {
+      "key": "surface_temperature_k",
+      "unit": "K",
+      "valid_range": [
+        120.0,
+        320.0
+      ]
+    },
+    {
+      "key": "wind_speed_m_s",
+      "unit": "m/s",
+      "valid_range": [
+        0.0,
+        60.0
+      ]
+    },
+    {
+      "key": "wind_direction_deg",
+      "unit": "degrees",
+      "convention": "Direction FROM which wind blows (0=N, 90=E, 180=S, 270=W)"
+    },
+    {
+      "key": "dust_optical_depth",
+      "unit": "dimensionless",
+      "valid_range": [
+        0.1,
+        4.0
+      ]
+    },
+    {
+      "key": "density_kg_m3",
+      "unit": "kg/m3",
+      "valid_range": [
+        0.001,
+        0.035
+      ]
+    }
+  ]
+}

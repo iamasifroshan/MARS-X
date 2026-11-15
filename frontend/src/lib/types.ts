@@ -1342,6 +1342,7 @@ export interface RouteIntelligenceMetadataResponse {
 export type ProvenanceClassification = 
   | "Historical Observation"
   | "Analytical Model"
+  | "Climatological Model"
   | "Derived Estimate"
   | "Unavailable";
 
@@ -1493,6 +1494,131 @@ export interface EnvironmentalMetadataResponse {
   reference_parameters: Record<string, any>;
   classification_tiers: ProvenanceClassification[];
   scientific_limitations: string;
+  safety_disclaimer: string;
+}
+
+// ── Climatology Types — Phase 8.9.2 (MCD v6.2) ─────────────────────────────
+
+export interface ClimatologyPoint {
+  latitude: number;
+  longitude: number;
+  solar_longitude_ls_deg: number;
+  local_true_solar_time_hours: number;
+  elevation_m: number;
+  season_name: string;
+  surface_pressure_pa: number;
+  atmospheric_temperature_k: number;
+  surface_temperature_k: number;
+  wind_speed_m_s: number;
+  wind_direction_deg: number;
+  wind_cardinal: string;
+  dust_optical_depth: number;
+  density_kg_m3: number;
+  interpolation_method: string;
+  is_landmark: boolean;
+  nearest_landmark?: string | null;
+  distance_to_landmark_km?: number | null;
+  classification: ProvenanceClassification;
+  model_version: string;
+  safety_disclaimer: string;
+}
+
+export interface ClimatologyProfilePoint {
+  step_value: number;
+  surface_pressure_pa: number;
+  atmospheric_temperature_k: number;
+  surface_temperature_k: number;
+  wind_speed_m_s: number;
+  dust_optical_depth: number;
+}
+
+export interface ClimatologyProfileResponse {
+  latitude: number;
+  longitude: number;
+  elevation_m: number;
+  profile_type: "diurnal" | "seasonal";
+  fixed_parameter: string;
+  independent_variable: string;
+  points: ClimatologyProfilePoint[];
+  min_temperature_k: number;
+  max_temperature_k: number;
+  mean_temperature_k: number;
+  min_pressure_pa: number;
+  max_pressure_pa: number;
+  mean_pressure_pa: number;
+  classification: ProvenanceClassification;
+  model_version: string;
+  safety_disclaimer: string;
+}
+
+export interface ClimatologyVariableMetadata {
+  name: string;
+  label: string;
+  unit: string;
+  valid_range: [number, number];
+  description: string;
+}
+
+export interface ClimatologyMetadataResponse {
+  service_name: string;
+  version: string;
+  model_name: string;
+  scenario: string;
+  authoritative_source: string;
+  citation: string;
+  native_spatial_resolution: string;
+  vertical_level: string;
+  temporal_coverage: string;
+  available_variables: ClimatologyVariableMetadata[];
+  classification_tiers: ProvenanceClassification[];
+  scientific_limitations: string;
+  safety_disclaimer: string;
+}
+
+export interface ClimatologyCoverageResponse {
+  lat_min: number;
+  lat_max: number;
+  lon_min: number;
+  lon_max: number;
+  seasonal_coverage: string;
+  diurnal_coverage: string;
+  grid_latitudes_deg: number[];
+  grid_longitudes_deg: number[];
+  landmarks: Record<string, any>;
+  classification: ProvenanceClassification;
+}
+
+export interface RoutePointClimatology {
+  point_index: number;
+  lat: number;
+  lon: number;
+  distance_m: number;
+  elevation_m: number;
+  climatological_pressure_pa: number;
+  climatological_temperature_k: number;
+  climatological_surface_temperature_k: number;
+  climatological_wind_speed_m_s: number;
+  climatological_wind_direction_deg: number;
+  climatological_dust_optical_depth: number;
+}
+
+export interface RouteClimatologySummary {
+  solar_longitude_ls_deg: number;
+  local_true_solar_time_hours: number;
+  min_climatology_pressure_pa: number;
+  max_climatology_pressure_pa: number;
+  mean_climatology_pressure_pa: number;
+  min_climatology_temp_k: number;
+  max_climatology_temp_k: number;
+  mean_climatology_temp_k: number;
+  min_surface_temp_k: number;
+  max_surface_temp_k: number;
+  mean_surface_temp_k: number;
+  mean_wind_speed_m_s: number;
+  max_wind_speed_m_s: number;
+  mean_dust_tau: number;
+  samples: RoutePointClimatology[];
+  classification: ProvenanceClassification;
   safety_disclaimer: string;
 }
 

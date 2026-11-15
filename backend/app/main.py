@@ -18,6 +18,7 @@ from app.routers import discovery as discovery_router
 from app.routers import traversability as traversability_router
 from app.routers import marswalk as marswalk_router
 from app.routers import environmental as environmental_router
+from app.routers import climatology as climatology_router
 
 
 # ── Logging ────────────────────────────────────────────────────────────────
@@ -62,6 +63,7 @@ app.include_router(discovery_router.router)
 app.include_router(traversability_router.router)
 app.include_router(marswalk_router.router)
 app.include_router(environmental_router.router)
+app.include_router(climatology_router.router)
 
 
 

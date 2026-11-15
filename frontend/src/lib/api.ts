@@ -53,6 +53,11 @@ import {
   HistoricalWeatherSummary,
   RouteEnvironmentalSummary,
   EnvironmentalMetadataResponse,
+  ClimatologyPoint,
+  ClimatologyProfileResponse,
+  ClimatologyMetadataResponse,
+  ClimatologyCoverageResponse,
+  RouteClimatologySummary,
 } from "./types";
 
 
@@ -1172,6 +1177,97 @@ export async function enrichRouteEnvironment(
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
     throw new Error(errBody.detail || `Route environmental enrichment failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+// ── Climatology API Fetchers — Phase 8.9.2 (MCD v6.2) ──────────────────────
+
+export async function fetchClimatologyMetadata(): Promise<ClimatologyMetadataResponse> {
+  const res = await apiFetch(`${API_BASE}/api/v1/environmental/climatology/metadata`);
+  if (!res.ok) {
+    throw new Error(`Climatology metadata fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchClimatologyPoint(
+  lat: number,
+  lon: number,
+  lsDeg: number = 0.0,
+  ltstHours: number = 12.0,
+  elevationM?: number
+): Promise<ClimatologyPoint> {
+  const params = new URLSearchParams({
+    lat: lat.toString(),
+    lon: lon.toString(),
+    ls_deg: lsDeg.toString(),
+    ltst_hours: ltstHours.toString(),
+  });
+  if (elevationM !== undefined && elevationM !== null) {
+    params.set("elevation_m", elevationM.toString());
+  }
+
+  const res = await apiFetch(`${API_BASE}/api/v1/environmental/climatology/point?${params.toString()}`);
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.detail || `Climatology point calculation failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchClimatologyProfile(
+  lat: number,
+  lon: number,
+  profileType: "diurnal" | "seasonal" = "diurnal",
+  fixedParam: number = 0.0,
+  elevationM?: number,
+  stepCount: number = 24
+): Promise<ClimatologyProfileResponse> {
+  const params = new URLSearchParams({
+    lat: lat.toString(),
+    lon: lon.toString(),
+    profile_type: profileType,
+    fixed_param: fixedParam.toString(),
+    step_count: stepCount.toString(),
+  });
+  if (elevationM !== undefined && elevationM !== null) {
+    params.set("elevation_m", elevationM.toString());
+  }
+
+  const res = await apiFetch(`${API_BASE}/api/v1/environmental/climatology/profile?${params.toString()}`);
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.detail || `Climatology profile calculation failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchClimatologyCoverage(): Promise<ClimatologyCoverageResponse> {
+  const res = await apiFetch(`${API_BASE}/api/v1/environmental/climatology/coverage`);
+  if (!res.ok) {
+    throw new Error(`Climatology coverage fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function enrichRouteClimatology(
+  routePoints: Array<{ lat: number; lon: number; elevation_m: number; distance_m: number }>,
+  lsDeg: number = 0.0,
+  ltstHours: number = 12.0
+): Promise<RouteClimatologySummary> {
+  const res = await apiFetch(`${API_BASE}/api/v1/environmental/climatology/route/enrich`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      route_points: routePoints,
+      ls_deg: lsDeg,
+      ltst_hours: ltstHours,
+    }),
+  });
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.detail || `Route climatological enrichment failed: ${res.status}`);
   }
   return res.json();
 }
