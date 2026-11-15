@@ -61,7 +61,25 @@ import {
 } from "./types";
 
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+export const CLOUD_API_BASE = "https://mars-x-cc6e.onrender.com";
+export const LOCAL_API_BASE = "http://127.0.0.1:8000";
+
+/**
+ * Planetary Backend API Base URL.
+ * Priority:
+ * 1. Explicit NEXT_PUBLIC_API_URL environment variable.
+ * 2. Browser runtime: if running on non-localhost domain (Vercel, Render, etc.),
+ *    direct queries to the live cloud backend (CLOUD_API_BASE).
+ * 3. In local production builds without explicit override, defaults to CLOUD_API_BASE.
+ * 4. In local development, defaults to LOCAL_API_BASE (with seamless cloud fallback).
+ */
+export const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
+    ? CLOUD_API_BASE
+    : process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_USE_LOCAL
+    ? CLOUD_API_BASE
+    : LOCAL_API_BASE);
 
 export interface ApiFetchOptions extends RequestInit {
   timeoutMs?: number;
@@ -88,7 +106,7 @@ async function apiFetch(urlStr: string, options: ApiFetchOptions = {}): Promise<
     }
   }
 
-  const executeFetch = async (): Promise<Response> => {
+  const executeFetch = async (targetUrl: string): Promise<Response> => {
     let attempt = 0;
     while (true) {
       const controller = new AbortController();
@@ -101,7 +119,7 @@ async function apiFetch(urlStr: string, options: ApiFetchOptions = {}): Promise<
       }
 
       try {
-        const res = await fetch(urlStr, {
+        const res = await fetch(targetUrl, {
           ...options,
           signal: controller.signal,
           cache: options.cache || "no-store",
@@ -136,10 +154,26 @@ async function apiFetch(urlStr: string, options: ApiFetchOptions = {}): Promise<
           continue;
         }
 
-        if (isAbort) {
-          throw new Error(`Request to ${urlStr} timed out after ${timeoutMs}ms. Please ensure the backend is responsive.`);
+        // If local backend is completely unreachable and request is idempotent, fall back to Render cloud backend
+        if (isIdempotent && targetUrl.startsWith(LOCAL_API_BASE) && !process.env.NEXT_PUBLIC_API_URL) {
+          const fallbackCloudUrl = targetUrl.replace(LOCAL_API_BASE, CLOUD_API_BASE);
+          try {
+            return await fetch(fallbackCloudUrl, {
+              ...options,
+              cache: options.cache || "no-store",
+              headers: { Accept: "application/json", ...(options.headers || {}) },
+            });
+          } catch {
+            // Fall through to error reporting below
+          }
         }
-        throw new Error(`MARS-X Backend unreachable at ${API_BASE}. Ensure FastAPI server is running on port 8000.`);
+
+        if (isAbort) {
+          throw new Error(`Request to ${targetUrl} timed out after ${timeoutMs}ms. Please ensure the backend is responsive.`);
+        }
+        throw new Error(
+          `MARS-X Backend unreachable at ${targetUrl} (Render Cloud: ${CLOUD_API_BASE}). Ensure the backend server is active.`
+        );
       } finally {
         clearTimeout(timeoutId);
         if (options.signal) {
@@ -150,7 +184,7 @@ async function apiFetch(urlStr: string, options: ApiFetchOptions = {}): Promise<
   };
 
   if (isIdempotent && !options.body && options.signal === undefined) {
-    const fetchPromise = executeFetch();
+    const fetchPromise = executeFetch(urlStr);
     _IN_FLIGHT_GETS.set(urlStr, fetchPromise);
     try {
       const resp = await fetchPromise;
@@ -160,7 +194,7 @@ async function apiFetch(urlStr: string, options: ApiFetchOptions = {}): Promise<
     }
   }
 
-  return executeFetch();
+  return executeFetch(urlStr);
 }
 
 export async function fetchHealth(): Promise<HealthResponse> {

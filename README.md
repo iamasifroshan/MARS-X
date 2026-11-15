@@ -3,6 +3,7 @@
 **Planetary Geospatial Intelligence, Multi-Stop Science Traverse Optimization & Mars Climatology Engine**
 
 [![NASA Space Apps Challenge 2026](https://img.shields.io/badge/NASA%20Space%20Apps-2026-orange.svg)](https://www.spaceappschallenge.org/)
+[![Render](https://img.shields.io/badge/Render-Live%20API-46E3B7.svg)](https://mars-x-cc6e.onrender.com)
 [![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![Next.js](https://img.shields.io/badge/Next.js-16.4.6%20Turbopack-black.svg)](https://nextjs.org/)
@@ -183,6 +184,9 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 - **Health Check:** `http://127.0.0.1:8000/health`
 - **Swagger Documentation:** `http://127.0.0.1:8000/docs`
+- **Deployed Cloud API (Render):** [https://mars-x-cc6e.onrender.com](https://mars-x-cc6e.onrender.com)
+- **Cloud API Health:** `https://mars-x-cc6e.onrender.com/health`
+- **Cloud Swagger Documentation:** `https://mars-x-cc6e.onrender.com/docs`
 
 ### 3. Frontend Setup
 In a new terminal:

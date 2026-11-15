@@ -1,5 +1,17 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Environment & Backend Connection
+
+By default, the frontend connects to either:
+- **Local FastAPI Backend:** `http://127.0.0.1:8000` (for local development with full raster access)
+- **Deployed Render Cloud Backend:** `https://mars-x-cc6e.onrender.com` (for production/hosted environments or automatic fallback)
+
+To explicitly configure the target backend, create `.env.local` or set `NEXT_PUBLIC_API_URL`:
+
+```bash
+NEXT_PUBLIC_API_URL=https://mars-x-cc6e.onrender.com
+```
+
 ## Getting Started
 
 First, run the development server:
