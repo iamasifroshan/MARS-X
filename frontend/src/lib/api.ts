@@ -63,32 +63,108 @@ import {
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
-async function apiFetch(urlStr: string, options: RequestInit = {}): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000);
-  try {
-    const res = await fetch(urlStr, {
-      ...options,
-      signal: controller.signal,
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-        ...(options.headers || {}),
-      },
-    });
-    return res;
-  } catch (err: unknown) {
-    if (err instanceof Error && err.name === "AbortError") {
-      throw new Error(`Request to ${urlStr} timed out after 8000ms. Check backend on port 8000.`);
+export interface ApiFetchOptions extends RequestInit {
+  timeoutMs?: number;
+  retries?: number;
+  retryDelayMs?: number;
+}
+
+// In-flight GET request deduplication map to avoid thundering-herd on identical endpoints
+const _IN_FLIGHT_GETS = new Map<string, Promise<Response>>();
+
+async function apiFetch(urlStr: string, options: ApiFetchOptions = {}): Promise<Response> {
+  const method = (options.method || "GET").toUpperCase();
+  const isIdempotent = method === "GET" || method === "HEAD";
+  const maxRetries = options.retries !== undefined ? options.retries : (isIdempotent ? 2 : 0);
+  const baseDelay = options.retryDelayMs || 400;
+  const timeoutMs = options.timeoutMs || 15000;
+
+  // Deduplicate identical in-flight GET requests
+  if (isIdempotent && !options.body && options.signal === undefined) {
+    const existing = _IN_FLIGHT_GETS.get(urlStr);
+    if (existing) {
+      const resp = await existing;
+      return resp.clone();
     }
-    throw new Error(`MARS-X Backend unreachable at ${API_BASE}. Ensure FastAPI server is running on port 8000.`);
-  } finally {
-    clearTimeout(timeoutId);
   }
+
+  const executeFetch = async (): Promise<Response> => {
+    let attempt = 0;
+    while (true) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+      // If caller passed an external AbortSignal, link it
+      const onExternalAbort = () => controller.abort();
+      if (options.signal) {
+        options.signal.addEventListener("abort", onExternalAbort);
+      }
+
+      try {
+        const res = await fetch(urlStr, {
+          ...options,
+          signal: controller.signal,
+          cache: options.cache || "no-store",
+          headers: {
+            Accept: "application/json",
+            ...(options.headers || {}),
+          },
+        });
+
+        // Retry transient server errors (502, 503, 504) on idempotent calls
+        if (isIdempotent && attempt < maxRetries && [502, 503, 504].includes(res.status)) {
+          attempt++;
+          const jitter = Math.random() * 150;
+          const delay = Math.min(2500, baseDelay * Math.pow(2, attempt) + jitter);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+
+        return res;
+      } catch (err: unknown) {
+        const isAbort = err instanceof Error && err.name === "AbortError";
+        if (isAbort && options.signal?.aborted) {
+          throw err; // Caller explicitly aborted
+        }
+
+        // Only retry transient network errors or timeouts on idempotent requests
+        if (isIdempotent && attempt < maxRetries) {
+          attempt++;
+          const jitter = Math.random() * 150;
+          const delay = Math.min(2500, baseDelay * Math.pow(2, attempt) + jitter);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+
+        if (isAbort) {
+          throw new Error(`Request to ${urlStr} timed out after ${timeoutMs}ms. Please ensure the backend is responsive.`);
+        }
+        throw new Error(`MARS-X Backend unreachable at ${API_BASE}. Ensure FastAPI server is running on port 8000.`);
+      } finally {
+        clearTimeout(timeoutId);
+        if (options.signal) {
+          options.signal.removeEventListener("abort", onExternalAbort);
+        }
+      }
+    }
+  };
+
+  if (isIdempotent && !options.body && options.signal === undefined) {
+    const fetchPromise = executeFetch();
+    _IN_FLIGHT_GETS.set(urlStr, fetchPromise);
+    try {
+      const resp = await fetchPromise;
+      return resp.clone();
+    } finally {
+      _IN_FLIGHT_GETS.delete(urlStr);
+    }
+  }
+
+  return executeFetch();
 }
 
 export async function fetchHealth(): Promise<HealthResponse> {
-  const res = await apiFetch(`${API_BASE}/health`);
+  const res = await apiFetch(`${API_BASE}/health`, { timeoutMs: 5000 });
   if (!res.ok) {
     throw new Error(`Health check failed with status: ${res.status}`);
   }
@@ -96,7 +172,7 @@ export async function fetchHealth(): Promise<HealthResponse> {
 }
 
 export async function fetchStatus(): Promise<StatusResponse> {
-  const res = await apiFetch(`${API_BASE}/api/v1/status`);
+  const res = await apiFetch(`${API_BASE}/api/v1/status`, { timeoutMs: 5000 });
   if (!res.ok) {
     throw new Error(`Status check failed with status: ${res.status}`);
   }
@@ -262,6 +338,7 @@ export async function fetchHazardMetadata(): Promise<HazardEngineMetadata> {
 export async function planMarsRoute(request: RoutePlanRequest): Promise<RoutePlanResponse> {
   const res = await apiFetch(`${API_BASE}/api/v1/routes/plan`, {
     method: "POST",
+    timeoutMs: 30000,
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
@@ -280,6 +357,7 @@ export async function compareMarsRouteAlgorithms(
 ): Promise<RouteComparisonResponse> {
   const res = await apiFetch(`${API_BASE}/api/v1/routes/compare`, {
     method: "POST",
+    timeoutMs: 30000,
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
@@ -597,6 +675,7 @@ export async function fetchElevationProfile(
   const res = await apiFetch(url.toString(), {
     cache: "no-store",
     headers: { Accept: "application/json" },
+    timeoutMs: 15000,
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -950,6 +1029,7 @@ export async function planMarswalkRoute(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
+    timeoutMs: 30000,
   });
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -987,6 +1067,7 @@ export async function planMultiStopTraverse(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
+    timeoutMs: 30000,
   });
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -1020,7 +1101,9 @@ export async function fetchRouteIntelligenceMetadata(): Promise<RouteIntelligenc
 export async function fetchRouteIntelligence(
   routeId: string
 ): Promise<RouteIntelligenceReport> {
-  const res = await apiFetch(`${API_BASE}/api/v1/marswalk/analysis/route/${encodeURIComponent(routeId)}`);
+  const res = await apiFetch(`${API_BASE}/api/v1/marswalk/analysis/route/${encodeURIComponent(routeId)}`, {
+    timeoutMs: 30000,
+  });
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
     throw new Error(errBody.detail || `Route intelligence analysis failed: ${res.status}`);
@@ -1031,7 +1114,9 @@ export async function fetchRouteIntelligence(
 export async function fetchMultiStopTraverseIntelligence(
   traverseId: string
 ): Promise<MultiStopTraverseIntelligenceReport> {
-  const res = await apiFetch(`${API_BASE}/api/v1/marswalk/analysis/multi-stop/${encodeURIComponent(traverseId)}`);
+  const res = await apiFetch(`${API_BASE}/api/v1/marswalk/analysis/multi-stop/${encodeURIComponent(traverseId)}`, {
+    timeoutMs: 30000,
+  });
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
     throw new Error(errBody.detail || `Multi-stop traverse intelligence analysis failed: ${res.status}`);

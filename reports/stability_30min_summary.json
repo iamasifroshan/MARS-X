@@ -1,0 +1,105 @@
+{
+  "elapsed_seconds": 2385.2,
+  "counts": {
+    "total_requests": 3881,
+    "success_requests": 3879,
+    "failed_requests": 2,
+    "timeouts": 2,
+    "connection_refused": 0
+  },
+  "status_codes": {
+    "200": 3879
+  },
+  "category_latency_stats": {
+    "health": {
+      "count": 906,
+      "min_ms": 1.48,
+      "median_ms": 2.09,
+      "mean_ms": 51.17,
+      "p95_ms": 10.7,
+      "max_ms": 3116.85
+    },
+    "status": {
+      "count": 906,
+      "min_ms": 1.17,
+      "median_ms": 1.75,
+      "mean_ms": 17.58,
+      "p95_ms": 7.75,
+      "max_ms": 2394.73
+    },
+    "discovery": {
+      "count": 904,
+      "min_ms": 1.83,
+      "median_ms": 3.61,
+      "mean_ms": 193.2,
+      "p95_ms": 449.48,
+      "max_ms": 8401.15
+    },
+    "elevation_profile": {
+      "count": 474,
+      "min_ms": 2.86,
+      "median_ms": 19.44,
+      "mean_ms": 87.14,
+      "p95_ms": 51.92,
+      "max_ms": 3571.58
+    },
+    "marswalk_route": {
+      "count": 215,
+      "min_ms": 2.49,
+      "median_ms": 3.85,
+      "mean_ms": 53.2,
+      "p95_ms": 41.41,
+      "max_ms": 4861.74
+    },
+    "environmental": {
+      "count": 258,
+      "min_ms": 1.61,
+      "median_ms": 2.16,
+      "mean_ms": 16.33,
+      "p95_ms": 30.34,
+      "max_ms": 1120.0
+    },
+    "climatology": {
+      "count": 216,
+      "min_ms": 1.96,
+      "median_ms": 2.8,
+      "mean_ms": 9.15,
+      "p95_ms": 6.96,
+      "max_ms": 1142.42
+    }
+  },
+  "failure_events_count": 2,
+  "failure_events": [
+    {
+      "timestamp": "2026-11-15T10:43:27.298802+00:00",
+      "category": "discovery",
+      "status_code": null,
+      "latency_ms": 158249.24,
+      "error": "ReadTimeout: timed out"
+    },
+    {
+      "timestamp": "2026-11-15T11:13:43.858887+00:00",
+      "category": "discovery",
+      "status_code": null,
+      "latency_ms": 899643.93,
+      "error": "ReadTimeout: timed out"
+    }
+  ],
+  "resource_summary": {
+    "total_samples": 231,
+    "memory_rss_mb": {
+      "initial": 135.68,
+      "peak": 495.49,
+      "final": 256.04
+    },
+    "cpu_pct": {
+      "mean": 26.32,
+      "peak": 184.0
+    },
+    "open_handles": {
+      "initial": 352,
+      "peak": 445,
+      "final": 366
+    }
+  }
+}

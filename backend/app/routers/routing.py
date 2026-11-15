@@ -57,7 +57,7 @@ async def get_routing_metadata() -> Dict[str, Any]:
 
 
 @router.post("/plan", response_model=RoutePlanResponse)
-async def plan_route(request: RoutePlanRequest) -> RoutePlanResponse:
+def plan_route(request: RoutePlanRequest) -> RoutePlanResponse:
     """Plan a single terrain-constrained Marswalk traverse using A* or Dijkstra."""
     if route_service is None:
         raise HTTPException(
@@ -73,7 +73,7 @@ async def plan_route(request: RoutePlanRequest) -> RoutePlanResponse:
 
 
 @router.post("/compare", response_model=RouteComparisonResponse)
-async def compare_route_algorithms(request: RoutePlanRequest) -> RouteComparisonResponse:
+def compare_route_algorithms(request: RoutePlanRequest) -> RouteComparisonResponse:
     """Run both A* and Dijkstra on identical mission parameters and return side-by-side metrics."""
     if route_service is None:
         raise HTTPException(

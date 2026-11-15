@@ -1,0 +1,12 @@
+{
+  "test": "controlled_backend_restart_and_recovery",
+  "timestamp": "2026-11-15T10:30:13.164770+00:00",
+  "disconnection_detected": true,
+  "clean_failure_during_outage": true,
+  "restart_to_online_ms": 2436.4,
+  "post_recovery_science_ms": 251.7,
+  "post_recovery_route_ms": 548.0,
+  "post_recovery_elevation_ms": 58.8,
+  "all_post_recovery_requests_succeeded": true,
+  "new_backend_pid": 35120
+}

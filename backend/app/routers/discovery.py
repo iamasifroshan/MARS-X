@@ -31,14 +31,14 @@ class CompareRequest(BaseModel):
 
 
 @router.get("/categories")
-async def get_discovery_categories() -> List[Dict[str, Any]]:
+def get_discovery_categories() -> List[Dict[str, Any]]:
     """Retrieve available science discovery categories with metadata and discovery counts."""
     service = get_discovery_service()
     return service.get_categories()
 
 
 @router.get("/list")
-async def get_discoveries(
+def get_discoveries(
     category: Optional[str] = Query(default=None, description="Optional category filter"),
     min_lat: Optional[float] = Query(default=None, ge=-90.0, le=90.0, description="South boundary latitude"),
     max_lat: Optional[float] = Query(default=None, ge=-90.0, le=90.0, description="North boundary latitude"),
@@ -66,7 +66,7 @@ async def get_discoveries(
 
 
 @router.get("/profile")
-async def get_science_profile(
+def get_science_profile(
     lat: float = Query(..., ge=-90.0, le=90.0, description="Latitude (-90° to +90°)"),
     lon: float = Query(..., description="Longitude (0° to 360° or -180° to +180°)"),
     radius_km: float = Query(default=500.0, ge=10.0, le=2500.0, description="Search radius for nearby features in km"),
@@ -86,7 +86,7 @@ async def get_science_profile(
 
 
 @router.get("/nearby")
-async def get_nearby_discoveries(
+def get_nearby_discoveries(
     lat: float = Query(..., ge=-90.0, le=90.0, description="Origin latitude (-90° to +90°)"),
     lon: float = Query(..., description="Origin longitude (0° to 360° or -180° to +180°)"),
     radius_km: float = Query(default=1500.0, ge=50.0, le=5000.0, description="Search radius in km on Mars sphere"),
@@ -98,7 +98,7 @@ async def get_nearby_discoveries(
 
 
 @router.get("/{discovery_id}")
-async def get_discovery_by_id(discovery_id: str) -> Dict[str, Any]:
+def get_discovery_by_id(discovery_id: str) -> Dict[str, Any]:
     """Retrieve details for a specific science discovery enriched with live co-registered measurements."""
     service = get_discovery_service()
     discovery = service.get_discovery_by_id(discovery_id)
@@ -108,7 +108,7 @@ async def get_discovery_by_id(discovery_id: str) -> Dict[str, Any]:
 
 
 @router.post("/compare")
-async def compare_science_locations(body: CompareRequest) -> Dict[str, Any]:
+def compare_science_locations(body: CompareRequest) -> Dict[str, Any]:
     """Compare up to 5 science locations side-by-side using integrated Mars datasets."""
     service = get_discovery_service()
     return service.compare_locations(body.locations)

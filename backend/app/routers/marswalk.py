@@ -59,7 +59,7 @@ router = APIRouter(
         504: {"description": "Search exceeded maximum node expansion limit."},
     },
 )
-async def generate_route(request: MarswalkRouteRequest) -> MarswalkRouteResponse:
+def generate_route(request: MarswalkRouteRequest) -> MarswalkRouteResponse:
     try:
         return MarswalkPlanner.plan_route(request)
     except ValueError as e:
@@ -99,7 +99,7 @@ async def generate_route(request: MarswalkRouteRequest) -> MarswalkRouteResponse
         404: {"description": "Route ID not found in cache or expired."},
     },
 )
-async def get_route(
+def get_route(
     route_id: str = Path(..., description="Unique route identifier, e.g. mw-a1b2c3d4e5f6"),
 ) -> MarswalkRouteResponse:
     route = get_cached_route(route_id)
@@ -120,7 +120,7 @@ async def get_route(
         "cost function formulation, analytical slope thresholds, and curated corridor presets."
     ),
 )
-async def get_metadata() -> MarswalkMetadataResponse:
+def get_metadata() -> MarswalkMetadataResponse:
     return MarswalkPlanner.get_metadata()
 
 
@@ -146,7 +146,7 @@ async def get_metadata() -> MarswalkMetadataResponse:
         422: {"description": "Traverse infeasible within slope or elevation limits."},
     },
 )
-async def plan_multi_stop_traverse(request: MultiStopRouteRequest) -> MultiStopTraverseResponse:
+def plan_multi_stop_traverse(request: MultiStopRouteRequest) -> MultiStopTraverseResponse:
     try:
         return MultiStopPlanner.plan_multi_stop_traverse(request)
     except ValueError as e:
@@ -178,7 +178,7 @@ async def plan_multi_stop_traverse(request: MultiStopRouteRequest) -> MultiStopT
     summary="Get multi-stop engine metadata, presets, and capabilities",
     description="Returns supported TSP optimization strategies, max stop limits, presets, and version signatures.",
 )
-async def get_multi_stop_metadata() -> MultiStopMetadataResponse:
+def get_multi_stop_metadata() -> MultiStopMetadataResponse:
     return MultiStopPlanner.get_metadata()
 
 
@@ -192,7 +192,7 @@ async def get_multi_stop_metadata() -> MultiStopMetadataResponse:
         404: {"description": "Traverse ID not found in cache or expired."},
     },
 )
-async def get_multi_stop_traverse(
+def get_multi_stop_traverse(
     traverse_id: str = Path(..., description="Unique multi-stop traverse identifier, e.g. mst-1a2b3c4d"),
 ) -> MultiStopTraverseResponse:
     traverse = get_cached_multi_stop_traverse(traverse_id)
@@ -214,7 +214,7 @@ async def get_multi_stop_traverse(
     summary="Get Route Intelligence engine metadata and scientific provenance",
     description="Returns data catalog references, native resolutions, vertical datums, evidence classes, and scientific rules.",
 )
-async def get_route_intelligence_metadata() -> RouteIntelligenceMetadataResponse:
+def get_route_intelligence_metadata() -> RouteIntelligenceMetadataResponse:
     intel_svc = get_route_intelligence_service()
     return intel_svc.get_metadata()
 
@@ -233,7 +233,7 @@ async def get_route_intelligence_metadata() -> RouteIntelligenceMetadataResponse
         404: {"description": "Route ID not found in cache or expired."},
     },
 )
-async def analyze_route_by_id(
+def analyze_route_by_id(
     route_id: str = Path(..., description="Unique route identifier, e.g. mw-a1b2c3d4e5f6"),
     ls_deg: Optional[float] = Query(default=None, description="Martian solar longitude Ls in degrees [0, 360)"),
     ltst_hours: Optional[float] = Query(default=None, description="Local True Solar Time in decimal hours [0, 24)"),
@@ -263,7 +263,7 @@ async def analyze_route_by_id(
         404: {"description": "Traverse ID not found in cache or expired."},
     },
 )
-async def analyze_multi_stop_traverse_by_id(
+def analyze_multi_stop_traverse_by_id(
     traverse_id: str = Path(..., description="Unique multi-stop traverse identifier, e.g. mst-1a2b3c4d"),
     ls_deg: Optional[float] = Query(default=None, description="Martian solar longitude Ls in degrees [0, 360)"),
     ltst_hours: Optional[float] = Query(default=None, description="Local True Solar Time in decimal hours [0, 24)"),

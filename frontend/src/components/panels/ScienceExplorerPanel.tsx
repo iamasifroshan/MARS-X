@@ -254,8 +254,15 @@ export const ScienceExplorerPanel: React.FC<ScienceExplorerPanelProps> = ({
               <p>Scanning Mars science targets...</p>
             </div>
           ) : error ? (
-            <div className="p-4 bg-red-950/30 border border-red-800/40 rounded m-3 text-red-300 text-[11px]">
-              {error}
+            <div className="p-4 bg-red-950/30 border border-red-800/40 rounded m-3 text-red-300 text-[11px] space-y-2">
+              <p>{error}</p>
+              <button
+                type="button"
+                onClick={() => loadDiscoveries()}
+                className="px-2.5 py-1 bg-red-900/40 hover:bg-red-800/60 border border-red-700/60 rounded text-[10px] text-red-200 transition-colors"
+              >
+                Retry Scan
+              </button>
             </div>
           ) : discoveries.length === 0 ? (
             <div className="p-8 text-center text-gray-500">

@@ -11,6 +11,7 @@ Exposes endpoints for:
 
 import os
 import math
+import threading
 import numpy as np
 from typing import List, Optional, Dict, Any, Tuple
 from fastapi import APIRouter, HTTPException, Query, Path
@@ -579,7 +580,7 @@ def _render_turbo_rgba(elev: np.ndarray, nodata_mask: np.ndarray, vmin: float, v
 
 
 @router.get("/render/global-mola")
-async def render_global_mola(hemisphere: str = Query(default="east", pattern="^(east|west)$")):
+def render_global_mola(hemisphere: str = Query(default="east", pattern="^(east|west)$")):
     """Render authentic Global MOLA numerical elevation as colored RGBA PNG with NoData transparency.
     - east: Longitude [0°, 180°E], Latitude [-90°, 90°N]
     - west: Longitude [-180°, 0°E] (180°E to 360°E), Latitude [-90°, 90°N]
@@ -605,7 +606,7 @@ async def render_global_mola(hemisphere: str = Query(default="east", pattern="^(
 
 
 @router.get("/render/mola-128-tile")
-async def render_mola_128_tile(tile_id: str = Query(default="00n000", pattern="^(00n000|44n000|00n090)$")):
+def render_mola_128_tile(tile_id: str = Query(default="00n000", pattern="^(00n000|44n000|00n090)$")):
     """Render authentic regional MOLA 128 ppd tile numerical elevation as colored RGBA PNG."""
     filename_map = {
         "00n000": "megt00n000hb.img",
@@ -630,7 +631,7 @@ async def render_mola_128_tile(tile_id: str = Query(default="00n000", pattern="^
 
 
 @router.get("/render/ctx-dtm")
-async def render_ctx_dtm():
+def render_ctx_dtm():
     """Render authentic USGS 20m CTX numerical DTM as colored high-contrast RGBA PNG."""
     ctx_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "raw", "ctx", "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif")
@@ -654,8 +655,27 @@ async def render_ctx_dtm():
 # -------------------------------------------------------------
 
 _MEMMAPS_128: Dict[str, np.memmap] = {}
+_OPEN_RASTERS: Dict[str, rasterio.DatasetReader] = {}
+_RASTER_LOCK = threading.Lock()
 _WINDOW_CACHE: Dict[str, Tuple[bytes, Dict[str, str]]] = {}
 _MAX_WINDOW_CACHE = 64
+
+
+def _get_raster_reader(path: str) -> Optional[rasterio.DatasetReader]:
+    """Retrieve or lazily open persistent rasterio reader handle in a thread-safe manner."""
+    with _RASTER_LOCK:
+        if path in _OPEN_RASTERS:
+            reader = _OPEN_RASTERS[path]
+            if not reader.closed:
+                return reader
+        if os.path.exists(path):
+            try:
+                reader = rasterio.open(path)
+                _OPEN_RASTERS[path] = reader
+                return reader
+            except Exception:
+                return None
+        return None
 
 
 def _get_mola128_mm(tile_id: str) -> Optional[np.memmap]:
@@ -714,21 +734,23 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
     norm_lon_180 = norm_lon - 360.0 if norm_lon > 180.0 else norm_lon
 
     # 2. Priority 0: HiRISE Controlled DTM (1.01 m/px, Holden Crater, IAU:49910)
+    # Fast geographic bounding box pre-check: lat in [-28.9, -28.1], lon in [308.7, 309.3] or lon_180 in [-51.3, -50.7]
     if preferred_source in [None, "auto", "hirise", "hirise-dtm-controlled-esp-011635"]:
-        hirise_path = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__),
-                "..",
-                "..",
-                "..",
-                "data",
-                "originals",
-                "hirise",
-                "DTEEC_011635_1510_029542_1510_A01.tif",
+        if -28.9 <= lat <= -28.1 and (308.7 <= norm_lon <= 309.3 or -51.3 <= norm_lon_180 <= -50.7):
+            hirise_path = os.path.abspath(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "..",
+                    "..",
+                    "..",
+                    "data",
+                    "originals",
+                    "hirise",
+                    "DTEEC_011635_1510_029542_1510_A01.tif",
+                )
             )
-        )
-        if os.path.exists(hirise_path):
-            with rasterio.open(hirise_path) as hi_src:
+            hi_src = _get_raster_reader(hirise_path)
+            if hi_src is not None:
                 x_hi = math.radians(norm_lon_180) * R_IAU
                 y_hi = math.radians(lat) * R_IAU
                 if (hi_src.bounds.left <= x_hi <= hi_src.bounds.right) and (
@@ -736,7 +758,8 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
                 ):
                     r_hi, c_hi = hi_src.index(x_hi, y_hi)
                     if 0 <= r_hi < hi_src.height and 0 <= c_hi < hi_src.width:
-                        val = float(hi_src.read(1, window=((r_hi, r_hi + 1), (c_hi, c_hi + 1)))[0, 0])
+                        with _RASTER_LOCK:
+                            val = float(hi_src.read(1, window=((r_hi, r_hi + 1), (c_hi, c_hi + 1)))[0, 0])
                         is_nodata = (val < -30000.0) or not math.isfinite(val)
                         return PointElevationDetailResult(
                             latitude=lat,
@@ -762,21 +785,23 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
                         )
 
     # 3. Priority 1A: Controlled CTX Numerical DTM (20.0 m/px, Apollinaris Sulci, IAU:49910)
+    # Fast geographic bounding box pre-check: lat in [4.3, 5.1], lon in [167.8, 168.7]
     if preferred_source in [None, "auto", "ctx", "ctx-dtm-controlled-t01-000893"]:
-        t01_path = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__),
-                "..",
-                "..",
-                "..",
-                "data",
-                "originals",
-                "ctx",
-                "T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif",
+        if 4.3 <= lat <= 5.1 and 167.8 <= norm_lon <= 168.7:
+            t01_path = os.path.abspath(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "..",
+                    "..",
+                    "..",
+                    "data",
+                    "originals",
+                    "ctx",
+                    "T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif",
+                )
             )
-        )
-        if os.path.exists(t01_path):
-            with rasterio.open(t01_path) as t01_src:
+            t01_src = _get_raster_reader(t01_path)
+            if t01_src is not None:
                 x_t01 = math.radians(norm_lon) * R_IAU
                 y_t01 = math.radians(lat) * R_IAU
                 if (t01_src.bounds.left <= x_t01 <= t01_src.bounds.right) and (
@@ -784,7 +809,8 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
                 ):
                     r_t01, c_t01 = t01_src.index(x_t01, y_t01)
                     if 0 <= r_t01 < t01_src.height and 0 <= c_t01 < t01_src.width:
-                        val = float(t01_src.read(1, window=((r_t01, r_t01 + 1), (c_t01, c_t01 + 1)))[0, 0])
+                        with _RASTER_LOCK:
+                            val = float(t01_src.read(1, window=((r_t01, r_t01 + 1), (c_t01, c_t01 + 1)))[0, 0])
                         is_nodata = (val == t01_src.nodata) or (val < -30000.0) or not math.isfinite(val)
                         return PointElevationDetailResult(
                             latitude=lat,
@@ -810,21 +836,23 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
                         )
 
     # 4. Priority 1B: Tyrrhena CTX Numerical DTM (20.0128 m/px, IAU:49910)
+    # Fast geographic bounding box pre-check: lat in [-5.3, -3.9], lon in [65.9, 66.8]
     if preferred_source in [None, "auto", "ctx", "ctx-dtm-p21-009323"]:
-        ctx_path = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__),
-                "..",
-                "..",
-                "..",
-                "data",
-                "raw",
-                "ctx",
-                "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif",
+        if -5.3 <= lat <= -3.9 and 65.9 <= norm_lon <= 66.8:
+            ctx_path = os.path.abspath(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "..",
+                    "..",
+                    "..",
+                    "data",
+                    "raw",
+                    "ctx",
+                    "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif",
+                )
             )
-        )
-        if os.path.exists(ctx_path):
-            with rasterio.open(ctx_path) as ctx_src:
+            ctx_src = _get_raster_reader(ctx_path)
+            if ctx_src is not None:
                 x_ctx = math.radians(norm_lon) * R_IAU
                 y_ctx = math.radians(lat) * R_IAU
                 if (ctx_src.bounds.left <= x_ctx <= ctx_src.bounds.right) and (
@@ -832,7 +860,8 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
                 ):
                     r_ctx, c_ctx = ctx_src.index(x_ctx, y_ctx)
                     if 0 <= r_ctx < ctx_src.height and 0 <= c_ctx < ctx_src.width:
-                        val = float(ctx_src.read(1, window=((r_ctx, r_ctx + 1), (c_ctx, c_ctx + 1)))[0, 0])
+                        with _RASTER_LOCK:
+                            val = float(ctx_src.read(1, window=((r_ctx, r_ctx + 1), (c_ctx, c_ctx + 1)))[0, 0])
                         is_nodata = (val == ctx_src.nodata) or (val < -30000.0) or not math.isfinite(val)
                         return PointElevationDetailResult(
                             latitude=lat,
@@ -856,7 +885,6 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
                             ),
                             source_checksum="a4edb9f414500fe44e1a3c2ba06ee39e5c060cf1483619e43f461be29d31aff2",
                         )
-
 
     # 3. Priority 2: Regional MOLA 128 ppd Tile (~463.08 m/px, IAU:49900)
     tile_info = None
@@ -929,34 +957,34 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
             "mola_megt90n000cb_elevation.tif",
         )
     )
-    if os.path.exists(cog_path):
-        with rasterio.open(cog_path) as mola4_src:
-            r, c = mola4_src.index(norm_lon, lat)
-            if 0 <= r < mola4_src.height and 0 <= c < mola4_src.width:
-                val = float(mola4_src.read(1, window=((r, r + 1), (c, c + 1)))[0, 0])
-                is_nodata = not math.isfinite(val) or (val == mola4_src.nodata)
-                return PointElevationDetailResult(
-                    latitude=lat,
-                    longitude=norm_lon,
-                    elevation_m=None if is_nodata else round(val, 2),
-                    dataset_id="mola-megdr-4",
-                    instrument="MOLA (Mars Orbiter Laser Altimeter)",
-                    tier="global_baseline",
-                    native_resolution_m=14818.67,
-                    native_resolution_desc="0.25°/px (~14.8 km/px at equator)",
-                    display_resolution_m=14818.67,
-                    crs="IAU:49900 (Equirectangular Mars Sphere R=3396000 m)",
-                    vertical_reference="MOLA Areoid (GMM3 mgm1025 degree 50)",
-                    is_nodata=is_nodata,
-                    is_valid=not is_nodata,
-                    query_status="nodata_void" if is_nodata else "success_global_mola_baseline",
-                    status_note=(
-                        "NoData cell"
-                        if is_nodata
-                        else "Sampled from authentic Global MOLA 4 ppd continuous elevation baseline."
-                    ),
-                    source_checksum="25f16fb7aaf857898dcf98bc4f841341a24f8b9f7e98453ca083bc45d897ca2c",
-                )
+    mola4_src = _get_raster_reader(cog_path)
+    if mola4_src is not None:
+        r, c = mola4_src.index(norm_lon, lat)
+        if 0 <= r < mola4_src.height and 0 <= c < mola4_src.width:
+            val = float(mola4_src.read(1, window=((r, r + 1), (c, c + 1)))[0, 0])
+            is_nodata = not math.isfinite(val) or (val == mola4_src.nodata)
+            return PointElevationDetailResult(
+                latitude=lat,
+                longitude=norm_lon,
+                elevation_m=None if is_nodata else round(val, 2),
+                dataset_id="mola-megdr-4",
+                instrument="MOLA (Mars Orbiter Laser Altimeter)",
+                tier="global_baseline",
+                native_resolution_m=14818.67,
+                native_resolution_desc="0.25°/px (~14.8 km/px at equator)",
+                display_resolution_m=14818.67,
+                crs="IAU:49900 (Equirectangular Mars Sphere R=3396000 m)",
+                vertical_reference="MOLA Areoid (GMM3 mgm1025 degree 50)",
+                is_nodata=is_nodata,
+                is_valid=not is_nodata,
+                query_status="nodata_void" if is_nodata else "success_global_mola_baseline",
+                status_note=(
+                    "NoData cell"
+                    if is_nodata
+                    else "Sampled from authentic Global MOLA 4 ppd continuous elevation baseline."
+                ),
+                source_checksum="25f16fb7aaf857898dcf98bc4f841341a24f8b9f7e98453ca083bc45d897ca2c",
+            )
 
     return PointElevationDetailResult(
         latitude=lat,
@@ -1011,7 +1039,7 @@ def _slerp_great_circle(lat1: float, lon1: float, lat2: float, lon2: float, f: f
 
 
 @router.get("/elevation/point", response_model=PointElevationDetailResult)
-async def get_point_elevation(
+def get_point_elevation(
     lat: float = Query(..., ge=-90.0, le=90.0, description="Planetocentric latitude in degrees"),
     lon: float = Query(..., description="East longitude in degrees (0 to 360 or -180 to 180)"),
     preferred_source: Optional[str] = Query(default=None, description="Optional preferred product or tier ('auto', 'hirise', 'ctx', 'mola')"),
@@ -1021,7 +1049,7 @@ async def get_point_elevation(
 
 
 @router.get("/elevation/profile", response_model=ElevationProfileResult)
-async def get_elevation_profile(
+def get_elevation_profile(
     start_lat: float = Query(..., ge=-90.0, le=90.0),
     start_lon: float = Query(...),
     end_lat: float = Query(..., ge=-90.0, le=90.0),
@@ -1094,7 +1122,7 @@ async def get_elevation_profile(
 
 
 @router.get("/render/window")
-async def render_terrain_window(
+def render_terrain_window(
     min_lon: float = Query(...),
     min_lat: float = Query(...),
     max_lon: float = Query(...),

@@ -1,6 +1,15 @@
 """MARS-X API — FastAPI application entry point."""
 
+import sys
+import asyncio
 import logging
+
+if sys.platform == "win32":
+    # Prevent Windows IOCP Proactor socket reset crash (WinError 64 / 10054 on accept)
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    except Exception:
+        pass
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -43,6 +52,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

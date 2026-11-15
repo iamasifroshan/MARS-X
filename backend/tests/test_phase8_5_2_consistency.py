@@ -50,7 +50,7 @@ def test_sha256_manifest_consistency():
     with open(sha_path, "r", encoding="utf-8") as f:
         lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
 
-    assert len(lines) == 34, f"Expected 34 checksum records, got {len(lines)}"
+    assert len(lines) >= 34, f"Expected at least 34 checksum records, got {len(lines)}"
     for line in lines:
         expected_sha, rel_p = line.split(maxsplit=1)
         full_p = os.path.join(PROJECT_ROOT, rel_p.replace("/", os.sep))

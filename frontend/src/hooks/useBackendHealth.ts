@@ -13,7 +13,7 @@ export interface BackendHealthState {
   error: string | null;
 }
 
-export function useBackendHealth(intervalMs = 15000): BackendHealthState {
+export function useBackendHealth(normalIntervalMs = 15000): BackendHealthState {
   const [state, setState] = useState<BackendHealthState>({
     isConnected: false,
     isLoading: true,
@@ -25,6 +25,7 @@ export function useBackendHealth(intervalMs = 15000): BackendHealthState {
 
   useEffect(() => {
     let isMounted = true;
+    let timerId: NodeJS.Timeout | null = null;
 
     async function checkHealth() {
       try {
@@ -43,6 +44,10 @@ export function useBackendHealth(intervalMs = 15000): BackendHealthState {
             error: null,
           });
         }
+        // When connected, schedule next check at normalIntervalMs
+        if (isMounted) {
+          timerId = setTimeout(checkHealth, normalIntervalMs);
+        }
       } catch (err) {
         if (isMounted) {
           setState({
@@ -54,17 +59,23 @@ export function useBackendHealth(intervalMs = 15000): BackendHealthState {
             error: err instanceof Error ? err.message : "Backend unreachable",
           });
         }
+        // When disconnected, poll aggressively (every 3000ms with small jitter) for fast recovery
+        if (isMounted) {
+          const retryDelay = 2500 + Math.random() * 1000;
+          timerId = setTimeout(checkHealth, retryDelay);
+        }
       }
     }
 
     checkHealth();
-    const timer = setInterval(checkHealth, intervalMs);
 
     return () => {
       isMounted = false;
-      clearInterval(timer);
+      if (timerId) {
+        clearTimeout(timerId);
+      }
     };
-  }, [intervalMs]);
+  }, [normalIntervalMs]);
 
   return state;
 }
