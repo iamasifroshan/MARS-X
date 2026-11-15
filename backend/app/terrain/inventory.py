@@ -158,9 +158,8 @@ class Mola128InventoryService:
 
     def __init__(self, raw_mola_dir: Optional[str] = None):
         if raw_mola_dir is None:
-            self.raw_dir = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "raw", "mola")
-            )
+            from app.config import DATA_ROOT
+            self.raw_dir = os.path.join(DATA_ROOT, "raw", "mola")
         else:
             self.raw_dir = os.path.abspath(raw_mola_dir)
 

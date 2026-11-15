@@ -597,9 +597,9 @@
       "official_archive": "USGS Astrogeology Science Center / AWS Open Data",
       "archive_collection": "USGS Controlled CTX DTMs (mars/mro/ctx/controlled/dtm)",
       "official_urls": {
-        "geotiff": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/ctx/controlled/dtm/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif",
-        "residuals": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/ctx/controlled/dtm/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-FINAL_geodiff-diff.csv",
-        "provenance": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/ctx/controlled/dtm/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W/provenance.txt"
+        "geotiff": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/ctx/controlled/usgs/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif",
+        "residuals": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/ctx/controlled/usgs/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-FINAL_geodiff-diff.csv",
+        "provenance": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/ctx/controlled/usgs/T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W/provenance.txt"
       },
       "original_filename": "T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif",
       "local_files": {
@@ -681,8 +681,8 @@
       "official_archive": "ASU Mars Space Flight Facility / NASA PDS Geosciences Node",
       "archive_collection": "Putzig & Mellon (2007) Global Thermal Inertia",
       "official_urls": {
-        "dayside": "https://www.mars.asu.edu/data/tes_ti/DBmap2007.tif",
-        "nightside": "https://www.mars.asu.edu/data/tes_ti/NBmap2007.tif"
+        "dayside": "https://mars.asu.edu/data/tes_putzigti/dayside2007/DBmap2007.tif",
+        "nightside": "https://mars.asu.edu/data/tes_putzigti/nightside2007/NBmap2007.tif"
       },
       "original_filename": "DBmap2007.tif / NBmap2007.tif",
       "local_files": {

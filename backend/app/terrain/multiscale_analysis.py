@@ -122,9 +122,13 @@ class MultiScaleAnalysisResult(BaseModel):
 class MultiScaleAnalyzer:
     """Service executing scale-aware topographic analysis on authentic Martian rasters."""
 
-    def __init__(self, data_dir: str = "data"):
-        self.data_dir = data_dir
-        self.selector = ResolutionSelector(data_dir=data_dir)
+    def __init__(self, data_dir: Optional[str] = None):
+        if data_dir is None or data_dir == "data":
+            from app.config import DATA_ROOT
+            self.data_dir = DATA_ROOT
+        else:
+            self.data_dir = data_dir
+        self.selector = ResolutionSelector(data_dir=self.data_dir)
 
     def _resolve_raster_path_and_bounds(
         self,

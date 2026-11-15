@@ -40,6 +40,11 @@ def query_thermal_inertia_at_point(
         return service.query_point(lat=lat, lon=lon, product=product)
     except Exception as e:
         logger.error("Thermal point query failed: %s", e)
+        if isinstance(e, FileNotFoundError) or "not found" in str(e).lower() or "no such file" in str(e).lower():
+            raise HTTPException(
+                status_code=503,
+                detail=f"TES thermal dataset unavailable on server: {e}. Please synchronize datasets via the MARS-X pipeline (/api/v1/system/sync).",
+            )
         raise HTTPException(status_code=500, detail=str(e))
 
 

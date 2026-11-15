@@ -5,7 +5,7 @@ services:
     region: oregon
     plan: standard
     buildCommand: "pip install -r backend/requirements.txt"
-    startCommand: "uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port $PORT"
+    startCommand: "python scripts/sync_production_datasets.py --tier core && uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port $PORT"
     healthCheckPath: /health
     envVars:
       - key: APP_NAME
@@ -14,6 +14,8 @@ services:
         value: "https://mars-x-nasa.vercel.app,http://localhost:3005,http://127.0.0.1:3005,https://mars-x-backend.onrender.com"
       - key: PYTHON_VERSION
         value: "3.12.6"
+      - key: MARS_DATA_DIR
+        value: "/opt/render/project/src/data"
     disk:
       name: mars-data
       mountPath: /opt/render/project/src/data

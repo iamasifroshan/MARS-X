@@ -69,7 +69,8 @@ class SlopeCategory(str, Enum):
 # ---------------------------------------------------------------------------
 # Each entry describes an integrated terrain product, its coverage footprint,
 # pixel spacing, and local file paths for elevation and slope.
-_DATA_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "data"))
+from app.config import DATA_ROOT as _CONFIG_DATA_ROOT
+_DATA_ROOT = os.getenv("MARS_DATA_DIR", os.getenv("DATA_ROOT", _CONFIG_DATA_ROOT))
 
 
 TERRAIN_SOURCES: List[Dict[str, Any]] = [
@@ -696,3 +697,26 @@ def get_traversability_service() -> TraversabilityService:
         _service = TraversabilityService()
         logger.info("TraversabilityService initialised.")
     return _service
+
+
+def refresh_terrain_sources() -> List[Dict[str, Any]]:
+    """Re-bind TERRAIN_SOURCES paths to current DATA_ROOT / MARS_DATA_DIR."""
+    root = os.getenv("MARS_DATA_DIR", os.getenv("DATA_ROOT", _CONFIG_DATA_ROOT))
+    for s in TERRAIN_SOURCES:
+        sid = s["source_id"]
+        if sid == "hirise-holden":
+            s["elev_path"] = os.path.join(root, "originals", "hirise", "DTEEC_011635_1510_029542_1510_A01.tif")
+            s["slope_path"] = os.path.join(root, "derived", "traversability", "holden_slope.tif")
+        elif sid == "ctx-tyrrhena":
+            s["elev_path"] = os.path.join(root, "raw", "ctx", "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif")
+            s["slope_path"] = os.path.join(root, "derived", "traversability", "tyrrhena_slope.tif")
+        elif sid == "ctx-apollinaris":
+            s["elev_path"] = os.path.join(root, "originals", "ctx", "T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif")
+            s["slope_path"] = os.path.join(root, "derived", "traversability", "apollinaris_slope.tif")
+        elif sid == "mola-128ppd":
+            s["elev_path"] = os.path.join(root, "raw", "mola", "megt00n000hb.img")
+            s["slope_path"] = os.path.join(root, "processed", "mola", "mola_megt90n000cb_slope.tif")
+        elif sid == "mola-4ppd":
+            s["elev_path"] = os.path.join(root, "processed", "mola", "mola_megt90n000cb_elevation.tif")
+            s["slope_path"] = os.path.join(root, "processed", "mola", "mola_megt90n000cb_slope.tif")
+    return TERRAIN_SOURCES

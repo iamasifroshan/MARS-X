@@ -13,7 +13,8 @@ from typing import Dict, List, Optional, Any, Tuple
 
 logger = logging.getLogger("MARS-X.science.geology")
 
-DATA_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "data"))
+from app.config import DATA_ROOT as _CONFIG_DATA_ROOT
+DATA_ROOT = os.getenv("MARS_DATA_DIR", os.getenv("DATA_ROOT", _CONFIG_DATA_ROOT))
 GIS_ROOT = os.path.join(DATA_ROOT, "derived", "geology", "sim3292_database", "SIM3292_MarsGlobalGeologicGIS_20M")
 SHP_DIR = os.path.join(GIS_ROOT, "SIM3292_Shapefiles")
 

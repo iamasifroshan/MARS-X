@@ -44,9 +44,8 @@ class TESThermalInertiaService:
 
     def __init__(self, data_root: Optional[str] = None):
         if data_root is None:
-            self.data_root = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "originals", "themis")
-            )
+            from app.config import DATA_ROOT
+            self.data_root = os.path.join(DATA_ROOT, "originals", "themis")
         else:
             self.data_root = data_root
 
@@ -293,9 +292,8 @@ class THEMISInfraredService:
 
     def __init__(self, data_root: Optional[str] = None):
         if data_root is None:
-            self.data_root = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "originals", "themis")
-            )
+            from app.config import DATA_ROOT
+            self.data_root = os.path.join(DATA_ROOT, "originals", "themis")
         else:
             self.data_root = data_root
 

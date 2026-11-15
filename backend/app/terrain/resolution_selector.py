@@ -114,9 +114,13 @@ class ResolutionSelector:
         AnalysisType.SITE_INSPECTION: 1.01,     # HiRISE DTM (tactical)
     }
 
-    def __init__(self, data_dir: str = "data"):
-        self.data_dir = data_dir
-        self.inventory_service = Mola128InventoryService()
+    def __init__(self, data_dir: Optional[str] = None):
+        if data_dir is None or data_dir == "data":
+            from app.config import DATA_ROOT
+            self.data_dir = DATA_ROOT
+        else:
+            self.data_dir = data_dir
+        self.inventory_service = Mola128InventoryService(raw_mola_dir=os.path.join(self.data_dir, "raw", "mola"))
 
     def _calculate_spherical_bbox_area(
         self, min_lat: float, min_lon: float, max_lat: float, max_lon: float

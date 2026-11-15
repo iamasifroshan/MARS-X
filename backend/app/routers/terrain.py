@@ -16,7 +16,7 @@ import numpy as np
 from typing import List, Optional, Dict, Any, Tuple
 from fastapi import APIRouter, HTTPException, Query, Path
 
-from app.config import API_V1_PREFIX
+from app.config import API_V1_PREFIX, DATA_ROOT
 from app.terrain.models import (
     TerrainSummaryResponse,
     RasterCoverageResponse,
@@ -81,7 +81,7 @@ async def get_terrain_datasets():
 @router.get("/layers")
 async def get_terrain_layers():
     """Retrieve all active and catalogued terrain visualization layers (Elevation, Slope, Roughness)."""
-    processed_mola_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "processed", "mola"))
+    processed_mola_dir = os.path.join(DATA_ROOT, "processed", "mola")
 
     elev_cog = os.path.join(processed_mola_dir, "mola_megt90n000cb_elevation.tif")
     slope_cog = os.path.join(processed_mola_dir, "mola_megt90n000cb_slope.tif")
@@ -144,7 +144,7 @@ async def get_terrain_layers():
             "vertical_datum": "MOLA Areoid",
             "unit": "metres",
             "value_range": {"min": -6000.0, "max": 4000.0},
-            "is_available": os.path.exists(os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "raw", "mola", "megt00n000hb.img")),
+            "is_available": os.path.exists(os.path.join(DATA_ROOT, "raw", "mola", "megt00n000hb.img")),
             "file_format": "PDS3 IMG / Tiled",
             "coverage_footprint": "Lat [-44.0°, 0.0°], Lon [0.0°, 90.0°E]",
         },
@@ -159,7 +159,7 @@ async def get_terrain_layers():
             "vertical_datum": "MOLA Areoid (ASP tied)",
             "unit": "metres",
             "value_range": {"min": 800.0, "max": 2520.0},
-            "is_available": os.path.exists(os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "raw", "ctx", "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif")),
+            "is_available": os.path.exists(os.path.join(DATA_ROOT, "raw", "ctx", "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif")),
             "file_format": "GeoTIFF (Stereo numerical DTM)",
             "coverage_footprint": "Lat [-5.19°, -4.01°N], Lon [66.03°, 66.60°E]",
         },
@@ -634,7 +634,7 @@ def render_mola_128_tile(tile_id: str = Query(default="00n000", pattern="^(00n00
 def render_ctx_dtm():
     """Render authentic USGS 20m CTX numerical DTM as colored high-contrast RGBA PNG."""
     ctx_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "raw", "ctx", "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif")
+        os.path.join(DATA_ROOT, "raw", "ctx", "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif")
     )
     if not os.path.exists(ctx_path):
         raise HTTPException(status_code=404, detail="USGS CTX DTM raster not found on disk.")
@@ -737,18 +737,7 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
     # Fast geographic bounding box pre-check: lat in [-28.9, -28.1], lon in [308.7, 309.3] or lon_180 in [-51.3, -50.7]
     if preferred_source in [None, "auto", "hirise", "hirise-dtm-controlled-esp-011635"]:
         if -28.9 <= lat <= -28.1 and (308.7 <= norm_lon <= 309.3 or -51.3 <= norm_lon_180 <= -50.7):
-            hirise_path = os.path.abspath(
-                os.path.join(
-                    os.path.dirname(__file__),
-                    "..",
-                    "..",
-                    "..",
-                    "data",
-                    "originals",
-                    "hirise",
-                    "DTEEC_011635_1510_029542_1510_A01.tif",
-                )
-            )
+            hirise_path = os.path.join(DATA_ROOT, "originals", "hirise", "DTEEC_011635_1510_029542_1510_A01.tif")
             hi_src = _get_raster_reader(hirise_path)
             if hi_src is not None:
                 x_hi = math.radians(norm_lon_180) * R_IAU
@@ -788,18 +777,7 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
     # Fast geographic bounding box pre-check: lat in [4.3, 5.1], lon in [167.8, 168.7]
     if preferred_source in [None, "auto", "ctx", "ctx-dtm-controlled-t01-000893"]:
         if 4.3 <= lat <= 5.1 and 167.8 <= norm_lon <= 168.7:
-            t01_path = os.path.abspath(
-                os.path.join(
-                    os.path.dirname(__file__),
-                    "..",
-                    "..",
-                    "..",
-                    "data",
-                    "originals",
-                    "ctx",
-                    "T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif",
-                )
-            )
+            t01_path = os.path.join(DATA_ROOT, "originals", "ctx", "T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif")
             t01_src = _get_raster_reader(t01_path)
             if t01_src is not None:
                 x_t01 = math.radians(norm_lon) * R_IAU
@@ -839,18 +817,7 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
     # Fast geographic bounding box pre-check: lat in [-5.3, -3.9], lon in [65.9, 66.8]
     if preferred_source in [None, "auto", "ctx", "ctx-dtm-p21-009323"]:
         if -5.3 <= lat <= -3.9 and 65.9 <= norm_lon <= 66.8:
-            ctx_path = os.path.abspath(
-                os.path.join(
-                    os.path.dirname(__file__),
-                    "..",
-                    "..",
-                    "..",
-                    "data",
-                    "raw",
-                    "ctx",
-                    "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif",
-                )
-            )
+            ctx_path = os.path.join(DATA_ROOT, "raw", "ctx", "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif")
             ctx_src = _get_raster_reader(ctx_path)
             if ctx_src is not None:
                 x_ctx = math.radians(norm_lon) * R_IAU
@@ -945,18 +912,7 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
             )
 
     # 4. Priority 3: Global MOLA 4 ppd Baseline (~14.8 km/px, IAU:49900)
-    cog_path = os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__),
-            "..",
-            "..",
-            "..",
-            "data",
-            "processed",
-            "mola",
-            "mola_megt90n000cb_elevation.tif",
-        )
-    )
+    cog_path = os.path.join(DATA_ROOT, "processed", "mola", "mola_megt90n000cb_elevation.tif")
     mola4_src = _get_raster_reader(cog_path)
     if mola4_src is not None:
         r, c = mola4_src.index(norm_lon, lat)
@@ -1473,18 +1429,7 @@ def render_terrain_window(
                 return Response(content=png_bytes, media_type="image/png", headers=headers)
 
     # 3. Fallback: Global MOLA 4 ppd windowed read
-    cog_path = os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__),
-            "..",
-            "..",
-            "..",
-            "data",
-            "processed",
-            "mola",
-            "mola_megt90n000cb_elevation.tif",
-        )
-    )
+    cog_path = os.path.join(DATA_ROOT, "processed", "mola", "mola_megt90n000cb_elevation.tif")
     with rasterio.open(cog_path) as mola4_src:
         from rasterio.windows import from_bounds
 

@@ -31,10 +31,11 @@ class TerrainDataEngine:
         self._auto_discover_rasters()
 
     def _auto_discover_rasters(self):
+        from app.config import DATA_ROOT
         candidate_paths = [
+            os.path.join(DATA_ROOT, "processed", "mola", "mola_megt90n000cb_elevation.tif"),
             "data/processed/mola/mola_megt90n000cb_elevation.tif",
             "../data/processed/mola/mola_megt90n000cb_elevation.tif",
-            os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "processed", "mola", "mola_megt90n000cb_elevation.tif"),
         ]
         for p in candidate_paths:
             abs_p = os.path.abspath(p)

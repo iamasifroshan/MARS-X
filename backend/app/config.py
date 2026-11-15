@@ -39,3 +39,9 @@ if _cors_raw:
     ]
 else:
     CORS_ORIGINS: List[str] = [o for o in DEFAULT_CORS_ORIGINS if o != "*"]
+
+# Absolute path to datasets root directory
+DEFAULT_DATA_DIR: str = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', '..', 'data')
+)
+DATA_ROOT: str = os.getenv('MARS_DATA_DIR', os.getenv('DATA_ROOT', DEFAULT_DATA_DIR))

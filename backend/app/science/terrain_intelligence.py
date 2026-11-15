@@ -166,10 +166,14 @@ PRESET_CANDIDATE_REGIONS = [
 class TerrainIntelligenceService:
     """Service providing terrain intelligence and multi-region comparisons."""
 
-    def __init__(self, data_dir: str = "data"):
-        self.data_dir = data_dir
-        self.analyzer = MultiScaleAnalyzer(data_dir=data_dir)
-        self.selector = ResolutionSelector(data_dir=data_dir)
+    def __init__(self, data_dir: Optional[str] = None):
+        if data_dir is None or data_dir == "data":
+            from app.config import DATA_ROOT
+            self.data_dir = DATA_ROOT
+        else:
+            self.data_dir = data_dir
+        self.analyzer = MultiScaleAnalyzer(data_dir=self.data_dir)
+        self.selector = ResolutionSelector(data_dir=self.data_dir)
 
     def _calculate_confidence_score(
         self,

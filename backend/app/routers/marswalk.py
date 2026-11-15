@@ -68,9 +68,15 @@ def generate_route(request: MarswalkRouteRequest) -> MarswalkRouteResponse:
             detail=str(e),
         )
     except FileNotFoundError as e:
+        logger.error("Required planetary raster dataset missing on host: %s", e)
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                f"Planetary raster dataset unavailable on host storage: {e}. "
+                "High-resolution DEM rasters must be synchronized via the MARS-X dataset pipeline "
+                "(/api/v1/system/sync or scripts/sync_production_datasets.py). "
+                "Analytical models, climatology, and solar geometry remain fully operational."
+            ),
         )
     except TimeoutError as e:
         raise HTTPException(
@@ -167,9 +173,15 @@ def plan_multi_stop_traverse(request: MultiStopRouteRequest) -> MultiStopTravers
             detail=str(e),
         )
     except FileNotFoundError as e:
+        logger.error("Required planetary raster dataset missing on host: %s", e)
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                f"Planetary raster dataset unavailable on host storage: {e}. "
+                "High-resolution DEM rasters must be synchronized via the MARS-X dataset pipeline "
+                "(/api/v1/system/sync or scripts/sync_production_datasets.py). "
+                "Analytical models, climatology, and solar geometry remain fully operational."
+            ),
         )
     except (RuntimeError, TimeoutError) as e:
         raise HTTPException(
