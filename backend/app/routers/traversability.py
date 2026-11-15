@@ -77,7 +77,7 @@ async def get_traversability_metadata():
 
 
 @router.get("/point", response_model=TraversabilityPointResult)
-async def get_traversability_point(
+def get_traversability_point(
     lat: float = Query(..., ge=-90.0, le=90.0, description="Planetocentric latitude in degrees"),
     lon: float = Query(..., ge=-180.0, le=360.0, description="East longitude in degrees (0–360 or -180–180)"),
 ):
@@ -101,7 +101,7 @@ async def get_traversability_point(
 
 
 @router.get("/window", response_model=TraversabilityWindowResult)
-async def get_traversability_window(
+def get_traversability_window(
     min_lat: float = Query(..., ge=-90.0, le=90.0,  description="South boundary latitude"),
     max_lat: float = Query(..., ge=-90.0, le=90.0,  description="North boundary latitude"),
     min_lon: float = Query(..., ge=-180.0, le=360.0, description="West boundary longitude"),

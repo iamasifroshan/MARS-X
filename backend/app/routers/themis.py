@@ -13,14 +13,14 @@ router = APIRouter(prefix=f"{API_V1_PREFIX}/themis", tags=["themis"])
 
 
 @router.get("/metadata")
-async def get_themis_metadata() -> Dict[str, Any]:
+def get_themis_metadata() -> Dict[str, Any]:
     """Retrieve THEMIS 256 ppd regional IR mosaic metadata, footprint, and qualitative semantics."""
     service = get_themis_service()
     return service.get_metadata()
 
 
 @router.get("/render/window")
-async def render_themis_window(
+def render_themis_window(
     min_lon: float = Query(..., description="West boundary longitude (0° to 360° or -180° to 180°)"),
     min_lat: float = Query(..., ge=-90.0, le=90.0, description="South boundary latitude (-90° to 90°)"),
     max_lon: float = Query(..., description="East boundary longitude (0° to 360° or -180° to 180°)"),
@@ -56,7 +56,7 @@ async def render_themis_window(
 
 @router.get("/point")
 @router.get("/temperature")
-async def query_themis_point_prohibited():
+def query_themis_point_prohibited():
     """Explicitly reject quantitative point temperature queries on THEMIS visual mosaics."""
     raise HTTPException(
         status_code=400,

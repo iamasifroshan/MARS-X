@@ -42,7 +42,7 @@ intelligence_service = TerrainIntelligenceService()
 
 
 @router.get("/resolution-selection", response_model=ResolutionSelectionResult)
-async def select_resolution(
+def select_resolution(
     min_lat: float = Query(..., ge=-90.0, le=90.0, description="Minimum latitude (-90° to 90°)"),
     min_lon: float = Query(..., ge=0.0, le=360.0, description="Minimum longitude (0° to 360°)"),
     max_lat: float = Query(..., ge=-90.0, le=90.0, description="Maximum latitude (-90° to 90°)"),
@@ -76,7 +76,7 @@ async def select_resolution(
 
 
 @router.get("/terrain-profile", response_model=MultiScaleAnalysisResult)
-async def get_terrain_profile(
+def get_terrain_profile(
     min_lat: float = Query(..., ge=-90.0, le=90.0),
     min_lon: float = Query(..., ge=0.0, le=360.0),
     max_lat: float = Query(..., ge=-90.0, le=90.0),
@@ -123,7 +123,7 @@ async def get_terrain_profile(
 
 
 @router.get("/transition-compatibility", response_model=ResolutionTransitionEvaluation)
-async def evaluate_transition_compatibility(
+def evaluate_transition_compatibility(
     product_a: str = Query(..., description="First product ID"),
     product_b: str = Query(..., description="Second product ID"),
     min_lat: Optional[float] = Query(default=None, ge=-90.0, le=90.0),
@@ -150,7 +150,7 @@ async def evaluate_transition_compatibility(
 
 
 @router.get("/region-assessment", response_model=RegionTerrainAssessment)
-async def get_region_assessment(
+def get_region_assessment(
     min_lat: float = Query(..., ge=-90.0, le=90.0),
     min_lon: float = Query(..., ge=0.0, le=360.0),
     max_lat: float = Query(..., ge=-90.0, le=90.0),
@@ -181,7 +181,7 @@ async def get_region_assessment(
 
 
 @router.get("/region-comparison", response_model=RegionComparisonResponse)
-async def get_preset_region_comparison(
+def get_preset_region_comparison(
     target_scale_m: float = Query(default=500.0, ge=1.0, le=20000.0),
 ) -> RegionComparisonResponse:
     """Compare authoritative preset Martian exploration regions at an equivalent physical scale."""
@@ -197,7 +197,7 @@ async def get_preset_region_comparison(
 
 
 @router.post("/region-comparison", response_model=RegionComparisonResponse)
-async def post_custom_region_comparison(
+def post_custom_region_comparison(
     request: RegionComparisonRequest,
 ) -> RegionComparisonResponse:
     """Compare user-defined candidate Martian regions at an equivalent physical scale."""
@@ -211,7 +211,7 @@ async def post_custom_region_comparison(
 
 
 @router.get("/provenance")
-async def get_scientific_provenance_registry(
+def get_scientific_provenance_registry(
     filter_status: Optional[str] = Query(default=None, description="Optional filter by production_status or provenance_status"),
 ) -> Dict[str, Any]:
     """Retrieve the authoritative MARS-X Scientific Dataset Provenance Registry."""
@@ -251,7 +251,7 @@ async def get_scientific_provenance_registry(
 
 
 @router.get("/provenance/{dataset_id}")
-async def get_dataset_provenance_by_id(
+def get_dataset_provenance_by_id(
     dataset_id: str,
 ) -> Dict[str, Any]:
     """Retrieve detailed scientific provenance, checksums, CRS, and URLs for a specific dataset ID."""

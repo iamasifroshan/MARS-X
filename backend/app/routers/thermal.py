@@ -13,14 +13,14 @@ router = APIRouter(prefix=f"{API_V1_PREFIX}/thermal", tags=["thermal"])
 
 
 @router.get("/metadata")
-async def get_thermal_metadata() -> Dict[str, Any]:
+def get_thermal_metadata() -> Dict[str, Any]:
     """Retrieve MGS TES Thermal Inertia dataset metadata, coverage, units, and citation."""
     service = get_thermal_service()
     return service.get_metadata()
 
 
 @router.get("/point")
-async def query_thermal_inertia_at_point(
+def query_thermal_inertia_at_point(
     lat: float = Query(..., ge=-90.0, le=90.0, description="Latitude (-90° to +90°)"),
     lon: float = Query(..., description="Longitude (0° to 360° or -180° to +180°)"),
     product: str = Query(
@@ -44,7 +44,7 @@ async def query_thermal_inertia_at_point(
 
 
 @router.get("/render/window")
-async def render_thermal_window(
+def render_thermal_window(
     min_lon: float = Query(..., description="West boundary longitude (-180° to 180° or 0° to 360°)"),
     min_lat: float = Query(..., ge=-90.0, le=90.0, description="South boundary latitude (-90° to 90°)"),
     max_lon: float = Query(..., description="East boundary longitude (-180° to 180° or 0° to 360°)"),

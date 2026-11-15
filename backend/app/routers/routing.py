@@ -27,7 +27,7 @@ except Exception:
 
 
 @router.get("/metadata")
-async def get_routing_metadata() -> Dict[str, Any]:
+def get_routing_metadata() -> Dict[str, Any]:
     """Retrieve capabilities, constraints, and valid footprints for Mars route planning."""
     return {
         "supported_datasets": [
@@ -89,7 +89,7 @@ def compare_route_algorithms(request: RoutePlanRequest) -> RouteComparisonRespon
 
 
 @router.get("/data-availability")
-async def check_route_data_availability(
+def check_route_data_availability(
     min_lat: float = Query(..., ge=-90.0, le=90.0, description="Minimum latitude in degrees (-90 to 90)"),
     min_lon: float = Query(..., ge=0.0, le=360.0, description="Minimum longitude in degrees (0 to 360)"),
     max_lat: float = Query(..., ge=-90.0, le=90.0, description="Maximum latitude in degrees (-90 to 90)"),
@@ -113,7 +113,7 @@ async def check_route_data_availability(
 
 
 @router.get("/terrain-source")
-async def get_corridor_terrain_source(
+def get_corridor_terrain_source(
     start_lat: float = Query(..., ge=-90.0, le=90.0, description="Start latitude in degrees"),
     start_lon: float = Query(..., ge=0.0, le=360.0, description="Start longitude in degrees"),
     dest_lat: float = Query(..., ge=-90.0, le=90.0, description="Destination latitude in degrees"),
@@ -142,18 +142,18 @@ async def get_corridor_terrain_source(
 routing_alias_router = APIRouter(prefix=f"{API_V1_PREFIX}/routing", tags=["routing"])
 
 @routing_alias_router.get("/data-availability")
-async def check_routing_data_availability_alias(
+def check_routing_data_availability_alias(
     min_lat: float = Query(..., ge=-90.0, le=90.0),
     min_lon: float = Query(..., ge=0.0, le=360.0),
     max_lat: float = Query(..., ge=-90.0, le=90.0),
     max_lon: float = Query(..., ge=0.0, le=360.0),
 ) -> Dict[str, Any]:
     """Alias for /api/v1/routes/data-availability."""
-    return await check_route_data_availability(min_lat, min_lon, max_lat, max_lon)
+    return check_route_data_availability(min_lat, min_lon, max_lat, max_lon)
 
 
 @routing_alias_router.get("/terrain-source")
-async def get_routing_terrain_source_alias(
+def get_routing_terrain_source_alias(
     start_lat: float = Query(..., ge=-90.0, le=90.0),
     start_lon: float = Query(..., ge=0.0, le=360.0),
     dest_lat: float = Query(..., ge=-90.0, le=90.0),
@@ -161,6 +161,6 @@ async def get_routing_terrain_source_alias(
     target_scale_m: Optional[float] = Query(default=None, ge=1.0),
 ) -> Dict[str, Any]:
     """Alias for /api/v1/routes/terrain-source."""
-    return await get_corridor_terrain_source(start_lat, start_lon, dest_lat, dest_lon, target_scale_m)
+    return get_corridor_terrain_source(start_lat, start_lon, dest_lat, dest_lon, target_scale_m)
 
 

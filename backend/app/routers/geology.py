@@ -13,21 +13,21 @@ router = APIRouter(prefix=f"{API_V1_PREFIX}/geology", tags=["geology"])
 
 
 @router.get("/metadata")
-async def get_geology_metadata() -> Dict[str, Any]:
+def get_geology_metadata() -> Dict[str, Any]:
     """Retrieve official USGS SIM 3292 Geological Map metadata, feature counts, and CRS."""
     service = get_geology_service()
     return service.get_metadata()
 
 
 @router.get("/legend")
-async def get_geology_legend() -> List[Dict[str, Any]]:
+def get_geology_legend() -> List[Dict[str, Any]]:
     """Retrieve chronostratigraphic legend and color designations for all 44 recognized Martian geological units."""
     service = get_geology_service()
     return service.get_legend()
 
 
 @router.get("/units/{unit_code}")
-async def get_geology_unit_details(
+def get_geology_unit_details(
     unit_code: str = Path(..., description="USGS unit code (e.g., 'mAl', 'lNl', 'AHv', 'lNh')")
 ) -> Dict[str, Any]:
     """Retrieve detailed scientific description, epoch, and dominant lithology for a specific unit code."""
@@ -39,7 +39,7 @@ async def get_geology_unit_details(
 
 
 @router.get("/point")
-async def query_geology_at_point(
+def query_geology_at_point(
     lat: float = Query(..., ge=-90.0, le=90.0, description="Latitude (-90° to +90°)"),
     lon: float = Query(..., description="Longitude (0° to 360° or -180° to +180°)"),
 ) -> Dict[str, Any]:
@@ -60,7 +60,7 @@ async def query_geology_at_point(
 
 
 @router.get("/viewport")
-async def query_geology_viewport(
+def query_geology_viewport(
     min_lon: float = Query(..., description="Minimum longitude (-180° to 180° or 0° to 360°)"),
     min_lat: float = Query(..., ge=-90.0, le=90.0, description="Minimum latitude (-90° to 90°)"),
     max_lon: float = Query(..., description="Maximum longitude (-180° to 180° or 0° to 360°)"),

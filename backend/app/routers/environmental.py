@@ -47,7 +47,7 @@ async def get_environmental_metadata() -> EnvironmentalMetadataResponse:
 
 
 @router.get("/pressure/estimate", response_model=AtmosphericPressureEstimate)
-async def estimate_atmospheric_pressure(
+def estimate_atmospheric_pressure(
     elevation_m: float = Query(..., description="Topographic elevation in metres relative to MOLA Areoid datum"),
     p_ref_pa: Optional[float] = Query(default=None, description="Reference pressure at datum in Pa (default: 610.0 Pa)"),
     scale_height_m: Optional[float] = Query(default=None, description="Atmospheric scale height in metres (default: 11100.0 m)"),
@@ -68,7 +68,7 @@ async def estimate_atmospheric_pressure(
 
 
 @router.get("/pressure/residuals", response_model=Dict[str, PressureResidualBenchmark])
-async def get_pressure_residuals() -> Dict[str, PressureResidualBenchmark]:
+def get_pressure_residuals() -> Dict[str, PressureResidualBenchmark]:
     """Retrieve quantitative residual benchmarks comparing analytical P(z) to in-situ MEDA and REMS ground truth."""
     service = get_environmental_service()
     try:
@@ -78,7 +78,7 @@ async def get_pressure_residuals() -> Dict[str, PressureResidualBenchmark]:
 
 
 @router.get("/solar-geometry", response_model=MarsSolarGeometry)
-async def get_solar_geometry(
+def get_solar_geometry(
     lat: float = Query(..., description="Planetocentric latitude in degrees [-90, +90]"),
     lon: float = Query(..., description="Planetocentric longitude in degrees"),
     ls_deg: float = Query(default=0.0, description="Martian solar longitude Ls in degrees [0, 360)"),
@@ -104,7 +104,7 @@ async def get_solar_geometry(
 
 
 @router.get("/time/eot")
-async def get_equation_of_time(
+def get_equation_of_time(
     ls_deg: float = Query(default=0.0, description="Martian solar longitude Ls in degrees [0, 360)"),
 ) -> Dict[str, Any]:
     """Calculate the Martian Equation of Time (EOT = LTST - LMST) from areocentric solar longitude Ls."""
@@ -121,7 +121,7 @@ async def get_equation_of_time(
 
 
 @router.get("/time/convert", response_model=MarsTimeConversion)
-async def convert_time(
+def convert_time(
     time_hours: float = Query(..., description="Solar time in decimal hours [0, 24)"),
     from_system: str = Query(..., description="Input time system: 'LMST', 'LTST', or 'MTC'"),
     to_system: str = Query(..., description="Target time system: 'LMST', 'LTST', or 'MTC'"),
@@ -145,7 +145,7 @@ async def convert_time(
 
 
 @router.get("/historical/meda", response_model=HistoricalWeatherSummary)
-async def get_historical_meda() -> HistoricalWeatherSummary:
+def get_historical_meda() -> HistoricalWeatherSummary:
     """Retrieve historical in-situ meteorological summary from Mars 2020 Perseverance MEDA Sol 1."""
     service = get_environmental_service()
     try:
@@ -157,7 +157,7 @@ async def get_historical_meda() -> HistoricalWeatherSummary:
 
 
 @router.get("/historical/rems", response_model=HistoricalWeatherSummary)
-async def get_historical_rems() -> HistoricalWeatherSummary:
+def get_historical_rems() -> HistoricalWeatherSummary:
     """Retrieve historical in-situ meteorological summary from MSL Curiosity REMS Sol 1."""
     service = get_environmental_service()
     try:
@@ -169,7 +169,7 @@ async def get_historical_rems() -> HistoricalWeatherSummary:
 
 
 @router.post("/route/enrich", response_model=RouteEnvironmentalSummary)
-async def enrich_route_environment(payload: RouteEnrichmentRequest) -> RouteEnvironmentalSummary:
+def enrich_route_environment(payload: RouteEnrichmentRequest) -> RouteEnvironmentalSummary:
     """Enrich a sequence of route waypoints with reference barometric pressure and solar geometry."""
     service = get_environmental_service()
     try:

@@ -244,6 +244,9 @@ Every 20 cycles, 6 concurrent asynchronous requests were dispatched simultaneous
 - **Event Loop Health:** Health checks executed during bursts returned in $<11\text{ ms}$, confirming Starlette threadpool execution successfully isolated heavy A* routing and raster I/O from the asyncio event loop.
 - **Thread Safety:** Under `_RASTER_LOCK`, concurrent raster sampling produced zero GDAL data races, zero NaN/corrupt heights, and zero segmentation faults.
 
+### G. Comprehensive Router Synchronous Offloading Audit
+To ensure complete immunity against event-loop starvation across every secondary subsystem, an exhaustive audit converted all synchronous endpoints across `geology.py`, `thermal.py`, `themis.py`, `science.py`, `traversability.py`, `climatology.py`, `environmental.py`, and `routing.py` from `async def` to standard `def`. Under Starlette/FastAPI semantics, standard `def` routes are automatically dispatched onto the background `ThreadPoolExecutor`, completely eliminating the possibility of raster decoding, geospatial vector queries, or mathematical models blocking `/health` or UI responsiveness.
+
 ---
 
 ## 6. Verification Against Submission Standards

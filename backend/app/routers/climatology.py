@@ -32,7 +32,7 @@ async def get_climatology_metadata() -> ClimatologyMetadataResponse:
 
 
 @router.get("/point", response_model=ClimatologyPoint)
-async def get_climatology_point(
+def get_climatology_point(
     lat: float = Query(..., ge=-90.0, le=90.0, description="Planetocentric latitude in degrees [-90, +90]"),
     lon: float = Query(..., description="Planetocentric East longitude in degrees [0, 360)"),
     ls_deg: float = Query(default=0.0, description="Martian solar longitude Ls in degrees [0, 360)"),
@@ -59,7 +59,7 @@ async def get_climatology_point(
 
 
 @router.get("/profile", response_model=ClimatologyProfileResponse)
-async def get_climatology_profile(
+def get_climatology_profile(
     lat: float = Query(..., ge=-90.0, le=90.0, description="Planetocentric latitude in degrees"),
     lon: float = Query(..., description="Planetocentric East longitude in degrees"),
     profile_type: str = Query(
@@ -100,14 +100,14 @@ async def get_climatology_profile(
 
 
 @router.get("/coverage", response_model=ClimatologyCoverageResponse)
-async def get_climatology_coverage() -> ClimatologyCoverageResponse:
+def get_climatology_coverage() -> ClimatologyCoverageResponse:
     """Return coverage boundaries, native grid dimensions, and anchor exploration landmarks."""
     service = get_climatology_service()
     return service.get_climatology_coverage()
 
 
 @router.post("/route/enrich", response_model=RouteClimatologySummary)
-async def enrich_route_climatology(
+def enrich_route_climatology(
     request: RouteClimatologyEnrichRequest,
 ) -> RouteClimatologySummary:
     """Enrich a planned Marswalk traverse with seasonal and diurnal climatological context."""
