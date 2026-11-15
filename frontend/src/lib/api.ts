@@ -43,6 +43,9 @@ import {
   MultiStopRouteRequest,
   MultiStopTraverseResponse,
   MultiStopMetadataResponse,
+  RouteIntelligenceReport,
+  MultiStopTraverseIntelligenceReport,
+  RouteIntelligenceMetadataResponse,
 } from "./types";
 
 
@@ -989,6 +992,41 @@ export async function fetchMultiStopTraverse(
   }
   return res.json();
 }
+
+// ---------------------------------------------------------------------------
+// Route Intelligence & Scientific Traverse Analysis API — Phase 8.8.4
+// ---------------------------------------------------------------------------
+
+export async function fetchRouteIntelligenceMetadata(): Promise<RouteIntelligenceMetadataResponse> {
+  const res = await apiFetch(`${API_BASE}/api/v1/marswalk/analysis/metadata`);
+  if (!res.ok) {
+    throw new Error(`Route intelligence metadata fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchRouteIntelligence(
+  routeId: string
+): Promise<RouteIntelligenceReport> {
+  const res = await apiFetch(`${API_BASE}/api/v1/marswalk/analysis/route/${encodeURIComponent(routeId)}`);
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.detail || `Route intelligence analysis failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchMultiStopTraverseIntelligence(
+  traverseId: string
+): Promise<MultiStopTraverseIntelligenceReport> {
+  const res = await apiFetch(`${API_BASE}/api/v1/marswalk/analysis/multi-stop/${encodeURIComponent(traverseId)}`);
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.detail || `Multi-stop traverse intelligence analysis failed: ${res.status}`);
+  }
+  return res.json();
+}
+
 
 
 

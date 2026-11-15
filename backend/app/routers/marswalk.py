@@ -25,6 +25,12 @@ from app.marswalk.multi_stop_planner import (
     MultiStopPlanner,
     get_cached_multi_stop_traverse,
 )
+from app.marswalk.route_intelligence_models import (
+    RouteIntelligenceReport,
+    MultiStopTraverseIntelligenceReport,
+    RouteIntelligenceMetadataResponse,
+)
+from app.marswalk.route_intelligence_service import get_route_intelligence_service
 
 logger = logging.getLogger("MARS-X.routers.marswalk")
 
@@ -195,4 +201,74 @@ async def get_multi_stop_traverse(
             detail=f"Multi-stop traverse '{traverse_id}' not found in cache or expired. Please re-run planning.",
         )
     return traverse
+
+
+# =============================================================================
+# ROUTE INTELLIGENCE & SCIENTIFIC TRAVERSE ANALYSIS — PHASE 8.8.4
+# =============================================================================
+
+@router.get(
+    "/analysis/metadata",
+    response_model=RouteIntelligenceMetadataResponse,
+    summary="Get Route Intelligence engine metadata and scientific provenance",
+    description="Returns data catalog references, native resolutions, vertical datums, evidence classes, and scientific rules.",
+)
+async def get_route_intelligence_metadata() -> RouteIntelligenceMetadataResponse:
+    intel_svc = get_route_intelligence_service()
+    return intel_svc.get_metadata()
+
+
+@router.get(
+    "/analysis/route/{route_id}",
+    response_model=RouteIntelligenceReport,
+    summary="Generate scientific route intelligence for a single-destination route",
+    description=(
+        "Analyzes elevation profile above MOLA Areoid, slope distribution, roughness, "
+        "USGS SIM 3292 geological units, contact crossings, structural features, "
+        "MGS TES thermal inertia, and nearby Phase 8.7 science opportunities."
+    ),
+    responses={
+        200: {"description": "Route intelligence successfully generated."},
+        404: {"description": "Route ID not found in cache or expired."},
+    },
+)
+async def analyze_route_by_id(
+    route_id: str = Path(..., description="Unique route identifier, e.g. mw-a1b2c3d4e5f6"),
+) -> RouteIntelligenceReport:
+    route = get_cached_route(route_id)
+    if route is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Route '{route_id}' not found in cache or expired. Please plan route first.",
+        )
+    intel_svc = get_route_intelligence_service()
+    return intel_svc.analyze_route(route)
+
+
+@router.get(
+    "/analysis/multi-stop/{traverse_id}",
+    response_model=MultiStopTraverseIntelligenceReport,
+    summary="Generate leg-by-leg and aggregated scientific traverse intelligence",
+    description=(
+        "Analyzes a multi-stop science traverse: leg-by-leg elevation profiles, slope exposure, "
+        "geology, thermal inertia, and nearby discoveries, plus aggregated analytics across all waypoints "
+        "without duplicate junction vertices."
+    ),
+    responses={
+        200: {"description": "Traverse intelligence successfully generated."},
+        404: {"description": "Traverse ID not found in cache or expired."},
+    },
+)
+async def analyze_multi_stop_traverse_by_id(
+    traverse_id: str = Path(..., description="Unique multi-stop traverse identifier, e.g. mst-1a2b3c4d"),
+) -> MultiStopTraverseIntelligenceReport:
+    traverse = get_cached_multi_stop_traverse(traverse_id)
+    if traverse is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Multi-stop traverse '{traverse_id}' not found in cache or expired. Please plan traverse first.",
+        )
+    intel_svc = get_route_intelligence_service()
+    return intel_svc.analyze_multi_stop_traverse(traverse)
+
 

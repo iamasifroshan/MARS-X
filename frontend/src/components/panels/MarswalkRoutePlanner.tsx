@@ -7,6 +7,8 @@ import {
   fetchMultiStopMetadata,
   planMultiStopTraverse,
   fetchDiscoveries,
+  fetchRouteIntelligence,
+  fetchMultiStopTraverseIntelligence,
 } from "@/lib/api";
 import {
   MarswalkRouteRequest,
@@ -19,11 +21,14 @@ import {
   MultiStopMetadataResponse,
   MultiStopPreset,
   ScienceDiscovery,
+  RouteIntelligenceReport,
+  MultiStopTraverseIntelligenceReport,
 } from "@/lib/types";
+import { RouteIntelligenceView } from "./RouteIntelligenceView";
 
 export const MarswalkRoutePlanner: React.FC = () => {
-  // Navigation mode: single leg vs multi-stop science traverse
-  const [plannerMode, setPlannerMode] = useState<"single" | "multi">("single");
+  // Navigation mode: single leg vs multi-stop science traverse vs route intelligence
+  const [plannerMode, setPlannerMode] = useState<"single" | "multi" | "intelligence">("single");
 
   // Metadata
   const [singleMetadata, setSingleMetadata] = useState<MarswalkMetadataResponse | null>(null);
@@ -90,6 +95,12 @@ export const MarswalkRoutePlanner: React.FC = () => {
   const [multiResult, setMultiResult] = useState<MultiStopTraverseResponse | null>(null);
   const [activeLegInspectIndex, setActiveLegInspectIndex] = useState<number | null>(null);
 
+  // Route Intelligence State — Phase 8.8.4
+  const [routeIntelligence, setRouteIntelligence] = useState<RouteIntelligenceReport | null>(null);
+  const [traverseIntelligence, setTraverseIntelligence] = useState<MultiStopTraverseIntelligenceReport | null>(null);
+  const [intelligenceLoading, setIntelligenceLoading] = useState<boolean>(false);
+  const [intelligenceError, setIntelligenceError] = useState<string | null>(null);
+
   // Load metadata and discovery catalog on mount
   useEffect(() => {
     fetchMarswalkMetadata()
@@ -146,6 +157,13 @@ export const MarswalkRoutePlanner: React.FC = () => {
 
       const result = await planMarswalkRoute(req);
       setRouteResult(result);
+
+      // Auto-load Route Intelligence
+      setIntelligenceLoading(true);
+      fetchRouteIntelligence(result.route_id)
+        .then((intel) => setRouteIntelligence(intel))
+        .catch((err) => console.warn("Failed to fetch route intelligence:", err))
+        .finally(() => setIntelligenceLoading(false));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Route planning failed.");
     } finally {
@@ -177,6 +195,13 @@ export const MarswalkRoutePlanner: React.FC = () => {
 
       const result = await planMultiStopTraverse(req);
       setMultiResult(result);
+
+      // Auto-load Multi-Stop Traverse Intelligence
+      setIntelligenceLoading(true);
+      fetchMultiStopTraverseIntelligence(result.traverse_id)
+        .then((intel) => setTraverseIntelligence(intel))
+        .catch((err) => console.warn("Failed to fetch traverse intelligence:", err))
+        .finally(() => setIntelligenceLoading(false));
     } catch (err: unknown) {
       setMultiError(err instanceof Error ? err.message : "Multi-stop planning failed.");
     } finally {
@@ -287,6 +312,19 @@ export const MarswalkRoutePlanner: React.FC = () => {
           }`}
         >
           <span>🧭</span> Multi-Stop Science Traverse (Traveling Explorer)
+        </button>
+        <button
+          onClick={() => setPlannerMode("intelligence")}
+          className={`flex-1 py-2 px-3 rounded font-bold uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 ${
+            plannerMode === "intelligence"
+              ? "bg-cyan-500 text-black shadow-md"
+              : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+          }`}
+        >
+          <span>🔬</span> Route Intelligence
+          {(routeIntelligence || traverseIntelligence) && (
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/40 text-cyan-200 font-bold">Ready</span>
+          )}
         </button>
       </div>
 
@@ -585,6 +623,16 @@ export const MarswalkRoutePlanner: React.FC = () => {
                   <div style={{ width: `${routeResult.slope_band_exposure_pct.very_high || 0}%` }} className="bg-[#8e44ad]" />
                   <div style={{ width: `${routeResult.slope_band_exposure_pct.unknown || 0}%` }} className="bg-[#7f8c8d]" />
                 </div>
+              </div>
+
+              {/* Phase 8.8.4 Action Button */}
+              <div className="pt-2">
+                <button
+                  onClick={() => setPlannerMode("intelligence")}
+                  className="w-full py-2.5 px-4 rounded bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/60 text-cyan-200 font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all shadow-md"
+                >
+                  <span>🔬</span> Inspect Scientific Route Intelligence (Elevation, Slope, Geology, Thermal &amp; Discoveries) →
+                </button>
               </div>
             </div>
           )}
@@ -1154,6 +1202,70 @@ export const MarswalkRoutePlanner: React.FC = () => {
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+              {/* Phase 8.8.4 Action Button */}
+              <div className="pt-2">
+                <button
+                  onClick={() => setPlannerMode("intelligence")}
+                  className="w-full py-2.5 px-4 rounded bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/60 text-cyan-200 font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all shadow-md"
+                >
+                  <span>🔬</span> Inspect Complete Traverse Intelligence (All Legs &amp; Aggregated Analytics) →
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* MODE 3: ROUTE INTELLIGENCE & TRAVERSE ANALYSIS (PHASE 8.8.4) */}
+      {/* ===================================================================== */}
+      {plannerMode === "intelligence" && (
+        <div className="space-y-4">
+          {intelligenceLoading ? (
+            <div className="p-8 text-center bg-[#0b0e1b] border border-[#1e253e] rounded-lg text-slate-400 space-y-3">
+              <div className="inline-block animate-spin text-2xl">⏳</div>
+              <div className="text-sm font-bold text-cyan-400">Computing Scientific Route Intelligence...</div>
+              <div className="text-[11px] text-slate-500">
+                Intersecting USGS SIM 3292 geological polygons, sampling MGS TES thermal inertia, and querying Phase 8.7 discoveries.
+              </div>
+            </div>
+          ) : (routeIntelligence || traverseIntelligence) ? (
+            <RouteIntelligenceView
+              routeReport={routeIntelligence}
+              traverseReport={traverseIntelligence}
+            />
+          ) : (
+            <div className="p-8 text-center bg-[#0b0e1b] border border-[#1e253e] rounded-lg text-slate-400 space-y-4">
+              <span className="text-3xl block">🔬</span>
+              <div className="space-y-1">
+                <div className="text-sm font-bold text-slate-200">No Route Planned Yet</div>
+                <p className="text-[11px] text-slate-400 max-w-md mx-auto leading-relaxed">
+                  Generate a single-leg Marswalk route or plan a multi-stop science traverse first.
+                  The intelligence engine will automatically synthesize elevation profiles, USGS SIM 3292 geology,
+                  MGS TES thermal inertia, and nearby science discoveries.
+                </p>
+              </div>
+              <div className="flex justify-center gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setPlannerMode("single");
+                    handlePlanRoute();
+                  }}
+                  className="py-2 px-4 rounded bg-orange-500 text-black font-bold uppercase tracking-wider text-xs shadow hover:bg-orange-400 transition-all"
+                >
+                  Plan Tyrrhena Valley Route (A*)
+                </button>
+                <button
+                  onClick={() => {
+                    setPlannerMode("multi");
+                    handlePlanMultiTraverse();
+                  }}
+                  className="py-2 px-4 rounded bg-emerald-500 text-black font-bold uppercase tracking-wider text-xs shadow hover:bg-emerald-400 transition-all"
+                >
+                  Plan Multi-Stop Transect (TSP)
+                </button>
               </div>
             </div>
           )}

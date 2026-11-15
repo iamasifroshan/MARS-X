@@ -1122,6 +1122,219 @@ export interface MultiStopMetadataResponse {
   safety_disclaimer: string;
 }
 
+// ---------------------------------------------------------------------------
+// Route Intelligence & Scientific Traverse Analysis — Phase 8.8.4
+// ---------------------------------------------------------------------------
+
+export interface RouteElevationProfilePoint {
+  sample_index: number;
+  distance_m: number;
+  lat: number;
+  lon: number;
+  elevation_m: number;
+  slope_deg: number;
+  local_gradient_pct: number;
+  dem_source: string;
+  resolution_m: number;
+}
+
+export interface ElevationProfileSummary {
+  min_elevation_m: number;
+  max_elevation_m: number;
+  cumulative_elevation_gain_m: number;
+  cumulative_elevation_loss_m: number;
+  net_elevation_change_m: number;
+  max_gradient_pct: number;
+  mean_gradient_pct: number;
+  sampling_interval_m: number;
+  total_samples: number;
+  vertical_datum: string;
+  points: RouteElevationProfilePoint[];
+}
+
+export interface SlopeExposureBand {
+  category: string;
+  description: string;
+  distance_m: number;
+  percentage: number;
+}
+
+export interface DemSourceSegment {
+  source_id: string;
+  instrument: string;
+  native_resolution_m: number;
+  start_distance_m: number;
+  end_distance_m: number;
+}
+
+export interface TerrainIntelligenceSummary {
+  slope_distribution: Record<string, number>;
+  slope_exposure_bands: SlopeExposureBand[];
+  mean_slope_deg: number;
+  max_slope_deg: number;
+  roughness_index_m: number;
+  roughness_classification: string;
+  nodata_distance_m: number;
+  nodata_pct: number;
+  coverage_status: string;
+  dem_source_segments: DemSourceSegment[];
+  cross_resolution_transition: boolean;
+  terrain_limitations: string;
+}
+
+export interface GeologicalContactCrossing {
+  distance_m: number;
+  coord: [number, number];
+  from_unit: string;
+  to_unit: string;
+  contact_type: string;
+}
+
+export interface GeologicalUnitSegment {
+  unit_code: string;
+  unit_name: string;
+  chronostratigraphic_period: string;
+  distance_start_m: number;
+  distance_end_m: number;
+  traversed_length_m: number;
+  traversed_pct: number;
+  description: string;
+}
+
+export interface NearbyGeologicalStructure {
+  object_id: number;
+  morphology: string;
+  origin: string;
+  interpretation: string;
+  preservation: string;
+  dimension: string;
+  distance_from_route_km: number;
+  closest_coord: [number, number];
+}
+
+export interface GeologicalRouteContext {
+  units_traversed: GeologicalUnitSegment[];
+  boundaries_crossed: GeologicalContactCrossing[];
+  nearby_structures: NearbyGeologicalStructure[];
+  published_scale: string;
+  cartographic_source: string;
+  positional_uncertainty_km: number;
+  limitations_disclaimer: string;
+}
+
+export interface ThermalInertiaSample {
+  distance_m: number;
+  lat: number;
+  lon: number;
+  thermal_inertia_tiu: number | null;
+  physical_interpretation: string;
+}
+
+export interface ThermophysicalRouteContext {
+  min_tiu: number | null;
+  max_tiu: number | null;
+  mean_tiu: number | null;
+  predominant_interpretation: string;
+  samples: ThermalInertiaSample[];
+  source_product: string;
+  native_resolution_desc: string;
+  units: string;
+  calibration_notes: string;
+  themis_context: string;
+  temperature_prohibition_disclaimer: string;
+}
+
+export interface RouteScienceOpportunity {
+  discovery_id: string;
+  title: string;
+  category: string;
+  category_title: string;
+  distance_from_route_km: number;
+  closest_route_milepost_m: number;
+  evidence_class: string;
+  supporting_datasets: string[];
+  primary_feature: string;
+  potential_investigation: string;
+  scientific_limitations: string;
+}
+
+export interface LegRouteIntelligence {
+  leg_index: number;
+  from_stop_id: string;
+  from_stop_name: string;
+  to_stop_id: string;
+  to_stop_name: string;
+  from_coord: [number, number];
+  to_coord: [number, number];
+  surface_distance_m: number;
+  horizontal_distance_m: number;
+  optimization_cost: number;
+  elevation_profile: ElevationProfileSummary;
+  terrain_intelligence: TerrainIntelligenceSummary;
+  geological_context: GeologicalRouteContext;
+  thermophysical_context: ThermophysicalRouteContext;
+  nearby_science_opportunities: RouteScienceOpportunity[];
+  dem_source: string;
+  native_resolution_desc: string;
+  coverage_limitations: string;
+}
+
+export interface RouteIntelligenceReport {
+  route_id: string;
+  route_name?: string;
+  surface_distance_m: number;
+  horizontal_distance_m: number;
+  optimization_cost: number;
+  start_coord: [number, number];
+  dest_coord: [number, number];
+  elevation_profile: ElevationProfileSummary;
+  terrain_intelligence: TerrainIntelligenceSummary;
+  geological_context: GeologicalRouteContext;
+  thermophysical_context: ThermophysicalRouteContext;
+  nearby_science_opportunities: RouteScienceOpportunity[];
+  dem_source: string;
+  instrument: string;
+  tier: string;
+  native_resolution_desc: string;
+  vertical_datum: string;
+  safety_disclaimer: string;
+}
+
+export interface MultiStopTraverseIntelligenceReport {
+  traverse_id: string;
+  traverse_name: string;
+  total_surface_distance_m: number;
+  total_horizontal_distance_m: number;
+  total_optimization_cost: number;
+  total_legs: number;
+  ordered_stop_names: string[];
+  legs: LegRouteIntelligence[];
+  aggregated_elevation_profile: ElevationProfileSummary;
+  aggregated_terrain_intelligence: TerrainIntelligenceSummary;
+  aggregated_geological_context: GeologicalRouteContext;
+  aggregated_thermophysical_context: ThermophysicalRouteContext;
+  aggregated_science_opportunities: RouteScienceOpportunity[];
+  dem_source: string;
+  instrument: string;
+  tier: string;
+  native_resolution_desc: string;
+  vertical_datum: string;
+  safety_disclaimer: string;
+}
+
+export interface RouteIntelligenceMetadataResponse {
+  system_name: string;
+  version: string;
+  vertical_datum: string;
+  geological_map: Record<string, any>;
+  thermal_dataset: Record<string, any>;
+  terrain_datasets: Array<Record<string, any>>;
+  evidence_classes: Array<{ class: string; description: string }>;
+  scientific_rules: string[];
+  safety_disclaimer: string;
+}
+
+
 
 
 
