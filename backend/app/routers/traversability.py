@@ -95,6 +95,9 @@ def get_traversability_point(
     svc = get_traversability_service()
     try:
         return svc.query_point(lat, lon)
+    except FileNotFoundError as exc:
+        logger.error("Terrain dataset unavailable on storage: %s", exc)
+        raise HTTPException(status_code=503, detail=f"Terrain dataset unavailable: {exc}. Full raster-based terrain analysis is available in Local Full Science Mode.")
     except Exception as exc:
         logger.exception("Error querying traversability point (%.4f, %.4f): %s", lat, lon, exc)
         raise HTTPException(status_code=500, detail=f"Traversability point query failed: {exc}")
@@ -128,6 +131,9 @@ def get_traversability_window(
     svc = get_traversability_service()
     try:
         return svc.query_window(min_lat, max_lat, min_lon, max_lon, width, height)
+    except FileNotFoundError as exc:
+        logger.error("Terrain dataset unavailable on storage: %s", exc)
+        raise HTTPException(status_code=503, detail=f"Terrain dataset unavailable: {exc}. Full raster-based terrain analysis is available in Local Full Science Mode.")
     except Exception as exc:
         logger.exception("Error querying traversability window: %s", exc)
         raise HTTPException(status_code=500, detail=f"Traversability window query failed: {exc}")

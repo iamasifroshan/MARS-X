@@ -26,8 +26,10 @@ import {
 } from "@/lib/types";
 import { RouteIntelligenceView } from "./RouteIntelligenceView";
 import { EnvironmentalIntelligenceView } from "./EnvironmentalIntelligenceView";
+import { useBackendHealth } from "@/hooks/useBackendHealth";
 
 export const MarswalkRoutePlanner: React.FC = () => {
+  const healthState = useBackendHealth();
   // Navigation mode: single leg vs multi-stop science traverse vs route intelligence vs environmental
   const [plannerMode, setPlannerMode] = useState<"single" | "multi" | "intelligence" | "environmental">("single");
 
@@ -305,6 +307,23 @@ export const MarswalkRoutePlanner: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Cloud Demo Mode Notice if Raster Processing is Unavailable */}
+      {healthState.isConnected && (healthState.operatingMode === "cloud_demo" || !healthState.rasterAvailable) && (
+        <div className="bg-amber-950/40 border border-amber-500/60 rounded-lg p-3.5 text-amber-200 shadow-md">
+          <div className="flex items-start space-x-2.5">
+            <span className="text-lg">ℹ️</span>
+            <div className="space-y-1">
+              <span className="font-bold uppercase tracking-wider text-[11px] text-amber-300">
+                Cloud Demo Mode — Raster Analysis Notice
+              </span>
+              <p className="text-[11px] leading-relaxed text-amber-200/90 font-sans">
+                Full raster-based terrain analysis is available in Local Full Science Mode. Start the local MARS-X backend with the required scientific datasets.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mode Navigation Tabs */}
       <div className="flex border-b border-[#232840] bg-[#0d1020] p-1 rounded-lg gap-1">

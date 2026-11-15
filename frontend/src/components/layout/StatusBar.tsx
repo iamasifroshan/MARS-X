@@ -49,6 +49,29 @@ export const StatusBar: React.FC<StatusBarProps> = ({
       </div>
 
       <div className="flex items-center space-x-4">
+        {healthState.isConnected && (
+          <span className="hidden sm:flex items-center space-x-1.5">
+            <span className="text-gray-500">MODE:</span>
+            <span
+              className={
+                healthState.operatingMode === "local_full_science"
+                  ? "text-cyan-400 font-bold"
+                  : healthState.operatingMode === "cloud_demo"
+                  ? "text-amber-400 font-bold"
+                  : "text-purple-400"
+              }
+            >
+              {healthState.operatingMode === "local_full_science"
+                ? "LOCAL FULL SCIENCE"
+                : healthState.operatingMode === "cloud_demo"
+                ? "CLOUD DEMO"
+                : "UNKNOWN"}
+            </span>
+          </span>
+        )}
+
+        {healthState.isConnected && <span className="hidden sm:inline-block text-gray-700">|</span>}
+
         {healthState.status && (
           <span className="hidden md:flex items-center space-x-1.5">
             <span className="text-gray-500">UPTIME:</span>

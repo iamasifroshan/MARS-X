@@ -2,7 +2,7 @@
 
 import logging
 from typing import Dict, List, Optional, Any
-from fastapi import APIRouter, HTTPException, Query, Body
+from fastapi import APIRouter, HTTPException, Query, Body, status
 
 from app.config import API_V1_PREFIX
 from app.terrain.resolution_selector import (
@@ -175,6 +175,12 @@ def get_region_assessment(
     )
     try:
         return intelligence_service.assess_region(reg, target_scale_m=target_scale_m)
+    except FileNotFoundError as e:
+        logger.error("Terrain dataset unavailable for region assessment: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Terrain dataset unavailable on storage: {e}. Full raster-based terrain analysis is available in Local Full Science Mode.",
+        )
     except Exception as e:
         logger.error("Region assessment failed: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
@@ -191,6 +197,12 @@ def get_preset_region_comparison(
     )
     try:
         return intelligence_service.compare_regions(req)
+    except FileNotFoundError as e:
+        logger.error("Terrain dataset unavailable for preset region comparison: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Terrain dataset unavailable on storage: {e}. Full raster-based terrain analysis is available in Local Full Science Mode.",
+        )
     except Exception as e:
         logger.error("Preset region comparison failed: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
@@ -205,6 +217,12 @@ def post_custom_region_comparison(
         return intelligence_service.compare_regions(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except FileNotFoundError as e:
+        logger.error("Terrain dataset unavailable for custom region comparison: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Terrain dataset unavailable on storage: {e}. Full raster-based terrain analysis is available in Local Full Science Mode.",
+        )
     except Exception as e:
         logger.error("Custom region comparison failed: %s", e)
         raise HTTPException(status_code=500, detail=str(e))

@@ -58,6 +58,7 @@ import {
   ClimatologyMetadataResponse,
   ClimatologyCoverageResponse,
   RouteClimatologySummary,
+  SystemCapabilitiesResponse,
 } from "./types";
 
 
@@ -239,6 +240,14 @@ export async function fetchStatus(): Promise<StatusResponse> {
   const res = await apiFetch(`${API_BASE}/api/v1/status`, { timeoutMs: 5000 });
   if (!res.ok) {
     throw new Error(`Status check failed with status: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchSystemCapabilities(): Promise<SystemCapabilitiesResponse> {
+  const res = await apiFetch(`${API_BASE}/api/v1/system/capabilities`, { timeoutMs: 6000 });
+  if (!res.ok) {
+    throw new Error(`System capabilities check failed with status: ${res.status}`);
   }
   return res.json();
 }

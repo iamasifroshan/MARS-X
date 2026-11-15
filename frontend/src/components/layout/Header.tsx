@@ -65,12 +65,51 @@ export const Header: React.FC<HeaderProps> = ({
         </nav>
       </div>
 
-      <div className="flex items-center space-x-4 font-mono text-xs">
+      <div className="flex items-center space-x-3 font-mono text-xs">
         <div className="hidden sm:flex items-center space-x-2 bg-[#121422] border border-[#23273e] px-2.5 py-1 rounded">
           <span className="text-[10px] text-gray-400">PLANETARY CRS:</span>
           <span className="text-[10px] text-amber-300 font-bold">EPSG:104905 / IAU:49900</span>
         </div>
 
+        {/* Operating Mode Badge */}
+        {healthState.isConnected && (
+          <div className="flex items-center space-x-1.5">
+            {healthState.operatingMode === "local_full_science" ? (
+              <span
+                className="text-[10px] px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 font-bold border border-cyan-500/50 shadow-[0_0_8px_rgba(6,182,212,0.3)]"
+                title="Local Full Science Mode: High-resolution DEM rasters active"
+              >
+                LOCAL FULL SCIENCE
+              </span>
+            ) : healthState.operatingMode === "cloud_demo" ? (
+              <div className="flex items-center space-x-1">
+                <span
+                  className="text-[10px] px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 font-bold border border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.3)]"
+                  title="Cloud Demo Mode: Lightweight services active. Raster analysis requires Local Full Science Mode."
+                >
+                  CLOUD DEMO
+                </span>
+                {!healthState.rasterAvailable && (
+                  <span
+                    className="text-[9px] px-1.5 py-0.5 rounded bg-red-950/50 text-red-400 font-mono border border-red-500/30 hidden lg:inline"
+                    title="Raster DEM datasets are not mounted on cloud container"
+                  >
+                    DATASET UNAVAILABLE
+                  </span>
+                )}
+              </div>
+            ) : healthState.capabilityCheckFailed ? (
+              <span
+                className="text-[10px] px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 font-bold border border-purple-500/50"
+                title="Capability discovery endpoint was unreachable"
+              >
+                CAPABILITY CHECK FAILED
+              </span>
+            ) : null}
+          </div>
+        )}
+
+        {/* API Connectivity Badge */}
         <div className="flex items-center space-x-2 bg-[#121422] border border-[#23273e] px-2.5 py-1 rounded">
           <div
             className={`w-2 h-2 rounded-full ${

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { fetchElevationProfile } from "../../lib/api";
 import { ElevationProfileResponse, ElevationProfilePoint } from "../../lib/types";
+import { useBackendHealth } from "../../hooks/useBackendHealth";
 
 const PRESET_TRANSECTS = [
   {
@@ -44,6 +45,7 @@ const PRESET_TRANSECTS = [
 ];
 
 export const ElevationProfilePanel: React.FC = () => {
+  const healthState = useBackendHealth();
   const [startLat, setStartLat] = useState<number>(-4.600);
   const [startLon, setStartLon] = useState<number>(66.317);
   const [endLat, setEndLat] = useState<number>(-4.640);
@@ -89,8 +91,15 @@ export const ElevationProfilePanel: React.FC = () => {
     const validPoints = profileData.points.filter((p) => p.elevation_m !== null);
     if (validPoints.length === 0) {
       return (
-        <div className="h-44 flex items-center justify-center text-amber-400 font-mono text-xs">
-          Entire profile trajectory falls in unmeasured NoData or unsupported coverage.
+        <div className="h-44 flex flex-col items-center justify-center text-amber-300 font-mono text-xs p-4 text-center space-y-1.5 bg-[#0d1020] rounded border border-amber-900/40">
+          <span className="font-bold text-amber-400">
+            {healthState.operatingMode === "cloud_demo" || !healthState.rasterAvailable
+              ? "Cloud Demo Mode — Elevation Raster Datasets Unavailable"
+              : "Entire profile trajectory falls in unmeasured NoData or unsupported coverage."}
+          </span>
+          <span className="text-amber-200/80 text-[11px] max-w-md">
+            Full raster-based terrain analysis is available in Local Full Science Mode. Start the local MARS-X backend with the required scientific datasets.
+          </span>
         </div>
       );
     }
@@ -234,6 +243,23 @@ export const ElevationProfilePanel: React.FC = () => {
           </span>
         </div>
       </div>
+
+      {/* Cloud Demo Mode Notice if Raster Processing is Unavailable */}
+      {healthState.isConnected && (healthState.operatingMode === "cloud_demo" || !healthState.rasterAvailable) && (
+        <div className="bg-amber-950/40 border border-amber-500/60 rounded-lg p-3.5 text-amber-200 shadow-md">
+          <div className="flex items-start space-x-2.5">
+            <span className="text-lg">ℹ️</span>
+            <div className="space-y-1">
+              <span className="font-bold uppercase tracking-wider text-[11px] text-amber-300">
+                Cloud Demo Mode Notice — Elevation Profiling
+              </span>
+              <p className="text-[11px] leading-relaxed text-amber-200/90 font-sans">
+                Full raster-based terrain analysis is available in Local Full Science Mode. Start the local MARS-X backend with the required scientific datasets.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Preset Transect Selector */}
       <div>

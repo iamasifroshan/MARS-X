@@ -80,4 +80,9 @@ def render_thermal_window(
         return Response(content=png_bytes, media_type="image/png")
     except Exception as e:
         logger.error("Thermal window rendering failed: %s", e)
+        if isinstance(e, FileNotFoundError) or "not found" in str(e).lower() or "no such file" in str(e).lower():
+            raise HTTPException(
+                status_code=503,
+                detail=f"TES thermal dataset unavailable on server: {e}. Please synchronize datasets or run in Local Full Science Mode.",
+            )
         raise HTTPException(status_code=500, detail=str(e))

@@ -1622,6 +1622,41 @@ export interface RouteClimatologySummary {
   safety_disclaimer: string;
 }
 
+// ── System Capabilities & Hybrid Operating Modes ────────────────────────────
+
+export interface DatasetCapability {
+  id: string;
+  name: string;
+  tier: "core" | "extended" | "baseline";
+  type: string;
+  available: boolean;
+  validation_status: "verified" | "missing" | "unverified";
+  format: string;
+  description: string;
+}
+
+export interface FeatureCapability {
+  id: string;
+  name: string;
+  available: boolean;
+  category: "raster_analysis" | "analytical_data" | "physics_model" | "catalog";
+  required_datasets: string[];
+  reason_if_unavailable: string | null;
+}
+
+export interface SystemCapabilitiesResponse {
+  operating_mode: "cloud_demo" | "local_full_science";
+  api_online: boolean;
+  api_available: boolean;
+  environment: "production_cloud" | "local_development";
+  raster_processing_available: boolean;
+  cloud_demo_notice: string | null;
+  datasets: Record<string, DatasetCapability>;
+  features: Record<string, FeatureCapability>;
+  corridors_ready: Record<string, boolean>;
+}
+
+
 
 
 

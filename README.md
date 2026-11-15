@@ -10,7 +10,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16.4.6%20Turbopack-black.svg)](https://nextjs.org/)
 [![MapLibre GL](https://img.shields.io/badge/MapLibre-GL%20JS-blueviolet.svg)](https://maplibre.org/)
 [![CRS](https://img.shields.io/badge/CRS-EPSG%3A104905%20(IAU%202000)-crimson.svg)](https://epsg.io/104905)
-[![Tests](https://img.shields.io/badge/Tests-492%20Passed%20(100%25)-success.svg)](backend/tests/)
+[![Tests](https://img.shields.io/badge/Tests-500%20Passed%20(100%25)-success.svg)](backend/tests/)
 
 > **NASA Space Apps Challenge 2026 Submission**  
 > **Challenge Track:** *Interplanetary Survival Guide: Martian Map*  
@@ -67,6 +67,59 @@ Exploring the surface of Mars presents extreme hazards: rugged crater rims, stee
 
 ---
 
+## 🌐 Zero-Cost Hybrid Deployment Architecture
+
+MARS-X implements a zero-cost dual operating architecture strictly separating **Cloud Demo Mode** from **Local Full Science Mode** at **$0.00 additional cloud infrastructure cost**:
+
+```mermaid
+graph TB
+    subgraph Cloud["Cloud Demo Mode (Render Free + Vercel)"]
+        direction TB
+        VercelApp["Vercel Frontend<br/>mars-x-nasa.vercel.app"]
+        RenderAPI["Render Free Web Service<br/>mars-x-backend.onrender.com"]
+        MCDCube["MCD v6.2 Climatology Cube<br/>(Tracked Git Asset - 2.8 MB)"]
+        CatData["Science Discovery Catalog<br/>(Curated GeoJSON - 45 KB)"]
+        
+        VercelApp -->|HTTPS| RenderAPI
+        RenderAPI --> MCDCube
+        RenderAPI --> CatData
+        RenderAPI -.->|503 with Guidance| MissingNotice["Cloud Demo Notice<br/>Raster features gracefully prompt user"]
+    end
+
+    subgraph Local["Local Full Science Mode (Workstation / Laptop)"]
+        direction TB
+        LocalFE["Local Next.js Frontend<br/>http://localhost:3005"]
+        LocalBE["Local FastAPI Backend<br/>http://127.0.0.1:8000"]
+        LocalRasters["Local Planetary Data (~2.95 GB)<br/>MOLA 128 ppd, CTX 20m, SIM 3292, TES"]
+        
+        LocalFE -->|HTTP| LocalBE
+        LocalBE --> LocalRasters
+        LocalBE --> FullSci["Full Terrain Profiling, Horn Traversability,<br/>A* Marswalk Geodesic Routing & ATSP"]
+    end
+```
+
+| Dimension | Mode A: Cloud Demo Mode | Mode B: Local Full Science Mode |
+|---|---|---|
+| **Target Audience** | Public evaluators, judges, quick previewers | Mission planners, researchers, geospatial analysts |
+| **Hosting & Cost** | **$0.00** (Render Free Tier + Vercel Hobby) | **$0.00** (Local developer machine / laptop) |
+| **Frontend URL** | [https://mars-x-nasa.vercel.app](https://mars-x-nasa.vercel.app) | `http://localhost:3005` |
+| **Backend URL** | [https://mars-x-backend.onrender.com](https://mars-x-backend.onrender.com) | `http://127.0.0.1:8000` |
+| **Datasets Available** | MCD v6.2 climatology cube, candidate discoveries, solar & pressure models | Full ~2.95 GB authentic rasters (MOLA, CTX, SIM 3292, TES) |
+| **Dynamic Capability Discovery** | `GET /api/v1/system/capabilities` reports `operating_mode: "cloud_demo"` | `GET /api/v1/system/capabilities` reports `operating_mode: "local_full_science"` |
+| **Lightweight Services** | 100% Operational (Solar, pressure, climatology, discoveries catalog) | 100% Operational |
+| **Raster Operations** | Returns structured HTTP 503 with clear transition guidance; UI displays informative banner | 100% Operational (Full Float32 DTM profiling, A* routing, ATSP) |
+| **Storage & Bandwidth** | Zero persistent disks; no heavy downloads on container boot | Local disk reading (`E:\MARS-X\data`) with memory-mapped caching |
+
+### Dynamic Backend Capability Discovery (`/api/v1/system/capabilities`)
+The frontend client automatically queries `GET /api/v1/system/capabilities` during startup and health polling:
+- **`operating_mode`**: `"cloud_demo"` vs `"local_full_science"`
+- **`raster_available`**: Boolean flag indicating whether high-resolution elevation rasters are present
+- **`datasets`**: Map of dataset IDs to availability paths, verified file sizes, and validation states
+- **`features`**: Granular capability breakdown for `elevation_profile`, `terrain_analysis`, `marswalk_routing`, `route_intelligence`, `environmental_climatology`, and `science_discovery`
+- **`cloud_demo_notice`**: Explanatory guidance displayed in Cloud Demo Mode for raster features
+
+---
+
 ## 🛠️ Architecture & Technology Stack
 
 ```mermaid
@@ -119,7 +172,7 @@ graph TD
 - **Backend:** FastAPI, Python 3.12, Rasterio, NumPy, Pydantic v2, Uvicorn.
 - **Frontend:** Next.js 16.4.6 (App Router + Turbopack), TypeScript, Tailwind CSS, Lucide React, MapLibre GL JS.
 - **Geodesics:** IAU 2000 Mars spherical arc-length geodesics ($R = 3,396,190.0\text{ m}$), Vincenty / Haversine distance computations.
-- **Testing:** pytest with 485 automated tests passing with 0 failures in 304s.
+- **Testing:** pytest with 500 automated tests passing with 0 failures in 281s.
 
 ---
 
@@ -168,6 +221,26 @@ graph TD
 - **Python 3.12+** (ensure `python` or `py` is on PATH)
 - **Node.js 18+** / **npm 9+**
 - **Git**
+
+### Automated One-Step Startup (Windows PowerShell)
+
+To start both the FastAPI backend and Next.js frontend with full capability verification in a single command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start_local_full_mode.ps1
+```
+
+This automated script:
+1. Validates the Python virtual environment and installs missing requirements.
+2. Verifies Node.js, npm, and frontend dependencies.
+3. Audits authentic raster datasets in `data/` against expected files.
+4. Starts the FastAPI backend on `http://127.0.0.1:8000` (if not already running).
+5. Configures `NEXT_PUBLIC_API_URL=http://127.0.0.1:8000` and starts the Next.js frontend on `http://localhost:3005`.
+6. Queries `GET /api/v1/system/capabilities` to print a terminal status table showing active datasets and features.
+
+---
+
+### Manual Setup Steps
 
 ### 1. Clone the Repository
 ```powershell
@@ -226,13 +299,13 @@ backend\.venv\Scripts\pytest.exe backend/tests/test_climatology.py
 # Run solar & atmospheric model integrity tests (Phase 8.9.1.1)
 backend\.venv\Scripts\pytest.exe backend/tests/test_environmental_models.py
 
-# Run the complete regression test suite (485 tests)
+# Run the complete regression test suite (500 tests)
 backend\.venv\Scripts\pytest.exe backend/tests/
 ```
 
 **Results:**
 ```
-====================== 485 passed in 304.83s (0:05:04) =======================
+====================== 500 passed in 281.65s (0:04:41) =======================
 ```
 
 ---

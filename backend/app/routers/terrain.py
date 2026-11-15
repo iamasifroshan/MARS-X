@@ -14,7 +14,7 @@ import math
 import threading
 import numpy as np
 from typing import List, Optional, Dict, Any, Tuple
-from fastapi import APIRouter, HTTPException, Query, Path
+from fastapi import APIRouter, HTTPException, Query, Path, Response, status
 
 from app.config import API_V1_PREFIX, DATA_ROOT
 from app.terrain.models import (
@@ -661,6 +661,26 @@ _WINDOW_CACHE: Dict[str, Tuple[bytes, Dict[str, str]]] = {}
 _MAX_WINDOW_CACHE = 64
 
 
+def _get_data_root() -> str:
+    """Retrieve dynamically resolved data root honoring environment variable overrides."""
+    from app.config import DEFAULT_DATA_DIR
+    return os.getenv("MARS_DATA_DIR", os.getenv("DATA_ROOT", DEFAULT_DATA_DIR))
+
+
+def _clear_raster_cache():
+    """Clear and close cached open raster readers and memmaps."""
+    with _RASTER_LOCK:
+        for r in list(_OPEN_RASTERS.values()):
+            try:
+                if not r.closed:
+                    r.close()
+            except Exception:
+                pass
+        _OPEN_RASTERS.clear()
+        _MEMMAPS_128.clear()
+        _WINDOW_CACHE.clear()
+
+
 def _get_raster_reader(path: str) -> Optional[rasterio.DatasetReader]:
     """Retrieve or lazily open persistent rasterio reader handle in a thread-safe manner."""
     with _RASTER_LOCK:
@@ -693,7 +713,7 @@ def _get_mola128_mm(tile_id: str) -> Optional[np.memmap]:
         return None
 
     raw_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "raw", "mola", fname)
+        os.path.join(_get_data_root(), "raw", "mola", fname)
     )
     if not os.path.exists(raw_path):
         return None
@@ -737,7 +757,7 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
     # Fast geographic bounding box pre-check: lat in [-28.9, -28.1], lon in [308.7, 309.3] or lon_180 in [-51.3, -50.7]
     if preferred_source in [None, "auto", "hirise", "hirise-dtm-controlled-esp-011635"]:
         if -28.9 <= lat <= -28.1 and (308.7 <= norm_lon <= 309.3 or -51.3 <= norm_lon_180 <= -50.7):
-            hirise_path = os.path.join(DATA_ROOT, "originals", "hirise", "DTEEC_011635_1510_029542_1510_A01.tif")
+            hirise_path = os.path.join(_get_data_root(), "originals", "hirise", "DTEEC_011635_1510_029542_1510_A01.tif")
             hi_src = _get_raster_reader(hirise_path)
             if hi_src is not None:
                 x_hi = math.radians(norm_lon_180) * R_IAU
@@ -777,7 +797,7 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
     # Fast geographic bounding box pre-check: lat in [4.3, 5.1], lon in [167.8, 168.7]
     if preferred_source in [None, "auto", "ctx", "ctx-dtm-controlled-t01-000893"]:
         if 4.3 <= lat <= 5.1 and 167.8 <= norm_lon <= 168.7:
-            t01_path = os.path.join(DATA_ROOT, "originals", "ctx", "T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif")
+            t01_path = os.path.join(_get_data_root(), "originals", "ctx", "T01_000893_1847_XN_04N191W__N09_065929_1853_XN_05N191W-DEM-geoid-adj.tif")
             t01_src = _get_raster_reader(t01_path)
             if t01_src is not None:
                 x_t01 = math.radians(norm_lon) * R_IAU
@@ -817,7 +837,7 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
     # Fast geographic bounding box pre-check: lat in [-5.3, -3.9], lon in [65.9, 66.8]
     if preferred_source in [None, "auto", "ctx", "ctx-dtm-p21-009323"]:
         if -5.3 <= lat <= -3.9 and 65.9 <= norm_lon <= 66.8:
-            ctx_path = os.path.join(DATA_ROOT, "raw", "ctx", "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif")
+            ctx_path = os.path.join(_get_data_root(), "raw", "ctx", "P21_009323_1754_XN_04S293W__N02_062992_1754_XI_04S293W_dtm.tif")
             ctx_src = _get_raster_reader(ctx_path)
             if ctx_src is not None:
                 x_ctx = math.radians(norm_lon) * R_IAU
@@ -912,7 +932,7 @@ def _sample_point_elevation(lat: float, lon: float, preferred_source: Optional[s
             )
 
     # 4. Priority 3: Global MOLA 4 ppd Baseline (~14.8 km/px, IAU:49900)
-    cog_path = os.path.join(DATA_ROOT, "processed", "mola", "mola_megt90n000cb_elevation.tif")
+    cog_path = os.path.join(_get_data_root(), "processed", "mola", "mola_megt90n000cb_elevation.tif")
     mola4_src = _get_raster_reader(cog_path)
     if mola4_src is not None:
         r, c = mola4_src.index(norm_lon, lat)
@@ -1057,6 +1077,16 @@ def get_elevation_profile(
                 resolution_m=pt_res.native_resolution_m,
                 is_nodata=pt_res.is_nodata,
             )
+        )
+
+    if nodata_count == num_samples and datasets_used_set == {"none"}:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Elevation dataset unavailable on host storage. "
+                "Full raster-based terrain analysis is available in Local Full Science Mode. "
+                "Start the local MARS-X backend with the required scientific datasets."
+            ),
         )
 
     return ElevationProfileResult(
