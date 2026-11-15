@@ -25,10 +25,11 @@ import {
   MultiStopTraverseIntelligenceReport,
 } from "@/lib/types";
 import { RouteIntelligenceView } from "./RouteIntelligenceView";
+import { EnvironmentalIntelligenceView } from "./EnvironmentalIntelligenceView";
 
 export const MarswalkRoutePlanner: React.FC = () => {
-  // Navigation mode: single leg vs multi-stop science traverse vs route intelligence
-  const [plannerMode, setPlannerMode] = useState<"single" | "multi" | "intelligence">("single");
+  // Navigation mode: single leg vs multi-stop science traverse vs route intelligence vs environmental
+  const [plannerMode, setPlannerMode] = useState<"single" | "multi" | "intelligence" | "environmental">("single");
 
   // Metadata
   const [singleMetadata, setSingleMetadata] = useState<MarswalkMetadataResponse | null>(null);
@@ -325,6 +326,16 @@ export const MarswalkRoutePlanner: React.FC = () => {
           {(routeIntelligence || traverseIntelligence) && (
             <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/40 text-cyan-200 font-bold">Ready</span>
           )}
+        </button>
+        <button
+          onClick={() => setPlannerMode("environmental")}
+          className={`flex-1 py-2 px-3 rounded font-bold uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 ${
+            plannerMode === "environmental"
+              ? "bg-amber-500 text-black shadow-md"
+              : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+          }`}
+        >
+          <span>🛰️</span> Environmental
         </button>
       </div>
 
@@ -1269,6 +1280,25 @@ export const MarswalkRoutePlanner: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* MODE 4: ENVIRONMENTAL INTELLIGENCE (PHASE 8.9.1) */}
+      {/* ===================================================================== */}
+      {plannerMode === "environmental" && (
+        <div className="space-y-4">
+          <EnvironmentalIntelligenceView
+            routePoints={
+              routeResult?.path_points?.map((p) => ({
+                lat: p.lat,
+                lon: p.lon,
+                elevation_m: p.elevation_m,
+                distance_m: p.cumulative_distance_m,
+              })) || null
+            }
+            routeName={routeResult?.route_name || multiResult?.traverse_name || null}
+          />
         </div>
       )}
     </div>

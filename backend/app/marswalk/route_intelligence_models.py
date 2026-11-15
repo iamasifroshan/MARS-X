@@ -12,6 +12,8 @@ Provides formal schemas for:
 from typing import Dict, List, Optional, Any, Tuple
 from pydantic import BaseModel, Field
 
+from app.science.environmental_models import RouteEnvironmentalSummary
+
 
 MARSWALK_SAFETY_DISCLAIMER = (
     "OPERATIONAL SAFETY WARNING: Marswalk route intelligence provides analytical and scientific "
@@ -246,6 +248,10 @@ class LegRouteIntelligence(BaseModel):
     dem_source: str = Field(..., description="Primary DEM dataset used for this leg")
     native_resolution_desc: str = Field(..., description="Human-readable pixel spacing description")
     coverage_limitations: str = Field(..., description="Specific coverage and terrain resolution caveats")
+    environmental_context: Optional[RouteEnvironmentalSummary] = Field(
+        default=None,
+        description="Analytical barometric pressure and solar geometry along this leg",
+    )
 
 
 class RouteIntelligenceReport(BaseModel):
@@ -270,6 +276,10 @@ class RouteIntelligenceReport(BaseModel):
     vertical_datum: str = Field(
         default="MOLA Areoid (Equipotential Gravitational Surface, R=3,396,190 m)",
         description="Vertical reference datum",
+    )
+    environmental_context: Optional[RouteEnvironmentalSummary] = Field(
+        default=None,
+        description="Analytical barometric pressure and solar geometry along the route",
     )
     safety_disclaimer: str = Field(default=MARSWALK_SAFETY_DISCLAIMER, description="Mandatory astronaut safety advisory")
 
@@ -304,6 +314,10 @@ class MultiStopTraverseIntelligenceReport(BaseModel):
     aggregated_science_opportunities: List[RouteScienceOpportunity] = Field(
         ...,
         description="Deduplicated list of nearby science opportunities along the traverse",
+    )
+    aggregated_environmental_context: Optional[RouteEnvironmentalSummary] = Field(
+        default=None,
+        description="Analytical barometric pressure and solar geometry along the full traverse",
     )
     dem_source: str = Field(..., description="Primary DEM dataset resolving all traverse waypoints")
     instrument: str = Field(..., description="Instrument name (HiRISE, CTX, MOLA)")

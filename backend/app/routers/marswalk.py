@@ -5,7 +5,8 @@ and engine metadata with mandatory safety disclaimers.
 """
 
 import logging
-from fastapi import APIRouter, HTTPException, Path, status
+from typing import Optional, List, Dict, Any
+from fastapi import APIRouter, HTTPException, Path, Query, status
 from app.config import API_V1_PREFIX
 from app.marswalk.marswalk_models import (
     MarswalkRouteRequest,
@@ -234,6 +235,9 @@ async def get_route_intelligence_metadata() -> RouteIntelligenceMetadataResponse
 )
 async def analyze_route_by_id(
     route_id: str = Path(..., description="Unique route identifier, e.g. mw-a1b2c3d4e5f6"),
+    ls_deg: Optional[float] = Query(default=None, description="Martian solar longitude Ls in degrees [0, 360)"),
+    ltst_hours: Optional[float] = Query(default=None, description="Local True Solar Time in decimal hours [0, 24)"),
+    tau: Optional[float] = Query(default=None, description="Column dust optical depth tau (tau >= 0)"),
 ) -> RouteIntelligenceReport:
     route = get_cached_route(route_id)
     if route is None:
@@ -242,7 +246,7 @@ async def analyze_route_by_id(
             detail=f"Route '{route_id}' not found in cache or expired. Please plan route first.",
         )
     intel_svc = get_route_intelligence_service()
-    return intel_svc.analyze_route(route)
+    return intel_svc.analyze_route(route, ls_deg=ls_deg, ltst_hours=ltst_hours, tau=tau)
 
 
 @router.get(
@@ -261,6 +265,9 @@ async def analyze_route_by_id(
 )
 async def analyze_multi_stop_traverse_by_id(
     traverse_id: str = Path(..., description="Unique multi-stop traverse identifier, e.g. mst-1a2b3c4d"),
+    ls_deg: Optional[float] = Query(default=None, description="Martian solar longitude Ls in degrees [0, 360)"),
+    ltst_hours: Optional[float] = Query(default=None, description="Local True Solar Time in decimal hours [0, 24)"),
+    tau: Optional[float] = Query(default=None, description="Column dust optical depth tau (tau >= 0)"),
 ) -> MultiStopTraverseIntelligenceReport:
     traverse = get_cached_multi_stop_traverse(traverse_id)
     if traverse is None:
@@ -269,6 +276,6 @@ async def analyze_multi_stop_traverse_by_id(
             detail=f"Multi-stop traverse '{traverse_id}' not found in cache or expired. Please plan traverse first.",
         )
     intel_svc = get_route_intelligence_service()
-    return intel_svc.analyze_multi_stop_traverse(traverse)
+    return intel_svc.analyze_multi_stop_traverse(traverse, ls_deg=ls_deg, ltst_hours=ltst_hours, tau=tau)
 
 

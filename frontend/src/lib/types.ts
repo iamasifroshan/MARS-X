@@ -1277,6 +1277,7 @@ export interface LegRouteIntelligence {
   dem_source: string;
   native_resolution_desc: string;
   coverage_limitations: string;
+  environmental_context?: RouteEnvironmentalSummary | null;
 }
 
 export interface RouteIntelligenceReport {
@@ -1297,6 +1298,7 @@ export interface RouteIntelligenceReport {
   tier: string;
   native_resolution_desc: string;
   vertical_datum: string;
+  environmental_context?: RouteEnvironmentalSummary | null;
   safety_disclaimer: string;
 }
 
@@ -1319,6 +1321,7 @@ export interface MultiStopTraverseIntelligenceReport {
   tier: string;
   native_resolution_desc: string;
   vertical_datum: string;
+  aggregated_environmental_context?: RouteEnvironmentalSummary | null;
   safety_disclaimer: string;
 }
 
@@ -1331,6 +1334,140 @@ export interface RouteIntelligenceMetadataResponse {
   terrain_datasets: Array<Record<string, any>>;
   evidence_classes: Array<{ class: string; description: string }>;
   scientific_rules: string[];
+  safety_disclaimer: string;
+}
+
+// ── Environmental Intelligence Types — Phase 8.9.1 ─────────────────────────
+
+export type ProvenanceClassification = 
+  | "Historical Observation"
+  | "Analytical Model"
+  | "Derived Estimate"
+  | "Unavailable";
+
+export interface AtmosphericPressureEstimate {
+  elevation_m: number;
+  reference_pressure_p0_pa: number;
+  scale_height_h_m: number;
+  reference_atmospheric_pressure_estimate_pa: number;
+  vertical_datum: string;
+  classification: ProvenanceClassification;
+  model_formula: string;
+  scientific_limitations: string;
+  safety_disclaimer: string;
+}
+
+export interface PressureResidualBenchmark {
+  station_id: string;
+  station_name: string;
+  mission: string;
+  landing_site: string;
+  coordinates: [number, number];
+  elevation_m: number;
+  model_pressure_pa: number;
+  observed_mean_pressure_pa: number;
+  residual_pa: number;
+  residual_percent: number;
+  observation_sol: number;
+  instrument_lid: string;
+  classification: ProvenanceClassification;
+  notes: string;
+}
+
+export interface MarsSolarGeometry {
+  lat: number;
+  lon: number;
+  solar_longitude_ls_deg: number;
+  local_true_solar_time_hours: number;
+  season_name: string;
+  mars_sun_distance_au: number;
+  solar_declination_deg: number;
+  hour_angle_deg: number;
+  solar_zenith_angle_deg: number;
+  solar_elevation_deg: number;
+  day_night_status: string;
+  is_day: boolean;
+  sunrise_hour?: number | null;
+  sunset_hour?: number | null;
+  polar_condition?: string | null;
+  top_of_atmosphere_solar_flux_w_m2: number;
+  optical_depth_tau?: number | null;
+  surface_solar_flux_w_m2: number;
+  classification: ProvenanceClassification;
+  methodology_citation: string;
+  safety_disclaimer: string;
+}
+
+export interface HistoricalRoverWeatherRecord {
+  station: string;
+  timestamp_or_sclk: string;
+  lmst: string;
+  ltst: string;
+  pressure_pa?: number | null;
+  ambient_temperature_k?: number | null;
+  ground_temperature_k?: number | null;
+  relative_humidity_percent?: number | null;
+  sensor_flags?: Record<string, any> | null;
+}
+
+export interface HistoricalWeatherSummary {
+  station_id: string;
+  instrument_name: string;
+  mission: string;
+  site_name: string;
+  coordinates: [number, number];
+  elevation_m: number;
+  sol: number;
+  solar_longitude_range_deg: [number, number];
+  total_samples: number;
+  pressure_summary_pa?: { min_pa: number; max_pa: number; mean_pa: number; count: number } | null;
+  ambient_temp_summary_k?: { min_k: number; max_k: number; mean_k: number; count: number } | null;
+  ground_temp_summary_k?: { min_k: number; max_k: number; mean_k: number; count: number } | null;
+  relative_humidity_summary_pct?: Record<string, number> | null;
+  irradiance_summary_w_m2?: Record<string, number> | null;
+  pds4_source_lid: string;
+  classification: ProvenanceClassification;
+  temporal_disclaimer: string;
+  sample_records: HistoricalRoverWeatherRecord[];
+}
+
+export interface RoutePointEnvironment {
+  point_index: number;
+  lat: number;
+  lon: number;
+  distance_m: number;
+  elevation_m: number;
+  reference_pressure_pa: number;
+  solar_zenith_angle_deg: number;
+  solar_elevation_deg: number;
+  is_day: boolean;
+  toa_solar_flux_w_m2: number;
+  surface_solar_flux_w_m2: number;
+}
+
+export interface RouteEnvironmentalSummary {
+  solar_longitude_ls_deg: number;
+  local_true_solar_time_hours: number;
+  optical_depth_tau?: number | null;
+  min_pressure_pa: number;
+  max_pressure_pa: number;
+  mean_pressure_pa: number;
+  min_surface_flux_w_m2: number;
+  max_surface_flux_w_m2: number;
+  mean_surface_flux_w_m2: number;
+  daylight_percentage: number;
+  samples: RoutePointEnvironment[];
+  classification: ProvenanceClassification;
+  safety_disclaimer: string;
+}
+
+export interface EnvironmentalMetadataResponse {
+  service_name: string;
+  version: string;
+  available_models: string[];
+  reference_parameters: Record<string, any>;
+  classification_tiers: ProvenanceClassification[];
+  scientific_limitations: string;
   safety_disclaimer: string;
 }
 

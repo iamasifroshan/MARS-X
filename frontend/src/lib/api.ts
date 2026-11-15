@@ -46,6 +46,12 @@ import {
   RouteIntelligenceReport,
   MultiStopTraverseIntelligenceReport,
   RouteIntelligenceMetadataResponse,
+  AtmosphericPressureEstimate,
+  PressureResidualBenchmark,
+  MarsSolarGeometry,
+  HistoricalWeatherSummary,
+  RouteEnvironmentalSummary,
+  EnvironmentalMetadataResponse,
 } from "./types";
 
 
@@ -1023,6 +1029,105 @@ export async function fetchMultiStopTraverseIntelligence(
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
     throw new Error(errBody.detail || `Multi-stop traverse intelligence analysis failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+// ── Environmental Intelligence API Fetchers — Phase 8.9.1 ──────────────────
+
+export async function fetchEnvironmentalMetadata(): Promise<EnvironmentalMetadataResponse> {
+  const res = await apiFetch(`${API_BASE}/api/v1/environmental/metadata`);
+  if (!res.ok) {
+    throw new Error(`Environmental metadata fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchAtmosphericPressureEstimate(
+  elevationM: number,
+  pRefPa?: number,
+  scaleHeightM?: number
+): Promise<AtmosphericPressureEstimate> {
+  const params = new URLSearchParams();
+  params.append("elevation_m", elevationM.toString());
+  if (pRefPa !== undefined) params.append("p_ref_pa", pRefPa.toString());
+  if (scaleHeightM !== undefined) params.append("scale_height_m", scaleHeightM.toString());
+
+  const res = await apiFetch(`${API_BASE}/api/v1/environmental/pressure/estimate?${params.toString()}`);
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.detail || `Pressure estimation failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchPressureResiduals(): Promise<Record<string, PressureResidualBenchmark>> {
+  const res = await apiFetch(`${API_BASE}/api/v1/environmental/pressure/residuals`);
+  if (!res.ok) {
+    throw new Error(`Pressure residuals fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchSolarGeometry(
+  lat: number,
+  lon: number,
+  lsDeg: number = 0.0,
+  ltstHours: number = 12.0,
+  tau?: number
+): Promise<MarsSolarGeometry> {
+  const params = new URLSearchParams();
+  params.append("lat", lat.toString());
+  params.append("lon", lon.toString());
+  params.append("ls_deg", lsDeg.toString());
+  params.append("ltst_hours", ltstHours.toString());
+  if (tau !== undefined) params.append("tau", tau.toString());
+
+  const res = await apiFetch(`${API_BASE}/api/v1/environmental/solar-geometry?${params.toString()}`);
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.detail || `Solar geometry calculation failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchHistoricalMeda(): Promise<HistoricalWeatherSummary> {
+  const res = await apiFetch(`${API_BASE}/api/v1/environmental/historical/meda`);
+  if (!res.ok) {
+    throw new Error(`MEDA Sol 1 fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchHistoricalRems(): Promise<HistoricalWeatherSummary> {
+  const res = await apiFetch(`${API_BASE}/api/v1/environmental/historical/rems`);
+  if (!res.ok) {
+    throw new Error(`REMS Sol 1 fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function enrichRouteEnvironment(
+  routePoints: Array<{ lat: number; lon: number; elevation_m: number; distance_m: number }>,
+  lsDeg: number = 0.0,
+  ltstHours: number = 12.0,
+  tau?: number,
+  maxSamples: number = 50
+): Promise<RouteEnvironmentalSummary> {
+  const res = await apiFetch(`${API_BASE}/api/v1/environmental/route/enrich`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      route_points: routePoints,
+      ls_deg: lsDeg,
+      ltst_hours: ltstHours,
+      tau,
+      max_samples: maxSamples,
+    }),
+  });
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.detail || `Route environmental enrichment failed: ${res.status}`);
   }
   return res.json();
 }

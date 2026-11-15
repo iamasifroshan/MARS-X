@@ -40,6 +40,7 @@ from app.marswalk.route_intelligence_models import (
 )
 from app.science.geology_service import get_geology_service
 from app.science.thermal_service import get_thermal_service
+from app.science.environmental_service import get_environmental_service
 from app.science.discovery_service import (
     ScienceDiscoveryService,
     mars_haversine_distance_km,
@@ -627,7 +628,13 @@ class RouteIntelligenceService:
     # SINGLE ROUTE INTELLIGENCE ANALYSIS
     # =========================================================================
 
-    def analyze_route(self, route: MarswalkRouteResponse) -> RouteIntelligenceReport:
+    def analyze_route(
+        self,
+        route: MarswalkRouteResponse,
+        ls_deg: Optional[float] = None,
+        ltst_hours: Optional[float] = None,
+        tau: Optional[float] = None,
+    ) -> RouteIntelligenceReport:
         """Produce exhaustive scientific intelligence report for a single-destination route."""
         # 1. Elevation Profile
         elev_profile = self.build_elevation_profile(
@@ -671,6 +678,29 @@ class RouteIntelligenceService:
             coords_with_distance=coords_with_dist,
         )
 
+        # 6. Optional Environmental Context
+        env_context = None
+        if ls_deg is not None and ltst_hours is not None:
+            try:
+                env_svc = get_environmental_service()
+                pts_dicts = [
+                    {
+                        "lat": p.lat,
+                        "lon": p.lon,
+                        "elevation_m": p.elevation_m,
+                        "distance_m": p.cumulative_distance_m,
+                    }
+                    for p in route.path_points
+                ]
+                env_context = env_svc.enrich_route_environmental_context(
+                    pts_dicts,
+                    ls_deg=ls_deg,
+                    ltst_hours=ltst_hours,
+                    tau=tau,
+                )
+            except Exception as e:
+                logger.warning("Failed to enrich route with environmental context: %s", e)
+
         return RouteIntelligenceReport(
             route_id=route.route_id,
             route_name=route.route_name or f"Marswalk Route ({route.source_dataset})",
@@ -684,6 +714,7 @@ class RouteIntelligenceService:
             geological_context=geo_context,
             thermophysical_context=thermal_context,
             nearby_science_opportunities=science_opps,
+            environmental_context=env_context,
             dem_source=route.source_dataset,
             instrument=route.instrument,
             tier=route.tier,
@@ -696,7 +727,13 @@ class RouteIntelligenceService:
     # MULTI-STOP TRAVERSE INTELLIGENCE ANALYSIS
     # =========================================================================
 
-    def analyze_multi_stop_traverse(self, traverse: MultiStopTraverseResponse) -> MultiStopTraverseIntelligenceReport:
+    def analyze_multi_stop_traverse(
+        self,
+        traverse: MultiStopTraverseResponse,
+        ls_deg: Optional[float] = None,
+        ltst_hours: Optional[float] = None,
+        tau: Optional[float] = None,
+    ) -> MultiStopTraverseIntelligenceReport:
         """Produce comprehensive leg-by-leg and aggregated traverse intelligence report."""
         leg_reports: List[LegRouteIntelligence] = []
         aggregated_points: List[ElevationProfilePoint] = []
@@ -775,6 +812,29 @@ class RouteIntelligenceService:
                 corridor_radius_km=100.0,
             )
 
+            # Leg Environmental Context
+            leg_env = None
+            if ls_deg is not None and ltst_hours is not None:
+                try:
+                    env_svc = get_environmental_service()
+                    pts_dicts = [
+                        {
+                            "lat": p.lat,
+                            "lon": p.lon,
+                            "elevation_m": p.elevation_m,
+                            "distance_m": p.cumulative_distance_m,
+                        }
+                        for p in pts
+                    ]
+                    leg_env = env_svc.enrich_route_environmental_context(
+                        pts_dicts,
+                        ls_deg=ls_deg,
+                        ltst_hours=ltst_hours,
+                        tau=tau,
+                    )
+                except Exception as e:
+                    logger.debug("Failed to enrich leg %d with environmental context: %s", leg.leg_index, e)
+
             leg_reports.append(
                 LegRouteIntelligence(
                     leg_index=leg.leg_index,
@@ -792,6 +852,7 @@ class RouteIntelligenceService:
                     geological_context=leg_geo,
                     thermophysical_context=leg_thermal,
                     nearby_science_opportunities=leg_opps,
+                    environmental_context=leg_env,
                     dem_source=leg.source_dataset,
                     native_resolution_desc=traverse.native_resolution_desc,
                     coverage_limitations=f"Leg evaluated over authentic {leg.source_dataset} DEM raster.",
@@ -865,6 +926,29 @@ class RouteIntelligenceService:
             max_opportunities=10,
         )
 
+        # Aggregated Environmental Context
+        agg_env = None
+        if ls_deg is not None and ltst_hours is not None:
+            try:
+                env_svc = get_environmental_service()
+                agg_pts_dicts = [
+                    {
+                        "lat": p.lat,
+                        "lon": p.lon,
+                        "elevation_m": p.elevation_m,
+                        "distance_m": p.distance_m,
+                    }
+                    for p in aggregated_points
+                ]
+                agg_env = env_svc.enrich_route_environmental_context(
+                    agg_pts_dicts,
+                    ls_deg=ls_deg,
+                    ltst_hours=ltst_hours,
+                    tau=tau,
+                )
+            except Exception as e:
+                logger.warning("Failed to enrich aggregated traverse with environmental context: %s", e)
+
         stop_names = [traverse.start_stop.name] + [s.name for s in traverse.ordered_stops] + [traverse.dest_stop.name]
 
         return MultiStopTraverseIntelligenceReport(
@@ -881,6 +965,7 @@ class RouteIntelligenceService:
             aggregated_geological_context=agg_geo,
             aggregated_thermophysical_context=agg_thermal,
             aggregated_science_opportunities=agg_opps,
+            aggregated_environmental_context=agg_env,
             dem_source=traverse.source_dataset,
             instrument=traverse.instrument,
             tier=traverse.tier,
