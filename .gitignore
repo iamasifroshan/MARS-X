@@ -67,6 +67,10 @@ data/visualization/*
 !data/originals/**/.gitkeep
 !data/derived/**/.gitkeep
 !data/visualization/**/.gitkeep
+!data/originals/climatology/
+!data/originals/climatology/**
+!data/derived/climatology/
+!data/derived/climatology/**
 
 # --- GDAL / Raster temp ---
 *.tif.aux.xml
