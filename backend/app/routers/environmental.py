@@ -16,6 +16,7 @@ from app.science.environmental_models import (
     AtmosphericPressureEstimate,
     PressureResidualBenchmark,
     MarsSolarGeometry,
+    MarsTimeConversion,
     HistoricalWeatherSummary,
     RouteEnvironmentalSummary,
     EnvironmentalMetadataResponse,
@@ -79,12 +80,14 @@ async def get_pressure_residuals() -> Dict[str, PressureResidualBenchmark]:
 @router.get("/solar-geometry", response_model=MarsSolarGeometry)
 async def get_solar_geometry(
     lat: float = Query(..., description="Planetocentric latitude in degrees [-90, +90]"),
-    lon: float = Query(..., description="Planetocentric East longitude in degrees [0, 360)"),
+    lon: float = Query(..., description="Planetocentric longitude in degrees"),
     ls_deg: float = Query(default=0.0, description="Martian solar longitude Ls in degrees [0, 360)"),
-    ltst_hours: float = Query(default=12.0, description="Local True Solar Time in decimal hours [0, 24)"),
+    ltst_hours: float = Query(default=12.0, description="Local solar time in decimal hours [0, 24)"),
     tau: Optional[float] = Query(default=None, description="Optional column dust optical depth tau (tau >= 0)"),
+    time_system: str = Query(default="LTST", description="Time system: 'LTST' (Local True Solar Time) or 'LMST' (Local Mean Solar Time)"),
+    lon_convention: str = Query(default="east_positive", description="Longitude convention: 'east_positive' [0, 360) / [-180, +180] or 'west_positive' [0, 360)"),
 ) -> MarsSolarGeometry:
-    """Calculate deterministic Mars solar geometry, declination, SZA, and surface solar flux."""
+    """Calculate deterministic Mars solar geometry, declination, SZA, and solar irradiance."""
     service = get_environmental_service()
     try:
         return service.calculate_solar_geometry(
@@ -93,6 +96,49 @@ async def get_solar_geometry(
             ls_deg=ls_deg,
             ltst_hours=ltst_hours,
             tau=tau,
+            time_system=time_system,
+            lon_convention=lon_convention,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/time/eot")
+async def get_equation_of_time(
+    ls_deg: float = Query(default=0.0, description="Martian solar longitude Ls in degrees [0, 360)"),
+) -> Dict[str, Any]:
+    """Calculate the Martian Equation of Time (EOT = LTST - LMST) from areocentric solar longitude Ls."""
+    service = get_environmental_service()
+    eot_deg, eot_hours = service.calculate_equation_of_time(ls_deg)
+    return {
+        "solar_longitude_ls_deg": round(ls_deg % 360.0, 2),
+        "equation_of_time_deg": round(eot_deg, 4),
+        "equation_of_time_hours": round(eot_hours, 4),
+        "equation_of_time_minutes": round(eot_hours * 60.0, 2),
+        "classification": "Analytical Model",
+        "citation": "Allison & McEwen (2000), Planetary and Space Science 48(2-3), pp. 215-235",
+    }
+
+
+@router.get("/time/convert", response_model=MarsTimeConversion)
+async def convert_time(
+    time_hours: float = Query(..., description="Solar time in decimal hours [0, 24)"),
+    from_system: str = Query(..., description="Input time system: 'LMST', 'LTST', or 'MTC'"),
+    to_system: str = Query(..., description="Target time system: 'LMST', 'LTST', or 'MTC'"),
+    lon_deg: float = Query(..., description="Planetocentric longitude in degrees"),
+    ls_deg: float = Query(default=0.0, description="Martian solar longitude Ls in degrees [0, 360)"),
+    lon_convention: str = Query(default="east_positive", description="Longitude convention: 'east_positive' or 'west_positive'"),
+) -> MarsTimeConversion:
+    """Convert solar time between MTC, LMST, and LTST according to longitude convention."""
+    service = get_environmental_service()
+    try:
+        return service.convert_mars_time(
+            time_hours=time_hours,
+            from_system=from_system,
+            to_system=to_system,
+            lon_deg=lon_deg,
+            ls_deg=ls_deg,
+            lon_convention=lon_convention,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

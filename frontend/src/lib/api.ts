@@ -49,6 +49,7 @@ import {
   AtmosphericPressureEstimate,
   PressureResidualBenchmark,
   MarsSolarGeometry,
+  MarsTimeConversion,
   HistoricalWeatherSummary,
   RouteEnvironmentalSummary,
   EnvironmentalMetadataResponse,
@@ -1074,7 +1075,9 @@ export async function fetchSolarGeometry(
   lon: number,
   lsDeg: number = 0.0,
   ltstHours: number = 12.0,
-  tau?: number
+  tau?: number,
+  timeSystem?: string,
+  lonConvention?: string
 ): Promise<MarsSolarGeometry> {
   const params = new URLSearchParams();
   params.append("lat", lat.toString());
@@ -1082,11 +1085,52 @@ export async function fetchSolarGeometry(
   params.append("ls_deg", lsDeg.toString());
   params.append("ltst_hours", ltstHours.toString());
   if (tau !== undefined) params.append("tau", tau.toString());
+  if (timeSystem) params.append("time_system", timeSystem);
+  if (lonConvention) params.append("lon_convention", lonConvention);
 
   const res = await apiFetch(`${API_BASE}/api/v1/environmental/solar-geometry?${params.toString()}`);
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
     throw new Error(errBody.detail || `Solar geometry calculation failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchEquationOfTime(lsDeg: number = 0.0): Promise<{
+  solar_longitude_ls_deg: number;
+  equation_of_time_deg: number;
+  equation_of_time_hours: number;
+  equation_of_time_minutes: number;
+  classification: string;
+  citation: string;
+}> {
+  const res = await apiFetch(`${API_BASE}/api/v1/environmental/time/eot?ls_deg=${lsDeg}`);
+  if (!res.ok) {
+    throw new Error(`Equation of Time fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function convertMarsTime(
+  timeHours: number,
+  fromSystem: "LMST" | "LTST" | "MTC",
+  toSystem: "LMST" | "LTST" | "MTC",
+  lonDeg: number,
+  lsDeg: number = 0.0,
+  lonConvention: "east_positive" | "west_positive" = "east_positive"
+): Promise<MarsTimeConversion> {
+  const params = new URLSearchParams({
+    time_hours: timeHours.toString(),
+    from_system: fromSystem,
+    to_system: toSystem,
+    lon_deg: lonDeg.toString(),
+    ls_deg: lsDeg.toString(),
+    lon_convention: lonConvention,
+  });
+  const res = await apiFetch(`${API_BASE}/api/v1/environmental/time/convert?${params.toString()}`);
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.detail || `Mars time conversion failed: ${res.status}`);
   }
   return res.json();
 }

@@ -47,6 +47,7 @@ export const EnvironmentalIntelligenceView: React.FC<EnvironmentalIntelligenceVi
   const [solarLon, setSolarLon] = useState<number>(77.4508);
   const [lsDeg, setLsDeg] = useState<number>(6.15); // Perseverance Sol 1 Ls
   const [ltstHours, setLtstHours] = useState<number>(13.5); // Midday
+  const [timeSystem, setTimeSystem] = useState<"LTST" | "LMST">("LTST");
   const [dustTau, setDustTau] = useState<number>(0.3);
   const [solarGeometry, setSolarGeometry] = useState<MarsSolarGeometry | null>(null);
   const [solarLoading, setSolarLoading] = useState<boolean>(false);
@@ -71,8 +72,8 @@ export const EnvironmentalIntelligenceView: React.FC<EnvironmentalIntelligenceVi
 
   // Fetch initial solar geometry on mount or parameter change
   useEffect(() => {
-    updateSolarGeometry(solarLat, solarLon, lsDeg, ltstHours, dustTau);
-  }, [solarLat, solarLon, lsDeg, ltstHours, dustTau]);
+    updateSolarGeometry(solarLat, solarLon, lsDeg, ltstHours, dustTau, timeSystem);
+  }, [solarLat, solarLon, lsDeg, ltstHours, dustTau, timeSystem]);
 
   // Fetch historical rover data when tab opened
   useEffect(() => {
@@ -124,9 +125,16 @@ export const EnvironmentalIntelligenceView: React.FC<EnvironmentalIntelligenceVi
       });
   };
 
-  const updateSolarGeometry = (lat: number, lon: number, ls: number, ltst: number, tau: number) => {
+  const updateSolarGeometry = (
+    lat: number,
+    lon: number,
+    ls: number,
+    tHours: number,
+    tau: number,
+    tSystem: "LTST" | "LMST" = "LTST"
+  ) => {
     setSolarLoading(true);
-    fetchSolarGeometry(lat, lon, ls, ltst, tau)
+    fetchSolarGeometry(lat, lon, ls, tHours, tau, tSystem)
       .then((res) => {
         setSolarGeometry(res);
         setSolarLoading(false);
@@ -447,10 +455,20 @@ export const EnvironmentalIntelligenceView: React.FC<EnvironmentalIntelligenceVi
                 </span>
               </div>
 
-              {/* Local True Solar Time (LTST) */}
+              {/* Local Solar Time (LTST / LMST) */}
               <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-slate-300 font-medium">Local Time (LTST):</span>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-slate-300 font-medium">Local Time:</span>
+                    <button
+                      type="button"
+                      onClick={() => setTimeSystem(timeSystem === "LTST" ? "LMST" : "LTST")}
+                      className="px-1.5 py-0.5 text-[9px] font-mono bg-[#161c36] hover:bg-[#1f284d] border border-[#2e3b68] rounded text-cyan-300"
+                      title="Toggle time system between Local True Solar Time (LTST) and Local Mean Solar Time (LMST)"
+                    >
+                      {timeSystem}
+                    </button>
+                  </div>
                   <span className="font-mono text-orange-400 font-bold">{ltstHours.toFixed(1)} h</span>
                 </div>
                 <input
@@ -462,9 +480,14 @@ export const EnvironmentalIntelligenceView: React.FC<EnvironmentalIntelligenceVi
                   onChange={(e) => setLtstHours(parseFloat(e.target.value))}
                   className="w-full h-1.5 bg-[#1e253e] rounded appearance-none cursor-pointer accent-orange-500"
                 />
-                <span className="text-[10px] text-slate-400 block font-mono">
-                  {Math.floor(ltstHours)}:{String(Math.floor((ltstHours % 1) * 60)).padStart(2, "0")} Sol time
-                </span>
+                <div className="flex justify-between text-[10px] text-slate-400 font-mono">
+                  <span>{Math.floor(ltstHours)}:{String(Math.floor((ltstHours % 1) * 60)).padStart(2, "0")} {timeSystem}</span>
+                  {solarGeometry && (
+                    <span className="text-cyan-400">
+                      {timeSystem === "LTST" ? `LMST ${solarGeometry.local_mean_solar_time_hours}h` : `LTST ${solarGeometry.local_true_solar_time_hours}h`} (EOT {solarGeometry.equation_of_time_minutes > 0 ? `+` : ``}{solarGeometry.equation_of_time_minutes}m)
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Dust Optical Depth (Tau) */}
@@ -510,52 +533,88 @@ export const EnvironmentalIntelligenceView: React.FC<EnvironmentalIntelligenceVi
 
             {/* Results Grid */}
             {solarGeometry && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-[#1e253e]">
-                <div className="p-2 bg-[#12162a] rounded border border-[#232b48]">
-                  <span className="text-[10px] text-slate-400 block uppercase">Solar Zenith Angle</span>
-                  <span className="text-sm font-mono font-bold text-orange-300">
-                    {solarGeometry.solar_zenith_angle_deg}°
-                  </span>
-                  <span className="text-[10px] text-slate-500 block">
-                    Elev: {solarGeometry.solar_elevation_deg}°
-                  </span>
+              <div className="space-y-3 pt-3 border-t border-[#1e253e]">
+                {/* Orbital & Celestial Parameters */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div className="p-2 bg-[#12162a] rounded border border-[#232b48]">
+                    <span className="text-[10px] text-slate-400 block uppercase">Solar Zenith Angle</span>
+                    <span className="text-sm font-mono font-bold text-orange-300">
+                      {solarGeometry.solar_zenith_angle_deg}°
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Elev: {solarGeometry.solar_elevation_deg}°
+                    </span>
+                  </div>
+
+                  <div className="p-2 bg-[#12162a] rounded border border-[#232b48]">
+                    <span className="text-[10px] text-slate-400 block uppercase">Diurnal State</span>
+                    <span
+                      className={`text-sm font-mono font-bold ${
+                        solarGeometry.is_day ? "text-emerald-400" : "text-blue-400"
+                      }`}
+                    >
+                      {solarGeometry.day_night_status}
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      {solarGeometry.polar_condition ||
+                        (solarGeometry.sunrise_hour && solarGeometry.sunset_hour
+                          ? `Rise ${solarGeometry.sunrise_hour}h / Set ${solarGeometry.sunset_hour}h`
+                          : "Diurnal")}
+                    </span>
+                  </div>
+
+                  <div className="p-2 bg-[#12162a] rounded border border-[#232b48]">
+                    <span className="text-[10px] text-slate-400 block uppercase">Mars-Sun Distance</span>
+                    <span className="text-sm font-mono font-bold text-slate-200">
+                      {solarGeometry.mars_sun_distance_au} AU
+                    </span>
+                    <span className="text-[10px] text-slate-500 block font-mono">
+                      Dec: {solarGeometry.solar_declination_deg}°
+                    </span>
+                  </div>
+
+                  <div className="p-2 bg-[#12162a] rounded border border-[#232b48]">
+                    <span className="text-[10px] text-slate-400 block uppercase">Equation of Time</span>
+                    <span className="text-sm font-mono font-bold text-cyan-300">
+                      {solarGeometry.equation_of_time_minutes > 0 ? `+` : ``}{solarGeometry.equation_of_time_minutes} min
+                    </span>
+                    <span className="text-[10px] text-slate-500 block font-mono">
+                      LMST: {solarGeometry.local_mean_solar_time_hours}h
+                    </span>
+                  </div>
                 </div>
 
-                <div className="p-2 bg-[#12162a] rounded border border-[#232b48]">
-                  <span className="text-[10px] text-slate-400 block uppercase">Diurnal State</span>
-                  <span
-                    className={`text-sm font-mono font-bold ${
-                      solarGeometry.is_day ? "text-emerald-400" : "text-blue-400"
-                    }`}
-                  >
-                    {solarGeometry.day_night_status}
-                  </span>
-                  <span className="text-[10px] text-slate-500 block">
-                    {solarGeometry.polar_condition ||
-                      (solarGeometry.sunrise_hour && solarGeometry.sunset_hour
-                        ? `Rise ${solarGeometry.sunrise_hour}h / Set ${solarGeometry.sunset_hour}h`
-                        : "Diurnal")}
-                  </span>
-                </div>
+                {/* Irradiance Breakdown: TOA Normal vs TOA Horizontal vs Surface Horizontal */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  <div className="p-2.5 bg-[#12162a] rounded border border-[#232b48]">
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">TOA Normal Irradiance (S_Mars)</span>
+                    <span className="text-sm font-mono font-bold text-slate-200">
+                      {solarGeometry.toa_normal_irradiance_w_m2} W/m²
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      S_0 / r² (normal incidence at top of atmosphere)
+                    </span>
+                  </div>
 
-                <div className="p-2 bg-[#12162a] rounded border border-[#232b48]">
-                  <span className="text-[10px] text-slate-400 block uppercase">TOA Normal Flux</span>
-                  <span className="text-sm font-mono font-bold text-slate-200">
-                    {solarGeometry.top_of_atmosphere_solar_flux_w_m2} W/m²
-                  </span>
-                  <span className="text-[10px] text-slate-500 block font-mono">
-                    r = {solarGeometry.mars_sun_distance_au} AU
-                  </span>
-                </div>
+                  <div className="p-2.5 bg-[#12162a] rounded border border-[#232b48]">
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">TOA Direct Horizontal Flux</span>
+                    <span className="text-sm font-mono font-bold text-amber-200">
+                      {solarGeometry.toa_horizontal_irradiance_w_m2} W/m²
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      S_Mars × max(0, cos(SZA))
+                    </span>
+                  </div>
 
-                <div className="p-2 bg-[#12162a] rounded border border-[#232b48]">
-                  <span className="text-[10px] text-slate-400 block uppercase">Direct Surface Flux</span>
-                  <span className="text-sm font-mono font-bold text-amber-300">
-                    {solarGeometry.surface_solar_flux_w_m2} W/m²
-                  </span>
-                  <span className="text-[10px] text-slate-500 block">
-                    Beer-Lambert τ={dustTau}
-                  </span>
+                  <div className="p-2.5 bg-[#12162a] rounded border border-[#232b48]">
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">Direct Beam Surface Horizontal</span>
+                    <span className="text-sm font-mono font-bold text-amber-400">
+                      {solarGeometry.surface_direct_horizontal_irradiance_w_m2} W/m²
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Extinguished direct beam (excludes diffuse skylight)
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
@@ -792,7 +851,7 @@ export const EnvironmentalIntelligenceView: React.FC<EnvironmentalIntelligenceVi
                   {routeSummary.mean_surface_flux_w_m2} W/m²
                 </span>
                 <span className="text-[10px] text-slate-500 block">
-                  Max: {routeSummary.max_surface_flux_w_m2} W/m²
+                  Direct beam (max {routeSummary.max_surface_flux_w_m2} W/m²)
                 </span>
               </div>
 
@@ -828,7 +887,7 @@ export const EnvironmentalIntelligenceView: React.FC<EnvironmentalIntelligenceVi
                       <th className="p-1.5">Elev (m)</th>
                       <th className="p-1.5">Ref Pressure (Pa)</th>
                       <th className="p-1.5">SZA (°)</th>
-                      <th className="p-1.5">Surface Flux (W/m²)</th>
+                      <th className="p-1.5">Surface Beam (W/m²)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#1e253e] text-slate-300">

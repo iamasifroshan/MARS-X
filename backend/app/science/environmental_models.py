@@ -87,6 +87,32 @@ class PressureResidualBenchmark(BaseModel):
     notes: str = Field(..., description="Scientific commentary explaining the physical origin of the residual")
 
 
+class MarsTimeConversion(BaseModel):
+    """Martian time system transformation between MTC, LMST, and LTST."""
+
+    input_time_hours: float = Field(..., description="Input solar time in decimal hours [0, 24)")
+    input_system: Literal["LMST", "LTST", "MTC"] = Field(..., description="Source time system")
+    lon_deg: float = Field(..., description="Planetocentric longitude in degrees")
+    lon_convention: Literal["east_positive", "west_positive"] = Field(
+        default="east_positive",
+        description="Longitude sign convention: 'east_positive' [0, 360) / [-180, 180] or 'west_positive' [0, 360)",
+    )
+    ls_deg: float = Field(..., description="Areocentric solar longitude Ls in degrees [0, 360)")
+    equation_of_time_hours: float = Field(..., description="Equation of Time (LTST - LMST) in decimal hours")
+    equation_of_time_minutes: float = Field(..., description="Equation of Time in decimal minutes")
+    lmst_hours: float = Field(..., description="Local Mean Solar Time in decimal hours [0, 24)")
+    ltst_hours: float = Field(..., description="Local True Solar Time in decimal hours [0, 24)")
+    mtc_hours: float = Field(..., description="Coordinated Mars Time (MTC) at Prime Meridian in decimal hours [0, 24)")
+    classification: ProvenanceClassification = Field(
+        default="Analytical Model",
+        description="Scientific provenance classification",
+    )
+    methodology: str = Field(
+        default="Allison & McEwen (2000), Planetary and Space Science 48(2-3), pp. 215-235.",
+        description="Formal citation for Mars timekeeping equations",
+    )
+
+
 class MarsSolarGeometry(BaseModel):
     """Deterministic Mars orbital and solar geometry parameters."""
 
@@ -94,6 +120,9 @@ class MarsSolarGeometry(BaseModel):
     lon: float = Field(..., description="Planetocentric East longitude in degrees [0, 360)")
     solar_longitude_ls_deg: float = Field(..., description="Areocentric solar longitude Ls in degrees [0, 360)")
     local_true_solar_time_hours: float = Field(..., description="Local True Solar Time (LTST) in decimal hours [0, 24)")
+    local_mean_solar_time_hours: float = Field(..., description="Local Mean Solar Time (LMST) in decimal hours [0, 24)")
+    equation_of_time_hours: float = Field(..., description="Equation of Time (LTST - LMST) in decimal hours")
+    equation_of_time_minutes: float = Field(..., description="Equation of Time (LTST - LMST) in decimal minutes")
     season_name: str = Field(..., description="Martian astronomical season title")
     mars_sun_distance_au: float = Field(..., description="Instantaneous Mars-Sun orbital radius vector in Astronomical Units")
     solar_declination_deg: float = Field(..., description="Sub-solar planetocentric declination delta in degrees")
@@ -102,20 +131,36 @@ class MarsSolarGeometry(BaseModel):
     solar_elevation_deg: float = Field(..., description="Solar elevation angle above local horizon in degrees (90 - SZA)")
     day_night_status: str = Field(..., description="Diurnal state ('Day', 'Night', 'Polar Day', 'Polar Night', 'Twilight')")
     is_day: bool = Field(..., description="Boolean flag: True if solar elevation > 0 deg (SZA < 90 deg)")
-    sunrise_hour: Optional[float] = Field(default=None, description="Local time of sunrise in decimal hours (None during polar night/day)")
-    sunset_hour: Optional[float] = Field(default=None, description="Local time of sunset in decimal hours (None during polar night/day)")
+    sunrise_hour: Optional[float] = Field(default=None, description="Local true solar time of sunrise in decimal hours (None during polar night/day)")
+    sunset_hour: Optional[float] = Field(default=None, description="Local true solar time of sunset in decimal hours (None during polar night/day)")
     polar_condition: Optional[str] = Field(default=None, description="Polar state: None, 'Polar Day (Midnight Sun)', or 'Polar Night'")
+    toa_normal_irradiance_w_m2: float = Field(
+        ...,
+        description="Top-Of-Atmosphere (TOA) normal-incidence solar irradiance S_Mars = S_0 / r^2 in W/m2",
+    )
+    toa_horizontal_irradiance_w_m2: float = Field(
+        ...,
+        description="Top-Of-Atmosphere (TOA) direct horizontal solar irradiance S_Mars * max(0, cos(SZA)) in W/m2 (0.0 when SZA >= 90 deg)",
+    )
+    surface_direct_normal_irradiance_w_m2: Optional[float] = Field(
+        default=None,
+        description="Direct beam normal-incidence solar irradiance at surface after dust extinction in W/m2 (0.0 when SZA >= 90 deg)",
+    )
+    surface_direct_horizontal_irradiance_w_m2: float = Field(
+        ...,
+        description="Direct beam horizontal solar irradiance at surface in W/m2 after geometric incidence and dust extinction (0.0 when SZA >= 90 deg)",
+    )
     top_of_atmosphere_solar_flux_w_m2: float = Field(
         ...,
-        description="Top-Of-Atmosphere (TOA) normal solar irradiance in W/m2 (0.0 W/m2 when SZA >= 90 deg)",
+        description="TOA direct horizontal solar irradiance in W/m2 (legacy alias for toa_horizontal_irradiance_w_m2)",
     )
     optical_depth_tau: Optional[float] = Field(
         default=None,
-        description="Column dust optical depth tau (tau >= 0) used for Beer-Lambert attenuation",
+        description="Optional column dust optical depth tau (tau >= 0) used for Beer-Lambert attenuation",
     )
     surface_solar_flux_w_m2: float = Field(
         ...,
-        description="Direct surface solar flux in W/m2 after atmospheric dust attenuation (strictly 0.0 W/m2 when SZA >= 90 deg)",
+        description="Direct surface horizontal solar flux in W/m2 (legacy alias for surface_direct_horizontal_irradiance_w_m2; does not include diffuse skylight)",
     )
     classification: ProvenanceClassification = Field(
         default="Analytical Model",
@@ -190,12 +235,30 @@ class RoutePointEnvironment(BaseModel):
     lon: float = Field(..., description="Planetocentric East longitude in degrees")
     distance_m: float = Field(..., description="Cumulative distance from route start in metres")
     elevation_m: float = Field(..., description="MOLA Areoid elevation in metres")
-    reference_pressure_pa: float = Field(..., description="Estimated barometric pressure P(z) in Pa")
+    reference_pressure_pa: float = Field(..., description="Estimated reference barometric pressure P(z) in Pa")
     solar_zenith_angle_deg: float = Field(..., description="Solar Zenith Angle (SZA) in degrees")
     solar_elevation_deg: float = Field(..., description="Solar elevation angle in degrees")
     is_day: bool = Field(..., description="True if Sun is above the horizon (solar elevation > 0 deg)")
-    toa_solar_flux_w_m2: float = Field(..., description="Top-of-atmosphere normal solar flux in W/m2")
-    surface_solar_flux_w_m2: float = Field(..., description="Attenuated surface solar flux in W/m2")
+    toa_normal_irradiance_w_m2: float = Field(
+        ...,
+        description="Top-of-atmosphere normal solar irradiance S_0 / r^2 in W/m2",
+    )
+    toa_horizontal_irradiance_w_m2: float = Field(
+        ...,
+        description="Top-of-atmosphere direct horizontal solar irradiance in W/m2 (0.0 when SZA >= 90 deg)",
+    )
+    surface_direct_horizontal_irradiance_w_m2: float = Field(
+        ...,
+        description="Attenuated direct beam horizontal solar irradiance in W/m2 (strictly 0.0 when SZA >= 90 deg)",
+    )
+    toa_solar_flux_w_m2: float = Field(
+        ...,
+        description="Top-of-atmosphere direct horizontal solar flux in W/m2 (legacy alias for toa_horizontal_irradiance_w_m2)",
+    )
+    surface_solar_flux_w_m2: float = Field(
+        ...,
+        description="Attenuated direct surface horizontal solar flux in W/m2 (legacy alias for surface_direct_horizontal_irradiance_w_m2)",
+    )
 
 
 class RouteEnvironmentalSummary(BaseModel):
@@ -207,9 +270,9 @@ class RouteEnvironmentalSummary(BaseModel):
     min_pressure_pa: float = Field(..., description="Minimum reference atmospheric pressure along traverse in Pa")
     max_pressure_pa: float = Field(..., description="Maximum reference atmospheric pressure along traverse in Pa")
     mean_pressure_pa: float = Field(..., description="Mean reference atmospheric pressure along traverse in Pa")
-    min_surface_flux_w_m2: float = Field(..., description="Minimum surface solar flux along traverse in W/m2")
-    max_surface_flux_w_m2: float = Field(..., description="Maximum surface solar flux along traverse in W/m2")
-    mean_surface_flux_w_m2: float = Field(..., description="Mean surface solar flux along traverse in W/m2")
+    min_surface_flux_w_m2: float = Field(..., description="Minimum direct surface horizontal solar flux along traverse in W/m2")
+    max_surface_flux_w_m2: float = Field(..., description="Maximum direct surface horizontal solar flux along traverse in W/m2")
+    mean_surface_flux_w_m2: float = Field(..., description="Mean direct surface horizontal solar flux along traverse in W/m2")
     daylight_percentage: float = Field(..., description="Percentage of the traverse bathed in direct sunlight [0, 100]")
     samples: List[RoutePointEnvironment] = Field(..., description="Subsampled route environmental waypoints")
     classification: ProvenanceClassification = Field(

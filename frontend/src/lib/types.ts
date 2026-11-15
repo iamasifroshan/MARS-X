@@ -1374,11 +1374,29 @@ export interface PressureResidualBenchmark {
   notes: string;
 }
 
+export interface MarsTimeConversion {
+  input_time_hours: number;
+  input_system: "LMST" | "LTST" | "MTC";
+  lon_deg: number;
+  lon_convention: "east_positive" | "west_positive";
+  ls_deg: number;
+  equation_of_time_hours: number;
+  equation_of_time_minutes: number;
+  lmst_hours: number;
+  ltst_hours: number;
+  mtc_hours: number;
+  classification: ProvenanceClassification;
+  methodology: string;
+}
+
 export interface MarsSolarGeometry {
   lat: number;
   lon: number;
   solar_longitude_ls_deg: number;
   local_true_solar_time_hours: number;
+  local_mean_solar_time_hours: number;
+  equation_of_time_hours: number;
+  equation_of_time_minutes: number;
   season_name: string;
   mars_sun_distance_au: number;
   solar_declination_deg: number;
@@ -1390,6 +1408,10 @@ export interface MarsSolarGeometry {
   sunrise_hour?: number | null;
   sunset_hour?: number | null;
   polar_condition?: string | null;
+  toa_normal_irradiance_w_m2: number;
+  toa_horizontal_irradiance_w_m2: number;
+  surface_direct_normal_irradiance_w_m2?: number | null;
+  surface_direct_horizontal_irradiance_w_m2: number;
   top_of_atmosphere_solar_flux_w_m2: number;
   optical_depth_tau?: number | null;
   surface_solar_flux_w_m2: number;
@@ -1441,6 +1463,9 @@ export interface RoutePointEnvironment {
   solar_zenith_angle_deg: number;
   solar_elevation_deg: number;
   is_day: boolean;
+  toa_normal_irradiance_w_m2: number;
+  toa_horizontal_irradiance_w_m2: number;
+  surface_direct_horizontal_irradiance_w_m2: number;
   toa_solar_flux_w_m2: number;
   surface_solar_flux_w_m2: number;
 }

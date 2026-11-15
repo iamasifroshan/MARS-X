@@ -18,6 +18,7 @@ from app.science.environmental_models import (
     AtmosphericPressureEstimate,
     PressureResidualBenchmark,
     MarsSolarGeometry,
+    MarsTimeConversion,
     HistoricalRoverWeatherRecord,
     HistoricalWeatherSummary,
     RoutePointEnvironment,
@@ -95,7 +96,107 @@ class EnvironmentalIntelligenceService:
             reference_atmospheric_pressure_estimate_pa=round(float(p_z), 2),
         )
 
-    # ── 2. Deterministic Mars Solar Geometry ────────────────────────────────
+    # ── 2. Time Systems & Equation of Time (Allison & McEwen 2000) ─────────
+    def calculate_equation_of_time(self, ls_deg: float) -> Tuple[float, float]:
+        """Compute the Martian Equation of Time (EOT = LTST - LMST) from areocentric solar longitude Ls.
+
+        Based on Allison & McEwen (2000), Planetary and Space Science 48(2-3), pp. 215-235:
+        EOT = 2.861° * sin(2*Ls) - 0.071° * sin(4*Ls) + 0.002° * sin(6*Ls) - (nu - M)
+        where (nu - M) is the Keplerian equation of center.
+
+        Returns:
+            Tuple of (eot_deg, eot_hours)
+        """
+        ls_norm = ls_deg % 360.0
+        ls_rad = math.radians(ls_norm)
+
+        # 1. Reduction to the equator harmonic series (axial tilt effect)
+        term_equator = (
+            2.861 * math.sin(2.0 * ls_rad)
+            - 0.071 * math.sin(4.0 * ls_rad)
+            + 0.002 * math.sin(6.0 * ls_rad)
+        )
+
+        # 2. Keplerian Equation of Center (eccentricity effect)
+        # True anomaly nu relative to perihelion Ls_p = 250.99°
+        nu_deg = (ls_norm - MARS_PERIHELION_LS_DEG) % 360.0
+        nu_rad = math.radians(nu_deg)
+        e = MARS_ECCENTRICITY
+
+        # Eccentric anomaly E via half-angle relation: tan(E/2) = sqrt((1-e)/(1+e)) * tan(nu/2)
+        tan_e_half = math.sqrt((1.0 - e) / (1.0 + e)) * math.tan(nu_rad / 2.0)
+        e_rad = 2.0 * math.atan(tan_e_half)
+        m_rad = e_rad - e * math.sin(e_rad)
+        m_deg = math.degrees(m_rad) % 360.0
+
+        # Equation of center in degrees [-180, +180]
+        eq_center = (nu_deg - m_deg + 180.0) % 360.0 - 180.0
+
+        # 3. Net Equation of Time in degrees and hours
+        eot_deg = term_equator - eq_center
+        eot_hours = eot_deg / 15.0
+
+        return eot_deg, eot_hours
+
+    def convert_mars_time(
+        self,
+        time_hours: float,
+        from_system: str,
+        to_system: str,
+        lon_deg: float,
+        ls_deg: float,
+        lon_convention: str = "east_positive",
+    ) -> MarsTimeConversion:
+        """Convert solar time between MTC, LMST, and LTST according to longitude convention.
+
+        Supported systems: 'LMST', 'LTST', 'MTC'.
+        Supported longitude conventions:
+        - 'east_positive': Planetocentric East longitude [0, 360) or [-180, +180].
+        - 'west_positive': Planetocentric West longitude [0, 360).
+        """
+        from_sys = from_system.upper().strip()
+        to_sys = to_system.upper().strip()
+        valid_systems = {"LMST", "LTST", "MTC"}
+        if from_sys not in valid_systems or to_sys not in valid_systems:
+            raise ValueError(f"Invalid time system: '{from_system}' -> '{to_system}'. Must be LMST, LTST, or MTC.")
+
+        # Standardize longitude to East-positive [0, 360)
+        if lon_convention.lower() == "west_positive":
+            lon_east = (360.0 - lon_deg) % 360.0
+        else:
+            lon_east = lon_deg % 360.0
+
+        eot_deg, eot_hours = self.calculate_equation_of_time(ls_deg)
+        t_in = time_hours % 24.0
+
+        # Step 1: Resolve to MTC (Coordinated Mars Time at Airy-0 Prime Meridian)
+        if from_sys == "MTC":
+            mtc = t_in
+            lmst = (mtc + lon_east / 15.0) % 24.0
+            ltst = (lmst + eot_hours) % 24.0
+        elif from_sys == "LMST":
+            lmst = t_in
+            mtc = (lmst - lon_east / 15.0) % 24.0
+            ltst = (lmst + eot_hours) % 24.0
+        else:  # LTST
+            ltst = t_in
+            lmst = (ltst - eot_hours) % 24.0
+            mtc = (lmst - lon_east / 15.0) % 24.0
+
+        return MarsTimeConversion(
+            input_time_hours=round(t_in, 4),
+            input_system=from_sys,  # type: ignore
+            lon_deg=round(lon_deg, 4),
+            lon_convention="west_positive" if lon_convention.lower() == "west_positive" else "east_positive",
+            ls_deg=round(ls_deg, 2),
+            equation_of_time_hours=round(eot_hours, 4),
+            equation_of_time_minutes=round(eot_hours * 60.0, 2),
+            lmst_hours=round(lmst, 4),
+            ltst_hours=round(ltst, 4),
+            mtc_hours=round(mtc, 4),
+        )
+
+    # ── 3. Deterministic Mars Solar Geometry & Irradiance ───────────────────
     def calculate_solar_geometry(
         self,
         lat: float,
@@ -103,44 +204,63 @@ class EnvironmentalIntelligenceService:
         ls_deg: float = 0.0,
         ltst_hours: float = 12.0,
         tau: Optional[float] = None,
+        time_system: str = "LTST",
+        lon_convention: str = "east_positive",
     ) -> MarsSolarGeometry:
         """Calculate deterministic Mars solar geometry, declination, SZA, and solar irradiance.
 
-        Based on Allison & McEwen (2000), Planetary and Space Science 48(2-3), pp. 215-235.
+        Distinguishes:
+        - Normal-incidence TOA solar irradiance: S_Mars = S_0 / r^2
+        - Direct horizontal TOA solar irradiance: S_Mars * max(0, cos(SZA))
+        - Direct beam normal-incidence surface irradiance: S_Mars * exp(-tau * airmass)
+        - Direct beam horizontal surface irradiance: S_Mars * max(0, cos(SZA)) * exp(-tau * airmass)
+        When SZA >= 90 deg, horizontal irradiance evaluates strictly to 0.0 W/m2.
         """
         if not (-90.0 <= lat <= 90.0):
             raise ValueError(f"Latitude {lat} must be in range [-90.0, +90.0] degrees.")
-        if not (0.0 <= lon < 360.0):
-            lon = lon % 360.0
 
-        if not (0.0 <= ls_deg < 360.0):
-            ls_deg = ls_deg % 360.0
+        # Standardize longitude to East-positive [0, 360)
+        if lon_convention.lower() == "west_positive":
+            norm_lon = (360.0 - lon) % 360.0
+        else:
+            norm_lon = lon % 360.0
 
-        if not (0.0 <= ltst_hours < 24.0):
-            ltst_hours = ltst_hours % 24.0
+        ls_norm = ls_deg % 360.0
+
+        # Calculate Equation of Time (EOT)
+        eot_deg, eot_hours = self.calculate_equation_of_time(ls_norm)
+
+        # Handle time system input (LTST vs LMST)
+        time_sys = time_system.upper().strip()
+        if time_sys == "LMST":
+            lmst_val = ltst_hours % 24.0
+            actual_ltst = (lmst_val + eot_hours) % 24.0
+        else:
+            actual_ltst = ltst_hours % 24.0
+            lmst_val = (actual_ltst - eot_hours) % 24.0
 
         if tau is not None and tau < 0.0:
             raise ValueError(f"Dust optical depth tau cannot be negative (received {tau}).")
 
         # Astronomical season identification
-        if 0.0 <= ls_deg < 90.0:
+        if 0.0 <= ls_norm < 90.0:
             season_name = "Northern Spring / Southern Autumn"
-        elif 90.0 <= ls_deg < 180.0:
+        elif 90.0 <= ls_norm < 180.0:
             season_name = "Northern Summer / Southern Winter"
-        elif 180.0 <= ls_deg < 270.0:
+        elif 180.0 <= ls_norm < 270.0:
             season_name = "Northern Autumn / Southern Spring"
         else:
             season_name = "Northern Winter / Southern Summer"
 
         # 1. Mars-Sun Distance r(Ls) in AU
-        ls_rad = math.radians(ls_deg)
+        ls_rad = math.radians(ls_norm)
         perihelion_rad = math.radians(MARS_PERIHELION_LS_DEG)
         true_anomaly = ls_rad - perihelion_rad
         num = MARS_SEMIMAJOR_AXIS_AU * (1.0 - MARS_ECCENTRICITY**2)
         den = 1.0 + MARS_ECCENTRICITY * math.cos(true_anomaly)
         r_au = num / den
 
-        # Solar constant at Mars top of atmosphere
+        # Normal-incidence solar constant at Mars top of atmosphere (S_Mars = S_0 / r^2)
         s0_mars = SOLAR_CONSTANT_1AU_W_M2 / (r_au**2)
 
         # 2. Solar Declination delta
@@ -151,7 +271,7 @@ class EnvironmentalIntelligenceService:
         declination_deg = math.degrees(declination_rad)
 
         # 3. Solar Hour Angle omega (0 deg at solar noon LTST=12h, 15 deg per hour)
-        hour_angle_deg = (ltst_hours - 12.0) * 15.0
+        hour_angle_deg = (actual_ltst - 12.0) * 15.0
         hour_angle_rad = math.radians(hour_angle_deg)
 
         # 4. Solar Zenith Angle (SZA)
@@ -187,8 +307,8 @@ class EnvironmentalIntelligenceService:
             omega_0_rad = math.acos(cos_omega_0)
             omega_0_deg = math.degrees(omega_0_rad)
             delta_hours = omega_0_deg / 15.0
-            sunrise_hour = round(12.0 - delta_hours, 2)
-            sunset_hour = round(12.0 + delta_hours, 2)
+            sunrise_hour = round((12.0 - delta_hours) % 24.0, 2)
+            sunset_hour = round((12.0 + delta_hours) % 24.0, 2)
 
             is_day = sza_deg < 90.0
             if is_day:
@@ -198,25 +318,37 @@ class EnvironmentalIntelligenceService:
             else:
                 day_night_status = "Night"
 
-        # 6. Solar Irradiance (TOA and Surface)
-        # Strict Rule: When SZA >= 90 deg, solar flux MUST be strictly non-positive (0.0 W/m2)
+        # 6. Solar Irradiance Separation:
+        # F_normal_TOA = S_Mars = S_0 / r^2 (physical normal incidence at TOA)
+        # F_horizontal_TOA = S_Mars * max(0, cos(SZA))
+        # Surface direct beam normal = S_Mars * exp(-tau * airmass)
+        # Surface direct horizontal = S_Mars * max(0, cos(SZA)) * exp(-tau * airmass)
+        toa_normal_irradiance = s0_mars
+
         if sza_deg < 90.0:
-            toa_flux = s0_mars * cos_sza
+            toa_horizontal_irradiance = s0_mars * cos_sza
             if tau is not None and tau >= 0.0:
-                # Beer-Lambert attenuation along slanted atmospheric column
-                airmass = 1.0 / max(cos_sza, 0.05)  # clamp airmass to avoid singularity at horizon
-                surface_flux = toa_flux * math.exp(-tau * airmass)
+                airmass = 1.0 / max(cos_sza, 0.05)  # clamp airmass to avoid horizon singularity
+                extinction = math.exp(-tau * airmass)
+                surface_direct_normal = s0_mars * extinction
+                surface_direct_horizontal = toa_horizontal_irradiance * extinction
             else:
-                surface_flux = toa_flux
+                surface_direct_normal = s0_mars
+                surface_direct_horizontal = toa_horizontal_irradiance
         else:
-            toa_flux = 0.0
-            surface_flux = 0.0
+            # Strict Rule: When SZA >= 90 deg, all direct horizontal and surface fluxes are strictly 0.0
+            toa_horizontal_irradiance = 0.0
+            surface_direct_normal = 0.0
+            surface_direct_horizontal = 0.0
 
         return MarsSolarGeometry(
             lat=round(lat, 4),
-            lon=round(lon, 4),
-            solar_longitude_ls_deg=round(ls_deg, 2),
-            local_true_solar_time_hours=round(ltst_hours, 2),
+            lon=round(norm_lon, 4),
+            solar_longitude_ls_deg=round(ls_norm, 2),
+            local_true_solar_time_hours=round(actual_ltst, 2),
+            local_mean_solar_time_hours=round(lmst_val, 2),
+            equation_of_time_hours=round(eot_hours, 4),
+            equation_of_time_minutes=round(eot_hours * 60.0, 2),
             season_name=season_name,
             mars_sun_distance_au=round(r_au, 5),
             solar_declination_deg=round(declination_deg, 2),
@@ -228,9 +360,13 @@ class EnvironmentalIntelligenceService:
             sunrise_hour=sunrise_hour,
             sunset_hour=sunset_hour,
             polar_condition=polar_condition,
-            top_of_atmosphere_solar_flux_w_m2=round(toa_flux, 2),
+            toa_normal_irradiance_w_m2=round(toa_normal_irradiance, 2),
+            toa_horizontal_irradiance_w_m2=round(toa_horizontal_irradiance, 2),
+            surface_direct_normal_irradiance_w_m2=round(surface_direct_normal, 2) if surface_direct_normal is not None else None,
+            surface_direct_horizontal_irradiance_w_m2=round(surface_direct_horizontal, 2),
+            top_of_atmosphere_solar_flux_w_m2=round(toa_horizontal_irradiance, 2),
             optical_depth_tau=round(tau, 3) if tau is not None else None,
-            surface_solar_flux_w_m2=round(surface_flux, 2),
+            surface_solar_flux_w_m2=round(surface_direct_horizontal, 2),
         )
 
     # ── 3. Historical In-Situ Rover Observation Parsers ─────────────────────
@@ -483,9 +619,10 @@ class EnvironmentalIntelligenceService:
                 instrument_lid=meda.pds4_source_lid,
                 notes=(
                     f"Model overestimates observed Sol 1 mean by {res_jezero:+.2f} Pa ({res_pct_jezero:+.2f}%). "
-                    "Perseverance Sol 1 occurred at Ls=6.1 deg (early Northern Spring / near aphelion), "
-                    "when global atmospheric mass is near its annual minimum because CO2 is sequestered "
-                    "in the southern seasonal polar cap. The analytical model uses a global mean P_ref=610 Pa."
+                    "MEDA Sol 1 dataset covers an afternoon interval (15:28–16:20 LTST, 2,330 1-Hz samples) at Ls=6.15 deg. "
+                    "The analytical model represents a simplified global isothermal reference profile (P_ref=610 Pa, H=11,100 m), "
+                    "which does not capture seasonal polar CO2 condensation cycles or diurnal tidal variations. "
+                    "MARS-X preserves this residual explicitly without artificial calibration."
                 ),
             ),
             "REMS_GALE": PressureResidualBenchmark(
@@ -503,9 +640,10 @@ class EnvironmentalIntelligenceService:
                 instrument_lid=rems.pds4_source_lid,
                 notes=(
                     f"Model overestimates observed Sol 1 mean by {res_gale:+.2f} Pa ({res_pct_gale:+.2f}%). "
-                    "Curiosity Sol 1 occurred at Ls=150.4 deg (late Northern Summer) during an active diurnal "
-                    "thermal tide cycle. Gale Crater is a deep topographic depression (z=-4440 m) subject "
-                    "to localized daytime convective venting and barometric tides that deviate from standard exponential scaling."
+                    "REMS Sol 1 dataset covers an afternoon interval (13:47–14:05 LTST, 450 valid samples) at Ls=150.4 deg. "
+                    "The analytical model represents a simplified global isothermal reference profile (P_ref=610 Pa, H=11,100 m), "
+                    "which does not capture localized basin topography effects or diurnal barometric tides. "
+                    "MARS-X preserves this residual explicitly without artificial calibration."
                 ),
             ),
         }
@@ -563,7 +701,7 @@ class EnvironmentalIntelligenceService:
             if sol_geo.is_day:
                 daylight_count += 1
 
-            surface_fluxes.append(sol_geo.surface_solar_flux_w_m2)
+            surface_fluxes.append(sol_geo.surface_direct_horizontal_irradiance_w_m2)
 
             enriched_points.append(
                 RoutePointEnvironment(
@@ -576,8 +714,11 @@ class EnvironmentalIntelligenceService:
                     solar_zenith_angle_deg=sol_geo.solar_zenith_angle_deg,
                     solar_elevation_deg=sol_geo.solar_elevation_deg,
                     is_day=sol_geo.is_day,
-                    toa_solar_flux_w_m2=sol_geo.top_of_atmosphere_solar_flux_w_m2,
-                    surface_solar_flux_w_m2=sol_geo.surface_solar_flux_w_m2,
+                    toa_normal_irradiance_w_m2=sol_geo.toa_normal_irradiance_w_m2,
+                    toa_horizontal_irradiance_w_m2=sol_geo.toa_horizontal_irradiance_w_m2,
+                    surface_direct_horizontal_irradiance_w_m2=sol_geo.surface_direct_horizontal_irradiance_w_m2,
+                    toa_solar_flux_w_m2=sol_geo.toa_horizontal_irradiance_w_m2,
+                    surface_solar_flux_w_m2=sol_geo.surface_direct_horizontal_irradiance_w_m2,
                 )
             )
 
