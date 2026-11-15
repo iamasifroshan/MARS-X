@@ -61,7 +61,7 @@ import {
 } from "./types";
 
 
-export const CLOUD_API_BASE = "https://mars-x-cc6e.onrender.com";
+export const CLOUD_API_BASE = "https://mars-x-backend.onrender.com";
 export const LOCAL_API_BASE = "http://127.0.0.1:8000";
 
 /**

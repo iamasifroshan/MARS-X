@@ -3,13 +3,14 @@
 **Planetary Geospatial Intelligence, Multi-Stop Science Traverse Optimization & Mars Climatology Engine**
 
 [![NASA Space Apps Challenge 2026](https://img.shields.io/badge/NASA%20Space%20Apps-2026-orange.svg)](https://www.spaceappschallenge.org/)
-[![Render](https://img.shields.io/badge/Render-Live%20API-46E3B7.svg)](https://mars-x-cc6e.onrender.com)
+[![Vercel Frontend](https://img.shields.io/badge/Vercel-Live%20App-000000.svg)](https://mars-x-nasa.vercel.app)
+[![Render Backend](https://img.shields.io/badge/Render-Live%20API-46E3B7.svg)](https://mars-x-backend.onrender.com)
 [![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![Next.js](https://img.shields.io/badge/Next.js-16.4.6%20Turbopack-black.svg)](https://nextjs.org/)
 [![MapLibre GL](https://img.shields.io/badge/MapLibre-GL%20JS-blueviolet.svg)](https://maplibre.org/)
 [![CRS](https://img.shields.io/badge/CRS-EPSG%3A104905%20(IAU%202000)-crimson.svg)](https://epsg.io/104905)
-[![Tests](https://img.shields.io/badge/Tests-485%20Passed%20(100%25)-success.svg)](backend/tests/)
+[![Tests](https://img.shields.io/badge/Tests-492%20Passed%20(100%25)-success.svg)](backend/tests/)
 
 > **NASA Space Apps Challenge 2026 Submission**  
 > **Challenge Track:** *Interplanetary Survival Guide: Martian Map*  
@@ -182,11 +183,12 @@ python -m venv .venv
 pip install -r requirements.txt
 uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
-- **Health Check:** `http://127.0.0.1:8000/health`
-- **Swagger Documentation:** `http://127.0.0.1:8000/docs`
-- **Deployed Cloud API (Render):** [https://mars-x-cc6e.onrender.com](https://mars-x-cc6e.onrender.com)
-- **Cloud API Health:** `https://mars-x-cc6e.onrender.com/health`
-- **Cloud Swagger Documentation:** `https://mars-x-cc6e.onrender.com/docs`
+- **Local Health Check:** `http://127.0.0.1:8000/health`
+- **Local Swagger Documentation:** `http://127.0.0.1:8000/docs`
+- **Deployed Cloud API (Render):** [https://mars-x-backend.onrender.com](https://mars-x-backend.onrender.com)
+- **Cloud API Health:** `https://mars-x-backend.onrender.com/health`
+- **Cloud Swagger Documentation:** `https://mars-x-backend.onrender.com/docs`
+- **Production Web Application (Vercel):** [https://mars-x-nasa.vercel.app](https://mars-x-nasa.vercel.app)
 
 ### 3. Frontend Setup
 In a new terminal:
